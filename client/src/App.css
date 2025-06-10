@@ -1,0 +1,136 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+html, body {
+  background-color: #111111;
+  margin: 0;
+  height: 100%;
+  color: white;
+  overflow: hidden;
+  width: 100vw; 
+}
+
+#root {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+}
+
+.cursor-wrapper {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+  user-select: none;
+}
+
+.cursor-id-label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.6rem;
+  font-weight: normal;
+  margin-bottom: 2px;
+  background-color: #111111;
+  padding: 1px 4px;
+  border-radius: 3px;
+  color: white;
+  border: 1px solid white;
+  white-space: nowrap;
+}
+
+#logo-container {
+  position: fixed;
+  top: 0px;
+  left: 25px;
+  z-index: 50;
+}
+
+#modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(36, 36, 36, 0.623);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 50;
+}
+
+#logo {
+  height: 100%;
+  width: auto;
+}
+
+.cursor-circle {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  width: 24px;
+  height: 24px;
+  background-image: url('./UI/cursor.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-color: transparent;
+  pointer-events: none;
+}
+
+.cursor-timer {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 0.5rem;
+  color: rgb(104, 104, 104);
+  margin-bottom: 4px;
+}
+
+.connect-button {
+  padding: 0.5rem 0.5rem;
+  color: white;
+  font-size: 0.6rem;
+  background-color: #111111;
+  font-family: 'Press Start 2P', cursive;
+}
+
+.connect-button.enabled {
+  cursor: pointer;
+}
+
+.connect-button.enabled:hover {
+  color: rgb(207, 207, 207);
+}
+
+.connect-button.disabled {
+  color: rgb(104, 104, 104);
+  cursor: not-allowed;
+}
+
+.form-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  width: 16rem; 
+  padding: 1rem;
+  background-color: #111111;
+  border-radius: 0.5rem;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 0.7rem;
+  justify-content: center;
+  text-align: center;
+  border:1px solid white;
+  margin:auto;
+}
+
+.input-global {
+  padding: 0.5rem;
+  border-radius: 1rem;
+  border: 1px solid white;
+  background-color: #111111;
+  color: white;
+  width: 75%;
+  text-align: center;
+  outline: none;
+  font-size: 0.6rem;
+  font-family: 'Press Start 2P', cursive;
+}
+
+.input-global::placeholder {
+  color: rgb(104, 104, 104);
+}
