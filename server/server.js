@@ -17,7 +17,6 @@ methods: ["GET", "POST"],
 let cursors = {;
 let lastMoveTimestamps = {;
 
-// Helper to filter cursors by valid name
 function getValidCursors() {
 const filtered = {;
 Object.entries(cursors).forEach(([id, cursor]) => {
@@ -77,13 +76,21 @@ cursors[socket.id].name = name.trim();
 io.emit('cursors', getValidCursors());
 );
 
+socket.on('spawnHeart', (heartData) => {
+console.log('Heart spawned by:', socket.id, 'at:', heartData.x, heartData.y);
+io.emit('heartSpawned', heartData);
+);
+
+socket.on('spawnCircle', (circleData) => {
+console.log('Circle spawned by:', socket.id, 'at:', circleData.x, circleData.y);
+io.emit('circleSpawned', circleData);
+);
+
 socket.on('disconnect', () => {
 console.log('User disconnected:', socket.id);
 delete cursors[socket.id];
 delete lastMoveTimestamps[socket.id];
 io.emit('cursors', getValidCursors());
-
-// Emit explicit disconnect event so clients can handle it immediately
 io.emit('clientDisconnected', socket.id);
 );
 );
