@@ -17,7 +17,6 @@ const io = new Server(server, {
 let cursors = {};
 let lastMoveTimestamps = {};
 
-// Helper to filter cursors by valid name
 function getValidCursors() {
   const filtered = {};
   Object.entries(cursors).forEach(([id, cursor]) => {
@@ -30,7 +29,7 @@ function getValidCursors() {
 
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
-
+  
   cursors[socket.id] = {
     x: 0,
     y: 0,
@@ -48,7 +47,7 @@ io.on('connection', (socket) => {
 
   socket.on('cursorMove', ({ x, y, name }) => {
     const now = Date.now();
-
+    
     if (!cursors[socket.id]) {
       cursors[socket.id] = {
         name: name?.trim() || '',
@@ -68,13 +67,23 @@ io.on('connection', (socket) => {
         const diffSeconds = Math.floor((now - lastMoveTimestamps[socket.id]) / 1000);
         cursors[socket.id].stillTime = diffSeconds;
       }
-
+      
       if (name && name.trim() !== '') {
         cursors[socket.id].name = name.trim();
       }
     }
-
+    
     io.emit('cursors', getValidCursors());
+  });
+
+  socket.on('spawnHeart', (heartData) => {
+    console.log('Heart spawned by:', socket.id, 'at:', heartData.x, heartData.y);
+    io.emit('heartSpawned', heartData);
+  });
+
+  socket.on('spawnCircle', (circleData) => {
+    console.log('Circle spawned by:', socket.id, 'at:', circleData.x, circleData.y);
+    io.emit('circleSpawned', circleData);
   });
 
   socket.on('disconnect', () => {
@@ -82,8 +91,6 @@ io.on('connection', (socket) => {
     delete cursors[socket.id];
     delete lastMoveTimestamps[socket.id];
     io.emit('cursors', getValidCursors());
-
-    // Emit explicit disconnect event so clients can handle it immediately
     io.emit('clientDisconnected', socket.id);
   });
 });
@@ -91,7 +98,7 @@ io.on('connection', (socket) => {
 setInterval(() => {
   const now = Date.now();
   let updated = false;
-
+  
   Object.keys(cursors).forEach((id) => {
     const cursor = cursors[id];
     const lastMove = lastMoveTimestamps[id];
@@ -103,7 +110,7 @@ setInterval(() => {
       }
     }
   });
-
+  
   if (updated) {
     io.emit('cursors', getValidCursors());
   }

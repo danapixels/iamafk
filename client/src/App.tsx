@@ -13,17 +13,65 @@ interface CursorsMap {
   [socketId: string]: CursorData;
 }
 
+interface Heart {
+  id: string;
+  x: number;
+  y: number;
+  timestamp: number;
+}
+
+interface Circle {
+  id: string;
+  x: number;
+  y: number;
+  timestamp: number;
+}
+
 function App() {
   const [cursors, setCursors] = useState<CursorsMap>({});
+  const [hearts, setHearts] = useState<Heart[]>([]);
+  const [circles, setCircles] = useState<Circle[]>([]);
   const socketRef = useRef<Socket | null>(null);
+  const heartCounterRef = useRef(0);
+  const circleCounterRef = useRef(0);
 
   const [username, setUsername] = useState('');
   const usernameRef = useRef(username);
   const [hasConnected, setHasConnected] = useState(false);
+  const clickEnabledTimeRef = useRef<number | null>(null); // 👈 Add this
+
+  const HEART_DURATION = 800;
+  const CIRCLE_DURATION = 600;
 
   useEffect(() => {
     usernameRef.current = username;
   }, [username]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = Date.now();
+
+      setHearts((prev) => prev.filter((heart) => now - heart.timestamp < HEART_DURATION));
+      setCircles((prev) => prev.filter((circle) => now - circle.timestamp < CIRCLE_DURATION));
+    }, 16);
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        const now = Date.now();
+        setHearts((prev) => prev.filter((heart) => now - heart.timestamp < HEART_DURATION));
+        setCircles((prev) => prev.filter((circle) => now - circle.timestamp < CIRCLE_DURATION));
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleVisibilityChange);
+    };
+  }, []);
 
   useEffect(() => {
     const socket = io('http://localhost:3001');
@@ -34,18 +82,32 @@ function App() {
     });
 
     socket.on('disconnect', () => {
-      console.log('❌ Disconnected from server');
+      console.log('❌ Disconnected');
       setHasConnected(false);
       setCursors({});
+      setHearts([]);
+      setCircles([]);
     });
 
     socket.on('cursors', (newCursors: CursorsMap) => {
       setCursors(newCursors);
     });
 
-    // Listen for explicit disconnect events from other clients
+    socket.on('heartSpawned', (heartData) => {
+      setHearts((prev) => [
+        ...prev,
+        { ...heartData, timestamp: Date.now() }
+      ]);
+    });
+
+    socket.on('circleSpawned', (circleData) => {
+      setCircles((prev) => [
+        ...prev,
+        { ...circleData, timestamp: Date.now() }
+      ]);
+    });
+
     socket.on('clientDisconnected', (id: string) => {
-      console.log('🛑 User disconnected:', id);
       setCursors((prev) => {
         const newCursors = { ...prev };
         delete newCursors[id];
@@ -55,7 +117,6 @@ function App() {
 
     const handleMouseMove = (e: MouseEvent) => {
       if (!socket.connected) return;
-
       socket.emit('cursorMove', {
         x: e.clientX,
         y: e.clientY,
@@ -71,27 +132,68 @@ function App() {
     };
   }, []);
 
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      const now = Date.now();
+
+      // 👇 Delay click responsiveness briefly after connect
+      if (
+        !socketRef.current?.connected ||
+        !hasConnected ||
+        (clickEnabledTimeRef.current !== null &&
+          now < clickEnabledTimeRef.current)
+      ) {
+        return;
+      }
+
+      const circleId = `${socketRef.current.id}-${now}-${++circleCounterRef.current}`;
+      socketRef.current.emit('spawnCircle', {
+        x: e.clientX,
+        y: e.clientY,
+        id: circleId,
+      });
+    }
+
+    window.addEventListener('click', handleClick);
+    return () => window.removeEventListener('click', handleClick);
+  }, [hasConnected]);
+
+  useEffect(() => {
+    function handleDoubleClick(e: MouseEvent) {
+      const now = Date.now();
+      if (!socketRef.current?.connected || !hasConnected) return;
+
+      const heartId = `${socketRef.current.id}-${now}-${++heartCounterRef.current}`;
+      socketRef.current.emit('spawnHeart', {
+        x: e.clientX,
+        y: e.clientY,
+        id: heartId,
+      });
+    }
+
+    window.addEventListener('dblclick', handleDoubleClick);
+    return () => window.removeEventListener('dblclick', handleDoubleClick);
+  }, [hasConnected]);
+
   const handleConnect = () => {
     if (username.trim() === '') return;
-    if (socketRef.current && socketRef.current.connected) {
+    if (socketRef.current?.connected) {
       socketRef.current.emit('setName', { name: username.trim() });
       setHasConnected(true);
+
+      // 👇 Set delay timer to ignore initial click from "Connect"
+      clickEnabledTimeRef.current = Date.now() + 300;
     }
   };
 
-  const formatTime = (totalSeconds: number) => {
-    const days = Math.floor(totalSeconds / (24 * 3600));
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-
-    let result = '';
-    if (days > 0) result += `${days}d `;
-    result += `${minutes}m ${seconds}s`;
-    return result.trim();
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}m ${secs}s`;
   };
 
   return (
-    <div id="app-root">
+    <div id="app-root" style={{ userSelect: 'none' }}>
       <div id="logo-container">
         <img src="./UI/logo.png" alt="Logo" id="logo" />
       </div>
@@ -99,12 +201,9 @@ function App() {
       {!hasConnected && (
         <div id="modal-overlay">
           <div className="form-container">
-            <label htmlFor="username">
-              What should everyone know you as when you're away?
-            </label>
+            <label htmlFor="username">What should everyone know you as when you're away?</label>
             <input
               id="username"
-              type="text"
               className="input-global"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
@@ -117,33 +216,93 @@ function App() {
         </div>
       )}
 
-      {Object.entries(cursors)
-        .filter(([id, cursor]) => {
-          if (!hasConnected && id === socketRef.current?.id) return false;
-          return cursor.name && cursor.name.trim() !== '' && cursor.name !== 'Anonymous';
-        })
-        .map(([id, cursor]) => {
-          const stillSeconds = cursor.stillTime || 0;
-          const isMyCursor = socketRef.current?.id === id;
+      {circles.map((circle) => {
+        const age = Date.now() - circle.timestamp;
+        if (age >= CIRCLE_DURATION) return null;
 
-          return (
-            <div
-              key={id}
-              className="cursor-wrapper"
-              style={{
-                left: cursor.x,
-                top: cursor.y,
-                fontWeight: isMyCursor ? 'bold' : 'normal',
-              }}
-            >
-              {stillSeconds >= 30 && (
-                <div className="cursor-timer">AFK {formatTime(stillSeconds)}</div>
-              )}
-              <div className="cursor-id-label">{cursor.name}</div>
-              <div className="cursor-circle" />
-            </div>
-          );
-        })}
+        const progress = age / CIRCLE_DURATION;
+        let size;
+
+        if (progress <= 0.33) {
+          size = (progress / 0.33) * 20;
+        } else if (progress <= 0.66) {
+          const p = (progress - 0.33) / 0.33;
+          size = 20 + p * 20;
+        } else {
+          const p = (progress - 0.66) / 0.34;
+          size = 40 * (1 - p);
+        }
+
+        return (
+          <div
+            key={circle.id}
+            style={{
+              position: 'absolute',
+              left: circle.x - size / 2,
+              top: circle.y - size / 2,
+              width: size,
+              height: size,
+              borderRadius: '50%',
+              backgroundColor: 'rgba(255, 0, 0, 0.8)',
+              border: '2px solid rgba(255, 0, 0, 1)',
+              pointerEvents: 'none',
+              zIndex: 9999,
+            }}
+          />
+        );
+      })}
+
+      {hearts.map((heart) => {
+        const age = Date.now() - heart.timestamp;
+        if (age >= HEART_DURATION) return null;
+
+        const progress = age / HEART_DURATION;
+        const opacity = 1 - progress;
+        const rise = (1 - Math.pow(1 - progress, 3)) * 20;
+
+        return (
+          <img
+            key={heart.id}
+            src="./UI/smile.png"
+            alt="Heart"
+            style={{
+              position: 'absolute',
+              left: heart.x - 12,
+              top: heart.y - 12 - rise,
+              width: 24,
+              height: 24,
+              opacity,
+              pointerEvents: 'none',
+              zIndex: 1000,
+            }}
+          />
+        );
+      })}
+
+      {Object.entries(cursors).map(([id, cursor]) => {
+        if (!hasConnected && id === socketRef.current?.id) return null;
+        if (!cursor.name || cursor.name === 'Anonymous') return null;
+
+        const isMe = id === socketRef.current?.id;
+
+        return (
+          <div
+            key={id}
+            className="cursor-wrapper"
+            style={{
+              left: cursor.x,
+              top: cursor.y,
+              fontWeight: isMe ? 'bold' : 'normal',
+            }}
+          >
+            {cursor.stillTime >= 30 && (
+              <div className="cursor-timer">AFK {formatTime(cursor.stillTime)}</div>
+            )}
+            <div className="cursor-id-label">{cursor.name}</div>
+            <div className="cursor-circle" />
+          </div>
+        );
+      })}
     </div>
   );
 }
