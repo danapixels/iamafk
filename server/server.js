@@ -76,6 +76,15 @@ cursors[socket.id].name = name.trim();
 io.emit('cursors', getValidCursors());
 );
 
+// NEW: Reset stillTime on client request (click/dblclick)
+socket.on('resetStillTime', () => {
+if (cursors[socket.id]) {
+cursors[socket.id].stillTime = 0;
+lastMoveTimestamps[socket.id] = Date.now();
+io.emit('cursors', getValidCursors());
+
+);
+
 socket.on('spawnHeart', (heartData) => {
 console.log('Heart spawned by:', socket.id, 'at:', heartData.x, heartData.y);
 io.emit('heartSpawned', heartData);

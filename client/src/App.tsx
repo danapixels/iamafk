@@ -38,7 +38,7 @@ const circleCounterRef = useRef(0);
 const [username, setUsername] = useState('');
 const usernameRef = useRef(username);
 const [hasConnected, setHasConnected] = useState(false);
-const clickEnabledTimeRef = useRef<number | null>(null); // 👈 Add this
+const clickEnabledTimeRef = useRef<number | null>(null);
 
 const HEART_DURATION = 800;
 const CIRCLE_DURATION = 600;
@@ -50,7 +50,6 @@ usernameRef.current = username;
 useEffect(() => {
 const interval = setInterval(() => {
 const now = Date.now();
-
 setHearts((prev) => prev.filter((heart) => now - heart.timestamp < HEART_DURATION));
 setCircles((prev) => prev.filter((circle) => now - circle.timestamp < CIRCLE_DURATION));
 , 16);
@@ -94,17 +93,11 @@ setCursors(newCursors);
 );
 
 socket.on('heartSpawned', (heartData) => {
-setHearts((prev) => [
-...prev,
-{ ...heartData, timestamp: Date.now() 
-]);
+setHearts((prev) => [...prev, { ...heartData, timestamp: Date.now() ]);
 );
 
 socket.on('circleSpawned', (circleData) => {
-setCircles((prev) => [
-...prev,
-{ ...circleData, timestamp: Date.now() 
-]);
+setCircles((prev) => [...prev, { ...circleData, timestamp: Date.now() ]);
 );
 
 socket.on('clientDisconnected', (id: string) => {
@@ -133,18 +126,17 @@ socket.disconnect();
 , []);
 
 useEffect(() => {
-function handleClick(e: MouseEvent) {
+const handleClick = (e: MouseEvent) => {
 const now = Date.now();
-
-// 👇 Delay click responsiveness briefly after connect
 if (
 !socketRef.current?.connected ||
 !hasConnected ||
-(clickEnabledTimeRef.current !== null &&
-now < clickEnabledTimeRef.current)
+(clickEnabledTimeRef.current !== null && now < clickEnabledTimeRef.current)
 ) {
 return;
 
+
+socketRef.current.emit('resetStillTime');
 
 const circleId = `${socketRef.current.id-${now-${++circleCounterRef.current`;
 socketRef.current.emit('spawnCircle', {
@@ -152,16 +144,18 @@ x: e.clientX,
 y: e.clientY,
 id: circleId,
 );
-
+;
 
 window.addEventListener('click', handleClick);
 return () => window.removeEventListener('click', handleClick);
 , [hasConnected]);
 
 useEffect(() => {
-function handleDoubleClick(e: MouseEvent) {
+const handleDoubleClick = (e: MouseEvent) => {
 const now = Date.now();
 if (!socketRef.current?.connected || !hasConnected) return;
+
+socketRef.current.emit('resetStillTime');
 
 const heartId = `${socketRef.current.id-${now-${++heartCounterRef.current`;
 socketRef.current.emit('spawnHeart', {
@@ -169,7 +163,7 @@ x: e.clientX,
 y: e.clientY,
 id: heartId,
 );
-
+;
 
 window.addEventListener('dblclick', handleDoubleClick);
 return () => window.removeEventListener('dblclick', handleDoubleClick);
@@ -180,8 +174,6 @@ if (username.trim() === '') return;
 if (socketRef.current?.connected) {
 socketRef.current.emit('setName', { name: username.trim() );
 setHasConnected(true);
-
-// 👇 Set delay timer to ignore initial click from "Connect"
 clickEnabledTimeRef.current = Date.now() + 300;
 
 ;
@@ -221,16 +213,8 @@ const age = Date.now() - circle.timestamp;
 if (age >= CIRCLE_DURATION) return null;
 
 const progress = age / CIRCLE_DURATION;
-
-let opacity;
-if (progress < 0.2) {
-opacity = progress / 0.2; 
- else {
-opacity = 1 - (progress - 0.2) / 0.8; 
-
-
-const scale = 0.2 + progress * 0.8;
-
+let opacity = progress < 0.2 ? progress / 0.2 : 1 - (progress - 0.2) / 0.8;
+const scale = 0.5 + progress * 0.5;
 const size = 40 * scale;
 
 return (
@@ -245,9 +229,8 @@ top: circle.y - size / 2,
 width: size,
 height: size,
 opacity,
-transition: 'none',
 pointerEvents: 'none',
-zIndex: 9999,
+zIndex: 9995,
 
 />
 );
@@ -268,13 +251,13 @@ src="./UI/smile.gif"
 alt="Heart"
 style={{
 position: 'absolute',
-left: heart.x - 12,
-top: heart.y - 40 - rise,
+left: heart.x - 40,
+top: heart.y - 80 - rise,
 width: 48,
 height: 48,
 opacity,
 pointerEvents: 'none',
-zIndex: 1000,
+zIndex: 9996,
 
 />
 );
@@ -294,13 +277,16 @@ style={{
 left: cursor.x,
 top: cursor.y,
 fontWeight: isMe ? 'bold' : 'normal',
+zIndex: 9997,
 
 >
+<div className="cursor-circle" />
+<div className="cursor-labels">
 {cursor.stillTime >= 30 && (
 <div className="cursor-timer">AFK {formatTime(cursor.stillTime)</div>
 )
 <div className="cursor-id-label">{cursor.name</div>
-<div className="cursor-circle" />
+</div>
 </div>
 );
 )
