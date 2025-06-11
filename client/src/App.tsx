@@ -221,30 +221,31 @@ const age = Date.now() - circle.timestamp;
 if (age >= CIRCLE_DURATION) return null;
 
 const progress = age / CIRCLE_DURATION;
-let size;
 
-if (progress <= 0.33) {
-size = (progress / 0.33) * 20;
- else if (progress <= 0.66) {
-const p = (progress - 0.33) / 0.33;
-size = 20 + p * 20;
+let opacity;
+if (progress < 0.2) {
+opacity = progress / 0.2; 
  else {
-const p = (progress - 0.66) / 0.34;
-size = 40 * (1 - p);
+opacity = 1 - (progress - 0.2) / 0.8; 
 
+
+const scale = 0.2 + progress * 0.8;
+
+const size = 40 * scale;
 
 return (
-<div
+<img
 key={circle.id
+src="./UI/echo.png"
+alt="Circle"
 style={{
 position: 'absolute',
 left: circle.x - size / 2,
 top: circle.y - size / 2,
 width: size,
 height: size,
-borderRadius: '50%',
-backgroundColor: 'rgba(255, 0, 0, 0.8)',
-border: '2px solid rgba(255, 0, 0, 1)',
+opacity,
+transition: 'none',
 pointerEvents: 'none',
 zIndex: 9999,
 
@@ -263,14 +264,14 @@ const rise = (1 - Math.pow(1 - progress, 3)) * 20;
 return (
 <img
 key={heart.id
-src="./UI/smile.png"
+src="./UI/smile.gif"
 alt="Heart"
 style={{
 position: 'absolute',
 left: heart.x - 12,
-top: heart.y - 12 - rise,
-width: 24,
-height: 24,
+top: heart.y - 40 - rise,
+width: 48,
+height: 48,
 opacity,
 pointerEvents: 'none',
 zIndex: 1000,
