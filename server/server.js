@@ -29,7 +29,7 @@ function getValidCursors() {
 
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
-  
+
   cursors[socket.id] = {
     x: 0,
     y: 0,
@@ -47,7 +47,7 @@ io.on('connection', (socket) => {
 
   socket.on('cursorMove', ({ x, y, name }) => {
     const now = Date.now();
-    
+
     if (!cursors[socket.id]) {
       cursors[socket.id] = {
         name: name?.trim() || '',
@@ -67,13 +67,22 @@ io.on('connection', (socket) => {
         const diffSeconds = Math.floor((now - lastMoveTimestamps[socket.id]) / 1000);
         cursors[socket.id].stillTime = diffSeconds;
       }
-      
+
       if (name && name.trim() !== '') {
         cursors[socket.id].name = name.trim();
       }
     }
-    
+
     io.emit('cursors', getValidCursors());
+  });
+
+  // NEW: Reset stillTime on client request (click/dblclick)
+  socket.on('resetStillTime', () => {
+    if (cursors[socket.id]) {
+      cursors[socket.id].stillTime = 0;
+      lastMoveTimestamps[socket.id] = Date.now();
+      io.emit('cursors', getValidCursors());
+    }
   });
 
   socket.on('spawnHeart', (heartData) => {
@@ -98,7 +107,7 @@ io.on('connection', (socket) => {
 setInterval(() => {
   const now = Date.now();
   let updated = false;
-  
+
   Object.keys(cursors).forEach((id) => {
     const cursor = cursors[id];
     const lastMove = lastMoveTimestamps[id];
@@ -110,7 +119,7 @@ setInterval(() => {
       }
     }
   });
-  
+
   if (updated) {
     io.emit('cursors', getValidCursors());
   }
