@@ -119,6 +119,9 @@ function App() {
           cursorType: data.type,
         },
       }));
+      if (data.id === socket.id) {
+        setCursorType(data.type);
+      }
     });
 
     const handleMouseMove = (e: MouseEvent) => {
@@ -212,12 +215,22 @@ function App() {
   };
 
   return (
-    <div id="app-root" style={{ userSelect: 'none' }}>
+    <div id="app-root" className={hasConnected ? 'cursor-hidden' : ''} style={{ userSelect: 'none' }}>
       <Panel socket={socketRef.current} onCursorChange={handleCursorChange} />
       <div id="logo-container">
-        <img src="./UI/logo.png" alt="Logo" id="logo" />
-        <div style={{ position: 'relative' }}>
-          <img src="./UI/leaderboard.png" alt="Leaderboard" id="leaderboard" style={{ marginTop: 0 }} />
+        <div className="logo-row">
+          <img src="./UI/logo.png" alt="Logo" id="logo" />
+          <a 
+            href="https://github.com/danafk/iamafk" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            style={{ pointerEvents: 'all' }}
+          >
+            <img src="./UI/github.png" alt="GitHub" id="github-logo" />
+          </a>
+        </div>
+        <div style={{ position: 'relative', margin: 0, padding: 0 }}>
+          <img src="./UI/leaderboard.png" alt="Leaderboard" id="leaderboard" />
           <div style={{ 
             position: 'absolute', 
             top: 'calc(50% + 12px)', 
@@ -320,7 +333,9 @@ function App() {
         if (!cursor.name || cursor.name === 'Anonymous') return null;
 
         const isMe = id === socketRef.current?.id;
-        const cursorClass = cursor.cursorType ? `cursor-${cursor.cursorType}` : 'cursor-default';
+        const cursorClass = isMe 
+          ? `cursor-${cursorType}`
+          : (cursor.cursorType ? `cursor-${cursor.cursorType}` : 'cursor-default');
 
         return (
           <div
