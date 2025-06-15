@@ -201,12 +201,45 @@ const handleCursorChange = (type: string) => {
 setCursorType(type);
 ;
 
+const getHighestAFKPlayer = () => {
+let highestAFK = { name: '', time: 0 ;
+Object.entries(cursors).forEach(([_, cursor]) => {
+if (cursor.stillTime > highestAFK.time && cursor.name && cursor.name !== 'Anonymous') {
+highestAFK = { name: cursor.name, time: cursor.stillTime ;
+
+);
+return highestAFK;
+;
+
 return (
 <div id="app-root" style={{ userSelect: 'none' >
 <Panel socket={socketRef.current onCursorChange={handleCursorChange />
 <div id="logo-container">
 <img src="./UI/logo.png" alt="Logo" id="logo" />
+<div style={{ position: 'relative' >
 <img src="./UI/leaderboard.png" alt="Leaderboard" id="leaderboard" style={{ marginTop: 0  />
+<div style={{ 
+position: 'absolute', 
+top: 'calc(50% + 12px)', 
+left: 'calc(50% + 10px)', 
+transform: 'translate(-50%, -50%)',
+fontFamily: '"Press Start 2P", cursive',
+fontSize: '0.5rem',
+color: 'white',
+textShadow: '2px 2px 0 #000',
+textAlign: 'center',
+width: '100%',
+pointerEvents: 'none',
+maxWidth: '200px',
+whiteSpace: 'nowrap',
+overflow: 'hidden',
+textOverflow: 'ellipsis'
+>
+{getHighestAFKPlayer().name.length > 8 
+? `${getHighestAFKPlayer().name.slice(0, 8)⋯`
+: getHighestAFKPlayer().name
+</div>
+</div>
 </div>
 
 {!hasConnected && (
