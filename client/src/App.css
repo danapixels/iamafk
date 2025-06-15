@@ -24,6 +24,11 @@ height: 100%;
 position: relative;
 
 
+/* Hide system cursor only when connected */
+.cursor-hidden {
+cursor: none;
+
+
 .cursor-wrapper {
 position: absolute;
 pointer-events: none;
@@ -38,15 +43,70 @@ top: 50%;
 transform: translate(-50%, -50%);
 image-rendering: pixelated;
 image-rendering: crisp-edges;
-width: 24px;
-height: 24px;
-background-image: url('./UI/cursor.png');
+width: auto;
+height: auto;
 background-size: contain;
 background-repeat: no-repeat;
 background-position: center;
 background-color: transparent;
 pointer-events: none; 
 z-index: 1;
+
+
+/* Default cursor size */
+.cursor-default {
+width: 24px;
+height: 24px;
+background-image: url('./UI/cursor.png') !important;
+
+
+/* Custom cursor classes with their original sizes */
+.cursor-bunny {
+width: 36px;
+height: 44px;
+background-image: url('./UI/bunny.png') !important;
+
+
+.cursor-cap {
+width: 42px;
+height: 34px;
+background-image: url('./UI/cap.png') !important;
+
+
+.cursor-slime {
+width: 50px;
+height: 36px;
+background-image: url('./UI/slime.png') !important;
+
+
+.cursor-astronaut {
+width: 44px;
+height: 40px;
+background-image: url('./UI/astronaut.png') !important;
+
+
+.cursor-beanie {
+width: 36px;
+height: 30px;
+background-image: url('./UI/beanie.png') !important;
+
+
+.cursor-headphones {
+width: 38px;
+height: 38px;
+background-image: url('./UI/headphones.png') !important;
+
+
+.cursor-sprout {
+width: 34px;
+height: 38px;
+background-image: url('./UI/sprout.png') !important;
+
+
+.cursor-cathat {
+width: 48px;
+height: 38px;
+background-image: url('./UI/cathat.png') !important;
 
 
 .cursor-labels {
@@ -89,11 +149,22 @@ pointer-events: none;
 
 #logo-container {
 position: fixed;
-top: 0px;
+top: 0;
 left: 25px;
 z-index: 10000;
 pointer-events: none;
 animation: fadeInFromTop 0.5s ease-out;
+margin: 0;
+padding: 0;
+
+
+.logo-row {
+display: flex;
+align-items: center;
+gap: 8px;
+pointer-events: none;
+margin: 0;
+padding: 0;
 
 
 #logo {
@@ -101,13 +172,28 @@ height: 100%;
 width: auto;
 pointer-events: none;
 display: block;
+margin: 0;
+padding: 0;
+
+
+#github-logo {
+width: 32px;
+height: 32px;
+pointer-events: all;
+cursor: pointer;
+transition: transform 0.2s ease;
+
+
+#github-logo:hover {
+transform: scale(1.1);
 
 
 #leaderboard {
 width: auto;
 height: auto;
 display: block;
-margin-top: 0;
+margin: 0;
+padding: 0;
 
 
 #modal-overlay {
