@@ -29,19 +29,58 @@ y: number;
 timestamp: number;
 
 
+interface Chair {
+id: string;
+x: number;
+y: number;
+
+
+interface Furniture {
+id: string;
+type: string;
+x: number;
+y: number;
+
+
+interface PanelProps {
+socket: Socket | null;
+onCursorChange: (type: string) => void;
+isDeleteMode: boolean;
+onDeleteModeChange: (isDeleteMode: boolean) => void;
+isDeleteButtonHovered: boolean;
+
+
+const FURNITURE_IMAGES: { [key: string]: string  = {
+chair: './UI/chair.png',
+lamp: './UI/lamp.png',
+bed: './UI/bed.png',
+walls: './UI/walls1.png',
+plant1: './UI/plant1.png',
+plant2: './UI/plant2.png',
+blackcat: './UI/blackcat.png',
+whitecat: './UI/whitecat.png'
+;
+
 function App() {
 const [cursors, setCursors] = useState<CursorsMap>({);
 const [hearts, setHearts] = useState<Heart[]>([]);
 const [circles, setCircles] = useState<Circle[]>([]);
+const [chairs, setChairs] = useState<{ [key: string]: Chair >({);
+const [furniture, setFurniture] = useState<{ [key: string]: Furniture >({);
+const [isDeleteMode, setIsDeleteMode] = useState(false);
 const socketRef = useRef<Socket | null>(null);
 const heartCounterRef = useRef(0);
 const circleCounterRef = useRef(0);
+const dragStartPos = useRef<{ x: number; y: number  | null>(null);
+const draggedChairId = useRef<string | null>(null);
+const draggedFurnitureId = useRef<string | null>(null);
 
 const [username, setUsername] = useState('');
 const usernameRef = useRef(username);
 const [hasConnected, setHasConnected] = useState(false);
 const clickEnabledTimeRef = useRef<number | null>(null);
 const [cursorType, setCursorType] = useState<string>('default');
+const [isDeleteButtonHovered, setIsDeleteButtonHovered] = useState(false);
 
 const HEART_DURATION = 800;
 const CIRCLE_DURATION = 600;
@@ -49,31 +88,6 @@ const CIRCLE_DURATION = 600;
 useEffect(() => {
 usernameRef.current = username;
 , [username]);
-
-useEffect(() => {
-const interval = setInterval(() => {
-const now = Date.now();
-setHearts((prev) => prev.filter((heart) => now - heart.timestamp < HEART_DURATION));
-setCircles((prev) => prev.filter((circle) => now - circle.timestamp < CIRCLE_DURATION));
-, 16);
-
-const handleVisibilityChange = () => {
-if (!document.hidden) {
-const now = Date.now();
-setHearts((prev) => prev.filter((heart) => now - heart.timestamp < HEART_DURATION));
-setCircles((prev) => prev.filter((circle) => now - circle.timestamp < CIRCLE_DURATION));
-
-;
-
-document.addEventListener('visibilitychange', handleVisibilityChange);
-window.addEventListener('focus', handleVisibilityChange);
-
-return () => {
-clearInterval(interval);
-document.removeEventListener('visibilitychange', handleVisibilityChange);
-window.removeEventListener('focus', handleVisibilityChange);
-;
-, []);
 
 useEffect(() => {
 const socket = io('http://localhost:3001');
@@ -112,16 +126,116 @@ return newCursors;
 );
 
 socket.on('cursorChanged', (data: { id: string; type: string ) => {
-setCursors((prev) => ({
+console.log('Cursor changed:', data.id, 'to type:', data.type);
+setCursors((prev) => {
+const newCursors = {
 ...prev,
 [data.id]: {
 ...prev[data.id],
 cursorType: data.type,
 ,
-));
+;
+console.log('Updated cursors:', newCursors);
+return newCursors;
+);
 if (data.id === socket.id) {
+console.log('Updating local cursor type to:', data.type);
 setCursorType(data.type);
 
+);
+
+socket.on('initialState', (data: { cursors: CursorsMap, chairs: { [key: string]: Chair , furniture: { [key: string]: Furniture  ) => {
+console.log('Received initial state');
+setCursors(data.cursors);
+setChairs(data.chairs);
+setFurniture(data.furniture);
+);
+
+socket.on('clientConnected', (data: { id: string, cursors: CursorsMap ) => {
+console.log('Client connected:', data.id);
+setCursors(data.cursors);
+);
+
+socket.on('chairSpawned', (chair: Chair) => {
+console.log('Chair spawned');
+const initialChair = {
+...chair,
+x: window.innerWidth / 2,
+y: window.innerHeight / 2
+;
+
+setChairs(prev => ({
+...prev,
+[chair.id]: initialChair
+));
+
+if (socketRef.current) {
+socketRef.current.emit('updateChairPosition', {
+chairId: chair.id,
+x: initialChair.x,
+y: initialChair.y
+);
+
+);
+
+socket.on('chairMoved', (data: { id: string, x: number, y: number ) => {
+setChairs(prev => ({
+...prev,
+[data.id]: { ...prev[data.id], x: data.x, y: data.y 
+));
+);
+
+socket.on('chairDeleted', (data: { id: string ) => {
+setChairs(prev => {
+const newChairs = { ...prev ;
+delete newChairs[data.id];
+return newChairs;
+);
+);
+
+socket.on('syncChairs', (chairs: { [key: string]: Chair ) => {
+console.log('Received initial chair sync:', chairs);
+setChairs(chairs);
+);
+
+socket.on('furnitureSpawned', (furniture: Furniture) => {
+console.log('Furniture spawned:', furniture.type);
+// Set initial position to center of viewport for the spawning user
+const initialFurniture = {
+...furniture,
+x: window.innerWidth / 2,
+y: window.innerHeight / 2
+;
+
+// Update local state
+setFurniture(prev => ({
+...prev,
+[furniture.id]: initialFurniture
+));
+
+// Send initial position to server
+if (socketRef.current) {
+socketRef.current.emit('updateFurniturePosition', {
+furnitureId: furniture.id,
+x: initialFurniture.x,
+y: initialFurniture.y
+);
+
+);
+
+socket.on('furnitureMoved', (data: { id: string, x: number, y: number ) => {
+setFurniture(prev => ({
+...prev,
+[data.id]: { ...prev[data.id], x: data.x, y: data.y 
+));
+);
+
+socket.on('furnitureDeleted', (data: { id: string ) => {
+setFurniture(prev => {
+const newFurniture = { ...prev ;
+delete newFurniture[data.id];
+return newFurniture;
+);
 );
 
 const handleMouseMove = (e: MouseEvent) => {
@@ -138,6 +252,11 @@ window.addEventListener('mousemove', handleMouseMove);
 return () => {
 window.removeEventListener('mousemove', handleMouseMove);
 socket.disconnect();
+socket.off('initialState');
+socket.off('clientConnected');
+socket.off('chairSpawned');
+socket.off('chairMoved');
+socket.off('chairDeleted');
 ;
 , []);
 
@@ -185,6 +304,182 @@ window.addEventListener('dblclick', handleDoubleClick);
 return () => window.removeEventListener('dblclick', handleDoubleClick);
 , [hasConnected]);
 
+useEffect(() => {
+const handleMouseMove = (e: MouseEvent) => {
+if (draggedChairId.current && dragStartPos.current) {
+const dx = e.clientX - dragStartPos.current.x;
+const dy = e.clientY - dragStartPos.current.y;
+
+// Check if chair is over delete button
+const deleteButton = document.querySelector('.button[src*="deletefurniturebutton.png"], .button[src*="furnitureselectedbutton.png"], .button[src*="furniturehoverbutton.png"]');
+if (deleteButton) {
+const rect = deleteButton.getBoundingClientRect();
+const chair = chairs[draggedChairId.current];
+if (chair && 
+e.clientX >= rect.left && 
+e.clientX <= rect.right && 
+e.clientY >= rect.top && 
+e.clientY <= rect.bottom) {
+setIsDeleteButtonHovered(true);
+ else {
+setIsDeleteButtonHovered(false);
+
+
+
+// Update chair position
+if (draggedChairId.current && socketRef.current) {
+const chair = chairs[draggedChairId.current];
+if (chair) {
+const newX = chair.x + dx;
+const newY = chair.y + dy;
+
+// Update local state immediately for smooth dragging
+setChairs(prev => ({
+...prev,
+[draggedChairId.current!]: { ...chair, x: newX, y: newY 
+));
+
+// Emit position update to server
+socketRef.current.emit('updateChairPosition', {
+chairId: draggedChairId.current,
+x: newX,
+y: newY
+);
+
+
+
+dragStartPos.current = { x: e.clientX, y: e.clientY ;
+
+;
+
+const handleMouseUp = (e: MouseEvent) => {
+if (draggedChairId.current) {
+if (isDeleteButtonHovered && socketRef.current) {
+// Delete the chair
+socketRef.current.emit('deleteChair', draggedChairId.current);
+
+setIsDeleteButtonHovered(false);
+draggedChairId.current = null;
+dragStartPos.current = null;
+
+;
+
+window.addEventListener('mousemove', handleMouseMove);
+window.addEventListener('mouseup', handleMouseUp);
+
+return () => {
+window.removeEventListener('mousemove', handleMouseMove);
+window.removeEventListener('mouseup', handleMouseUp);
+;
+, [chairs, isDeleteButtonHovered]);
+
+useEffect(() => {
+const handleMouseMove = (e: MouseEvent) => {
+if (draggedFurnitureId.current && dragStartPos.current) {
+const dx = e.clientX - dragStartPos.current.x;
+const dy = e.clientY - dragStartPos.current.y;
+
+// Check if furniture is over delete button
+const deleteButton = document.querySelector('.button[src*="deletefurniturebutton.png"], .button[src*="furnitureselectedbutton.png"], .button[src*="furniturehoverbutton.png"]');
+if (deleteButton) {
+const rect = deleteButton.getBoundingClientRect();
+const item = furniture[draggedFurnitureId.current];
+if (item && 
+e.clientX >= rect.left && 
+e.clientX <= rect.right && 
+e.clientY >= rect.top && 
+e.clientY <= rect.bottom) {
+setIsDeleteButtonHovered(true);
+ else {
+setIsDeleteButtonHovered(false);
+
+
+
+// Update furniture position
+if (draggedFurnitureId.current && socketRef.current) {
+const item = furniture[draggedFurnitureId.current];
+if (item) {
+const newX = item.x + dx;
+const newY = item.y + dy;
+
+// Create a new furniture object to force re-render
+const updatedFurniture = {
+...furniture,
+[draggedFurnitureId.current]: {
+...item,
+x: newX,
+y: newY
+
+;
+
+// Update state with new object
+setFurniture(updatedFurniture);
+
+// Emit position update to server
+socketRef.current.emit('updateFurniturePosition', {
+furnitureId: draggedFurnitureId.current,
+x: newX,
+y: newY
+);
+
+
+
+dragStartPos.current = { x: e.clientX, y: e.clientY ;
+
+;
+
+const handleMouseUp = (e: MouseEvent) => {
+if (draggedFurnitureId.current) {
+if (isDeleteButtonHovered && socketRef.current) {
+// Delete the furniture
+socketRef.current.emit('deleteFurniture', draggedFurnitureId.current);
+// Immediately remove from local state
+setFurniture(prev => {
+const newFurniture = { ...prev ;
+delete newFurniture[draggedFurnitureId.current!];
+return newFurniture;
+);
+
+setIsDeleteButtonHovered(false);
+draggedFurnitureId.current = null;
+dragStartPos.current = null;
+
+;
+
+window.addEventListener('mousemove', handleMouseMove);
+window.addEventListener('mouseup', handleMouseUp);
+
+return () => {
+window.removeEventListener('mousemove', handleMouseMove);
+window.removeEventListener('mouseup', handleMouseUp);
+;
+, [furniture, isDeleteButtonHovered]);
+
+useEffect(() => {
+const interval = setInterval(() => {
+const now = Date.now();
+setHearts((prev) => prev.filter((heart) => now - heart.timestamp < HEART_DURATION));
+setCircles((prev) => prev.filter((circle) => now - circle.timestamp < CIRCLE_DURATION));
+, 16);
+
+const handleVisibilityChange = () => {
+if (!document.hidden) {
+const now = Date.now();
+setHearts((prev) => prev.filter((heart) => now - heart.timestamp < HEART_DURATION));
+setCircles((prev) => prev.filter((circle) => now - circle.timestamp < CIRCLE_DURATION));
+
+;
+
+document.addEventListener('visibilitychange', handleVisibilityChange);
+window.addEventListener('focus', handleVisibilityChange);
+
+return () => {
+clearInterval(interval);
+document.removeEventListener('visibilitychange', handleVisibilityChange);
+window.removeEventListener('focus', handleVisibilityChange);
+;
+, []);
+
 const handleConnect = () => {
 if (username.trim() === '') return;
 if (socketRef.current?.connected) {
@@ -200,8 +495,10 @@ const secs = seconds % 60;
 return `${minsm ${secss`;
 ;
 
-const handleCursorChange = (type: string) => {
-setCursorType(type);
+const handleCursorChange = (cursor: { type: string ) => {
+if (socketRef.current) {
+socketRef.current.emit('changeCursor', cursor);
+
 ;
 
 const getHighestAFKPlayer = () => {
@@ -214,9 +511,42 @@ highestAFK = { name: cursor.name, time: cursor.stillTime ;
 return highestAFK;
 ;
 
+const handleChairMouseDown = (e: React.MouseEvent, chairId: string) => {
+e.preventDefault();
+e.stopPropagation();
+
+// Allow any user to drag any chair
+draggedChairId.current = chairId;
+dragStartPos.current = { x: e.clientX, y: e.clientY ;
+;
+
+const handleFurnitureMouseDown = (e: React.MouseEvent, furnitureId: string) => {
+e.preventDefault();
+e.stopPropagation();
+
+// Allow any user to drag any furniture
+draggedFurnitureId.current = furnitureId;
+dragStartPos.current = { x: e.clientX, y: e.clientY ;
+;
+
 return (
-<div id="app-root" className={hasConnected ? 'cursor-hidden' : '' style={{ userSelect: 'none' >
-<Panel socket={socketRef.current onCursorChange={handleCursorChange />
+<div 
+id="app-root" 
+className={hasConnected ? 'cursor-hidden' : '' 
+style={{ 
+userSelect: 'none',
+cursor: hasConnected ? 'none' : 'default',
+position: 'relative',
+overflow: 'hidden'
+
+>
+<Panel 
+socket={socketRef.current 
+onCursorChange={handleCursorChange 
+isDeleteMode={isDeleteMode
+onDeleteModeChange={setIsDeleteMode
+isDeleteButtonHovered={isDeleteButtonHovered
+/>
 <div id="logo-container">
 <div className="logo-row">
 <img src="./UI/logo.png" alt="Logo" id="logo" />
@@ -327,6 +657,57 @@ zIndex: 9996,
 />
 );
 )
+
+{Object.values(chairs).map((chair) => (
+<img
+key={chair.id
+src="./UI/chair.png"
+alt="Chair"
+style={{
+position: 'fixed',
+left: chair.x,
+top: chair.y,
+transform: 'translate(-50%, -50%)',
+pointerEvents: 'all',
+cursor: hasConnected ? 'none' : 'grab',
+zIndex: 9993,
+touchAction: 'none',
+userSelect: 'none',
+WebkitUserSelect: 'none',
+
+onMouseDown={(e) => handleChairMouseDown(e, chair.id)
+draggable={false
+/>
+))
+
+{Object.values(furniture).map((item) => (
+<img
+key={`${item.id-${item.x-${item.y`
+src={FURNITURE_IMAGES[item.type]
+alt={item.type
+style={{
+position: 'fixed',
+left: item.x,
+top: item.y,
+transform: 'translate(-50%, -50%)',
+pointerEvents: 'all',
+cursor: hasConnected ? 'none' : 'grab',
+zIndex: 9993,
+touchAction: 'none',
+userSelect: 'none',
+WebkitUserSelect: 'none',
+width: 'auto',
+height: 'auto',
+willChange: 'transform',
+backfaceVisibility: 'hidden',
+WebkitBackfaceVisibility: 'hidden',
+WebkitTransform: 'translate(-50%, -50%)',
+transformStyle: 'preserve-3d'
+
+onMouseDown={(e) => handleFurnitureMouseDown(e, item.id)
+draggable={false
+/>
+))
 
 {Object.entries(cursors).map(([id, cursor]) => {
 if (!hasConnected && id === socketRef.current?.id) return null;
