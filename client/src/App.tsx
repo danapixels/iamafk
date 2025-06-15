@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState  from 'react';
 import { io, Socket  from 'socket.io-client';
 import './App.css';
+import Panel from './Panel';
 
 interface CursorData {
 x: number;
 y: number;
 name?: string;
 stillTime: number;
+cursorType?: string;
 
 
 interface CursorsMap {
@@ -39,6 +41,7 @@ const [username, setUsername] = useState('');
 const usernameRef = useRef(username);
 const [hasConnected, setHasConnected] = useState(false);
 const clickEnabledTimeRef = useRef<number | null>(null);
+const [cursorType, setCursorType] = useState<string>('default');
 
 const HEART_DURATION = 800;
 const CIRCLE_DURATION = 600;
@@ -106,6 +109,16 @@ const newCursors = { ...prev ;
 delete newCursors[id];
 return newCursors;
 );
+);
+
+socket.on('cursorChanged', (data: { id: string; type: string ) => {
+setCursors((prev) => ({
+...prev,
+[data.id]: {
+...prev[data.id],
+cursorType: data.type,
+,
+));
 );
 
 const handleMouseMove = (e: MouseEvent) => {
@@ -184,10 +197,16 @@ const secs = seconds % 60;
 return `${minsm ${secss`;
 ;
 
+const handleCursorChange = (type: string) => {
+setCursorType(type);
+;
+
 return (
 <div id="app-root" style={{ userSelect: 'none' >
+<Panel socket={socketRef.current onCursorChange={handleCursorChange />
 <div id="logo-container">
 <img src="./UI/logo.png" alt="Logo" id="logo" />
+<img src="./UI/leaderboard.png" alt="Leaderboard" id="leaderboard" style={{ marginTop: 0  />
 </div>
 
 {!hasConnected && (
@@ -268,6 +287,7 @@ if (!hasConnected && id === socketRef.current?.id) return null;
 if (!cursor.name || cursor.name === 'Anonymous') return null;
 
 const isMe = id === socketRef.current?.id;
+const cursorClass = cursor.cursorType ? `cursor-${cursor.cursorType` : 'cursor-default';
 
 return (
 <div
@@ -280,7 +300,7 @@ fontWeight: isMe ? 'bold' : 'normal',
 zIndex: 9997,
 
 >
-<div className="cursor-circle" />
+<div className={`cursor-circle ${cursorClass` />
 <div className="cursor-labels">
 {cursor.stillTime >= 30 && (
 <div className="cursor-timer">AFK {formatTime(cursor.stillTime)</div>

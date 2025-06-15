@@ -35,6 +35,7 @@ x: 0,
 y: 0,
 name: '',
 stillTime: 0,
+cursorType: 'default',
 ;
 lastMoveTimestamps[socket.id] = Date.now();
 
@@ -93,6 +94,13 @@ io.emit('heartSpawned', heartData);
 socket.on('spawnCircle', (circleData) => {
 console.log('Circle spawned by:', socket.id, 'at:', circleData.x, circleData.y);
 io.emit('circleSpawned', circleData);
+);
+
+socket.on('changeCursor', ({ type ) => {
+if (cursors[socket.id]) {
+cursors[socket.id].cursorType = type;
+io.emit('cursorChanged', { id: socket.id, type );
+
 );
 
 socket.on('disconnect', () => {
