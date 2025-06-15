@@ -4,15 +4,28 @@ import './Panel.css';
 
 interface PanelProps {
   socket: Socket | null;
-  onCursorChange: (cursorType: string) => void;
+  onCursorChange: (cursor: { type: string }) => void;
+  isDeleteMode: boolean;
+  onDeleteModeChange: (isDeleteMode: boolean) => void;
+  isDeleteButtonHovered: boolean;
 }
 
-const Panel: React.FC<PanelProps> = ({ socket, onCursorChange }) => {
+const Panel: React.FC<PanelProps> = ({ socket, onCursorChange, isDeleteMode, onDeleteModeChange, isDeleteButtonHovered }) => {
   const handleHatClick = (hatType: string) => {
     if (socket) {
       socket.emit('changeCursor', { type: hatType });
-      onCursorChange(hatType);
+      onCursorChange({ type: hatType });
     }
+  };
+
+  const handleFurnitureClick = (type: string) => {
+    if (socket) {
+      socket.emit('spawnFurniture', { type });
+    }
+  };
+
+  const handleDeleteClick = () => {
+    onDeleteModeChange(!isDeleteMode);
   };
 
   return (
@@ -104,19 +117,129 @@ const Panel: React.FC<PanelProps> = ({ socket, onCursorChange }) => {
         <div className="panel-section">
           <div className="button-grid">
             <div className="button-row">
-              <img src="./UI/chairbutton.png" alt="Chair" className="button" />
-              <img src="./UI/lampbutton.png" alt="Lamp" className="button" />
-              <img src="./UI/bedbutton.png" alt="Bed" className="button" />
+              <img 
+                src="./UI/chairbutton.png" 
+                alt="Chair" 
+                className="button"
+                onClick={() => handleFurnitureClick('chair')}
+                onMouseEnter={(e) => {
+                  e.currentTarget.src = './UI/chairbuttonhover.png';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.src = './UI/chairbutton.png';
+                }}
+              />
+              <img 
+                src="./UI/lampbutton.png" 
+                alt="Lamp" 
+                className="button"
+                onClick={() => handleFurnitureClick('lamp')}
+                onMouseEnter={(e) => {
+                  e.currentTarget.src = './UI/lampbuttonhover.png';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.src = './UI/lampbutton.png';
+                }}
+              />
+              <img 
+                src="./UI/bedbutton.png" 
+                alt="Bed" 
+                className="button"
+                onClick={() => handleFurnitureClick('bed')}
+                onMouseEnter={(e) => {
+                  e.currentTarget.src = './UI/bedbuttonhover.png';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.src = './UI/bedbutton.png';
+                }}
+              />
             </div>
             <div className="button-row">
-              <img src="./UI/wallsbutton.png" alt="Walls" className="button" />
-              <img src="./UI/plant1button.png" alt="Plant 1" className="button" />
-              <img src="./UI/plant2button.png" alt="Plant 2" className="button" />
+              <img 
+                src="./UI/wallsbutton.png" 
+                alt="Walls" 
+                className="button"
+                onClick={() => handleFurnitureClick('walls')}
+                onMouseEnter={(e) => {
+                  e.currentTarget.src = './UI/wallsbuttonhover.png';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.src = './UI/wallsbutton.png';
+                }}
+              />
+              <img 
+                src="./UI/plant1button.png" 
+                alt="Plant 1" 
+                className="button"
+                onClick={() => handleFurnitureClick('plant1')}
+                onMouseEnter={(e) => {
+                  e.currentTarget.src = './UI/plant1buttonhover.png';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.src = './UI/plant1button.png';
+                }}
+              />
+              <img 
+                src="./UI/plant2button.png" 
+                alt="Plant 2" 
+                className="button"
+                onClick={() => handleFurnitureClick('plant2')}
+                onMouseEnter={(e) => {
+                  e.currentTarget.src = './UI/plant2buttonhover.png';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.src = './UI/plant2button.png';
+                }}
+              />
             </div>
             <div className="button-row">
-              <img src="./UI/blackcatbutton.png" alt="Black Cat" className="button" />
-              <img src="./UI/whitecatbutton.png" alt="White Cat" className="button" />
-              <img src="./UI/deletefurniturebutton.png" alt="Delete Furniture" className="button" />
+              <img 
+                src="./UI/blackcatbutton.png" 
+                alt="Black Cat" 
+                className="button"
+                onClick={() => handleFurnitureClick('blackcat')}
+                onMouseEnter={(e) => {
+                  e.currentTarget.src = './UI/blackcatbuttonhover.png';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.src = './UI/blackcatbutton.png';
+                }}
+              />
+              <img 
+                src="./UI/whitecatbutton.png" 
+                alt="White Cat" 
+                className="button"
+                onClick={() => handleFurnitureClick('whitecat')}
+                onMouseEnter={(e) => {
+                  e.currentTarget.src = './UI/whitecatbuttonhover.png';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.src = './UI/whitecatbutton.png';
+                }}
+              />
+              <img
+                src={
+                  isDeleteButtonHovered 
+                    ? "./UI/furnitureselectedbutton.png"
+                    : isDeleteMode 
+                      ? "./UI/furnitureselectedbutton.png" 
+                      : "./UI/deletefurniturebutton.png"
+                }
+                alt="Delete Furniture"
+                className="button"
+                onClick={() => onDeleteModeChange(!isDeleteMode)}
+                onMouseEnter={(e) => {
+                  e.currentTarget.src = './UI/furnitureselectedbutton.png';
+                }}
+                onMouseLeave={(e) => {
+                  if (isDeleteMode) {
+                    e.currentTarget.src = './UI/furnitureselectedbutton.png';
+                  } else {
+                    e.currentTarget.src = './UI/deletefurniturebutton.png';
+                  }
+                }}
+                style={{ cursor: 'pointer' }}
+              />
             </div>
           </div>
         </div>

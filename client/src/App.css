@@ -19,9 +19,22 @@ html, body {
 }
 
 #app-root {
-  width: 100%;
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
   position: relative;
+  background-color: #111111;
+  cursor: default;
+}
+
+#app-root.cursor-hidden {
+  cursor: none;
+}
+
+#app-root.cursor-hidden * {
+  cursor: none !important;
 }
 
 /* Hide system cursor only when connected */
