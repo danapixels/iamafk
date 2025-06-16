@@ -9,6 +9,8 @@ y: number;
 name?: string;
 stillTime: number;
 cursorType?: string;
+isFrozen?: boolean;
+frozenPosition?: { x: number; y: number ;
 
 
 interface CursorsMap {
@@ -27,12 +29,6 @@ id: string;
 x: number;
 y: number;
 timestamp: number;
-
-
-interface Chair {
-id: string;
-x: number;
-y: number;
 
 
 interface Furniture {
@@ -68,14 +64,12 @@ function App() {
 const [cursors, setCursors] = useState<CursorsMap>({);
 const [hearts, setHearts] = useState<Heart[]>([]);
 const [circles, setCircles] = useState<Circle[]>([]);
-const [chairs, setChairs] = useState<{ [key: string]: Chair >({);
 const [furniture, setFurniture] = useState<{ [key: string]: Furniture >({);
 const [isDeleteMode, setIsDeleteMode] = useState(false);
 const socketRef = useRef<Socket | null>(null);
 const heartCounterRef = useRef(0);
 const circleCounterRef = useRef(0);
 const dragStartPos = useRef<{ x: number; y: number  | null>(null);
-const draggedChairId = useRef<string | null>(null);
 const draggedFurnitureId = useRef<string | null>(null);
 
 const [username, setUsername] = useState('');
@@ -88,6 +82,8 @@ const [selectedFurnitureId, setSelectedFurnitureId] = useState<string | null>(nu
 const [furnitureZIndices, setFurnitureZIndices] = useState<{ [key: string]: number >({);
 const furnitureRefs = useRef<{ [key: string]: HTMLImageElement | null >({);
 const [furnitureFlipped, setFurnitureFlipped] = useState<{ [key: string]: boolean >({);
+const [isCursorFrozen, setIsCursorFrozen] = useState(false);
+const [frozenCursorPosition, setFrozenCursorPosition] = useState<{ x: number; y: number  | null>(null);
 
 const HEART_DURATION = 800;
 const CIRCLE_DURATION = 600;
@@ -161,10 +157,9 @@ setCursorType(data.type);
 
 );
 
-socket.on('initialState', (data: { cursors: CursorsMap, chairs: { [key: string]: Chair , furniture: { [key: string]: Furniture  ) => {
+socket.on('initialState', (data: { cursors: CursorsMap, furniture: { [key: string]: Furniture  ) => {
 console.log('Received initial state');
 setCursors(data.cursors);
-setChairs(data.chairs);
 setFurniture(data.furniture);
 // Initialize flipped state from furniture data
 const initialFlippedState: { [key: string]: boolean  = {;
@@ -179,48 +174,6 @@ setFurnitureFlipped(initialFlippedState);
 socket.on('clientConnected', (data: { id: string, cursors: CursorsMap ) => {
 console.log('Client connected:', data.id);
 setCursors(data.cursors);
-);
-
-socket.on('chairSpawned', (chair: Chair) => {
-console.log('Chair spawned');
-const initialChair = {
-...chair,
-x: window.innerWidth / 2,
-y: window.innerHeight / 2
-;
-
-setChairs(prev => ({
-...prev,
-[chair.id]: initialChair
-));
-
-if (socketRef.current) {
-socketRef.current.emit('updateChairPosition', {
-chairId: chair.id,
-x: initialChair.x,
-y: initialChair.y
-);
-
-);
-
-socket.on('chairMoved', (data: { id: string, x: number, y: number ) => {
-setChairs(prev => ({
-...prev,
-[data.id]: { ...prev[data.id], x: data.x, y: data.y 
-));
-);
-
-socket.on('chairDeleted', (data: { id: string ) => {
-setChairs(prev => {
-const newChairs = { ...prev ;
-delete newChairs[data.id];
-return newChairs;
-);
-);
-
-socket.on('syncChairs', (chairs: { [key: string]: Chair ) => {
-console.log('Received initial chair sync:', chairs);
-setChairs(chairs);
 );
 
 socket.on('furnitureSpawned', (furniture: Furniture) => {
@@ -293,9 +246,9 @@ window.removeEventListener('mousemove', handleMouseMove);
 socket.disconnect();
 socket.off('initialState');
 socket.off('clientConnected');
-socket.off('chairSpawned');
-socket.off('chairMoved');
-socket.off('chairDeleted');
+socket.off('furnitureSpawned');
+socket.off('furnitureMoved');
+socket.off('furnitureDeleted');
 ;
 , []);
 
@@ -342,75 +295,6 @@ id: heartId,
 window.addEventListener('dblclick', handleDoubleClick);
 return () => window.removeEventListener('dblclick', handleDoubleClick);
 , [hasConnected]);
-
-useEffect(() => {
-const handleMouseMove = (e: MouseEvent) => {
-if (draggedChairId.current && dragStartPos.current) {
-const dx = e.clientX - dragStartPos.current.x;
-const dy = e.clientY - dragStartPos.current.y;
-
-// Check if chair is over delete button
-const deleteButton = document.querySelector('.button[src*="deletefurniturebutton.png"], .button[src*="furnitureselectedbutton.png"], .button[src*="furniturehoverbutton.png"]');
-if (deleteButton) {
-const rect = deleteButton.getBoundingClientRect();
-const chair = chairs[draggedChairId.current];
-if (chair && 
-e.clientX >= rect.left && 
-e.clientX <= rect.right && 
-e.clientY >= rect.top && 
-e.clientY <= rect.bottom) {
-setIsDeleteButtonHovered(true);
- else {
-setIsDeleteButtonHovered(false);
-
-
-
-// Update chair position
-if (draggedChairId.current && socketRef.current) {
-const chair = chairs[draggedChairId.current];
-if (chair) {
-const newX = chair.x + dx;
-const newY = chair.y + dy;
-
-// Update local state immediately for smooth dragging
-setChairs(prev => ({
-...prev,
-[draggedChairId.current!]: { ...chair, x: newX, y: newY 
-));
-
-// Emit position update to server
-socketRef.current.emit('updateChairPosition', {
-chairId: draggedChairId.current,
-x: newX,
-y: newY
-);
-
-
-
-dragStartPos.current = { x: e.clientX, y: e.clientY ;
-
-;
-
-const handleMouseUp = (e: MouseEvent) => {
-if (draggedChairId.current) {
-if (isDeleteButtonHovered && socketRef.current) {
-// Delete the chair
-socketRef.current.emit('deleteChair', draggedChairId.current);
-
-setIsDeleteButtonHovered(false);
-draggedChairId.current = null;
-dragStartPos.current = null;
-
-;
-
-window.addEventListener('mousemove', handleMouseMove);
-window.addEventListener('mouseup', handleMouseUp);
-
-return () => {
-window.removeEventListener('mousemove', handleMouseMove);
-window.removeEventListener('mouseup', handleMouseUp);
-;
-, [chairs, isDeleteButtonHovered]);
 
 useEffect(() => {
 const handleMouseMove = (e: MouseEvent) => {
@@ -536,6 +420,7 @@ return `${minsm ${secss`;
 
 const handleCursorChange = (cursor: { type: string ) => {
 if (socketRef.current) {
+setCursorType(cursor.type);
 socketRef.current.emit('changeCursor', cursor);
 
 ;
@@ -548,15 +433,6 @@ highestAFK = { name: cursor.name, time: cursor.stillTime ;
 
 );
 return highestAFK;
-;
-
-const handleChairMouseDown = (e: React.MouseEvent, chairId: string) => {
-e.preventDefault();
-e.stopPropagation();
-
-// Allow any user to drag any chair
-draggedChairId.current = chairId;
-dragStartPos.current = { x: e.clientX, y: e.clientY ;
 ;
 
 const handleFurnitureMouseDown = (e: React.MouseEvent, furnitureId: string) => {
@@ -681,13 +557,123 @@ setFurnitureFlipped(prev => ({
 
 , []);
 
+// Modify the cursor move handler to respect frozen state
+useEffect(() => {
+const handleMouseMove = (e: MouseEvent) => {
+if (!socketRef.current?.connected || isCursorFrozen) return;
+socketRef.current.emit('cursorMove', {
+x: e.clientX,
+y: e.clientY,
+name: usernameRef.current.trim(),
+);
+;
+
+window.addEventListener('mousemove', handleMouseMove);
+return () => window.removeEventListener('mousemove', handleMouseMove);
+, [isCursorFrozen]);
+
+// Add socket listener for cursor freeze updates
+useEffect(() => {
+if (socketRef.current) {
+socketRef.current.on('cursorFrozen', (data: { 
+id: string, 
+isFrozen: boolean,
+frozenPosition?: { x: number; y: number 
+) => {
+if (data.id === socketRef.current?.id) {
+setIsCursorFrozen(data.isFrozen);
+if (data.isFrozen && data.frozenPosition) {
+setFrozenCursorPosition(data.frozenPosition);
+ else {
+setFrozenCursorPosition(null);
+
+
+// Update the cursors state with the frozen position
+setCursors(prev => {
+const newCursors = { ...prev ;
+if (newCursors[data.id]) {
+newCursors[data.id].isFrozen = data.isFrozen;
+if (data.isFrozen && data.frozenPosition) {
+newCursors[data.id].frozenPosition = data.frozenPosition;
+ else {
+delete newCursors[data.id].frozenPosition;
+
+
+return newCursors;
+);
+);
+
+, []);
+
+// Add click handler to unfreeze cursor
+useEffect(() => {
+const handleClick = (e: MouseEvent) => {
+// Don't unfreeze if clicking on furniture controls or panel
+const target = e.target as HTMLElement;
+if (target.closest('[data-furniture-control="true"]') || 
+target.closest('.panel-container')) {
+return;
+
+
+// Only unfreeze if clicking on the main app area
+if (target.closest('#app-root') && isCursorFrozen && socketRef.current) {
+// Unfreeze the cursor
+setFrozenCursorPosition(null);
+setIsCursorFrozen(false);
+socketRef.current.emit('cursorFreeze', { 
+isFrozen: false,
+x: e.clientX,
+y: e.clientY
+);
+
+;
+
+window.addEventListener('click', handleClick);
+return () => window.removeEventListener('click', handleClick);
+, [isCursorFrozen]);
+
+const handleFurnitureDoubleClick = (e: React.MouseEvent, furnitureId: string) => {
+e.preventDefault();
+e.stopPropagation();
+
+const item = furniture[furnitureId];
+if (item && (item.type === 'bed' || item.type === 'chair')) {
+// Clear selection state when double-clicking bed or chair
+setSelectedFurnitureId(null);
+
+if (!isCursorFrozen) {
+// When freezing, store the current cursor position
+const frozenPos = { x: e.clientX, y: e.clientY ;
+setFrozenCursorPosition(frozenPos);
+if (socketRef.current) {
+socketRef.current.emit('cursorFreeze', { 
+isFrozen: true,
+x: frozenPos.x,
+y: frozenPos.y
+);
+
+ else {
+// When unfreezing via double-click on furniture, clear the frozen position
+setFrozenCursorPosition(null);
+if (socketRef.current) {
+socketRef.current.emit('cursorFreeze', { 
+isFrozen: false,
+x: e.clientX,
+y: e.clientY
+);
+
+
+setIsCursorFrozen(!isCursorFrozen);
+
+;
+
 return (
 <div 
 id="app-root" 
-className={hasConnected ? 'cursor-hidden' : '' 
+className={hasConnected ? (isCursorFrozen ? '' : 'cursor-hidden') : '' 
 style={{ 
 userSelect: 'none',
-cursor: hasConnected ? 'none' : 'default',
+cursor: hasConnected ? (isCursorFrozen ? 'default' : 'none') : 'default',
 position: 'relative',
 overflow: 'hidden'
 
@@ -811,28 +797,6 @@ zIndex: 9996,
 );
 )
 
-{Object.values(chairs).map((chair) => (
-<img
-key={chair.id
-src="./UI/chair.png"
-alt="Chair"
-style={{
-position: 'fixed',
-left: chair.x,
-top: chair.y,
-transform: 'translate(-50%, -50%)',
-pointerEvents: 'all',
-cursor: hasConnected ? 'none' : 'grab',
-zIndex: 9993,
-touchAction: 'none',
-userSelect: 'none',
-WebkitUserSelect: 'none',
-
-onMouseDown={(e) => handleChairMouseDown(e, chair.id)
-draggable={false
-/>
-))
-
 {Object.values(furniture).map((item) => (
 <React.Fragment key={`${item.id-${item.x-${item.y`>
 <img
@@ -848,11 +812,13 @@ left: item.x,
 top: item.y,
 transform: `translate(-50%, -50%) ${furnitureFlipped[item.id] ? 'scaleX(-1)' : ''`,
 pointerEvents: 'all',
-cursor: hasConnected ? 'none' : 'grab',
+cursor: hasConnected ? (isCursorFrozen ? 'default' : 'none') : 'grab',
 zIndex: Z_INDEX_LAYERS.FURNITURE + (furnitureZIndices[item.id] || 0),
 touchAction: 'none',
 userSelect: 'none',
 WebkitUserSelect: 'none',
+MozUserSelect: 'none',
+msUserSelect: 'none',
 width: 'auto',
 height: 'auto',
 willChange: 'transform',
@@ -863,8 +829,19 @@ transformStyle: 'preserve-3d',
 border: selectedFurnitureId === item.id ? '1px dashed #fff' : 'none',
 borderRadius: selectedFurnitureId === item.id ? '6px' : '0',
 boxSizing: 'border-box',
+WebkitTouchCallout: 'none',
+WebkitTapHighlightColor: 'transparent'
 
-onMouseDown={(e) => handleFurnitureMouseDown(e, item.id)
+onMouseDown={(e) => {
+e.preventDefault();
+e.stopPropagation();
+handleFurnitureMouseDown(e, item.id);
+
+onDoubleClick={(e) => {
+e.preventDefault();
+e.stopPropagation();
+handleFurnitureDoubleClick(e, item.id);
+
 draggable={false
 />
 {selectedFurnitureId === item.id && (
@@ -1005,15 +982,39 @@ const cursorClass = isMe
 ? `cursor-${cursorType`
 : (cursor.cursorType ? `cursor-${cursor.cursorType` : 'cursor-default');
 
+// For my cursor:
+// - If frozen: use frozen position for everyone (including me)
+// - If not frozen: use current position
+// For other users' cursors:
+// - If frozen: ONLY use frozen position (ignore current position)
+// - If not frozen: use current position
+const cursorX = isMe 
+? (isCursorFrozen && frozenCursorPosition ? frozenCursorPosition.x : cursor.x)
+: (cursor.isFrozen && cursor.frozenPosition ? cursor.frozenPosition.x : cursor.x);
+const cursorY = isMe
+? (isCursorFrozen && frozenCursorPosition ? frozenCursorPosition.y : cursor.y)
+: (cursor.isFrozen && cursor.frozenPosition ? cursor.frozenPosition.y : cursor.y);
+
+// Show cursor if:
+// 1. It's someone else's cursor (always show)
+// 2. It's my cursor and I'm connected (show custom cursor)
+const shouldShowCursor = !isMe || hasConnected;
+
+if (!shouldShowCursor) return null;
+
+// For other users' cursors, only show if they have a valid position
+// (either frozen position when frozen, or current position when not frozen)
+if (!isMe && cursor.isFrozen && !cursor.frozenPosition) return null;
+
 return (
 <div
 key={id
 className="cursor-wrapper"
 style={{
-left: cursor.x,
-top: cursor.y,
+left: cursorX,
+top: cursorY,
 fontWeight: isMe ? 'bold' : 'normal',
-zIndex: Z_INDEX_LAYERS.CURSORS,
+zIndex: Z_INDEX_LAYERS.CURSORS
 
 >
 <div className={`cursor-circle ${cursorClass` />
