@@ -141,11 +141,12 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('cursorFreeze', ({ isFrozen, x, y }) => {
-    console.log('User', socket.id, 'cursor freeze state:', isFrozen);
+  socket.on('cursorFreeze', ({ isFrozen, x, y, sleepingOnBed }) => {
+    console.log('User', socket.id, 'cursor freeze state:', isFrozen, 'sleepingOnBed:', sleepingOnBed);
     if (cursors[socket.id]) {
       // Update the cursor's frozen state
       cursors[socket.id].isFrozen = isFrozen;
+      cursors[socket.id].sleepingOnBed = sleepingOnBed;
       
       if (isFrozen) {
         // Store the frozen position when freezing
@@ -153,13 +154,15 @@ io.on('connection', (socket) => {
       } else {
         // Remove frozen position when unfreezing
         delete cursors[socket.id].frozenPosition;
+        delete cursors[socket.id].sleepingOnBed;
       }
 
       // Broadcast to all clients that this cursor is frozen/unfrozen
       io.emit('cursorFrozen', { 
         id: socket.id, 
         isFrozen,
-        frozenPosition: cursors[socket.id].frozenPosition
+        frozenPosition: cursors[socket.id].frozenPosition,
+        sleepingOnBed: cursors[socket.id].sleepingOnBed
       });
 
       // Update the cursors state for all clients

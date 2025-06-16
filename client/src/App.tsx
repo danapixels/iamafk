@@ -11,6 +11,7 @@ interface CursorData {
   cursorType?: string;
   isFrozen?: boolean;
   frozenPosition?: { x: number; y: number };
+  sleepingOnBed?: boolean;
 }
 
 interface CursorsMap {
@@ -93,8 +94,8 @@ function App() {
     CURSORS: 9997,
     PANEL: 9996,
     LOGO: 9995,
-    FURNITURE: 9993, // Base z-index for furniture
-    MIN_FURNITURE: 9993, // Minimum z-index for furniture
+    FURNITURE: 100, // Base z-index for furniture
+    MIN_FURNITURE: 100, // Minimum z-index for furniture
     MAX_FURNITURE: 9994  // Maximum z-index for furniture (below cursors and panel)
   };
 
@@ -578,7 +579,8 @@ function App() {
       socketRef.current.on('cursorFrozen', (data: { 
         id: string, 
         isFrozen: boolean,
-        frozenPosition?: { x: number; y: number }
+        frozenPosition?: { x: number; y: number },
+        sleepingOnBed?: boolean
       }) => {
         if (data.id === socketRef.current?.id) {
           setIsCursorFrozen(data.isFrozen);
@@ -588,15 +590,17 @@ function App() {
             setFrozenCursorPosition(null);
           }
         }
-        // Update the cursors state with the frozen position
+        // Update the cursors state with the frozen position and sleeping state
         setCursors(prev => {
           const newCursors = { ...prev };
           if (newCursors[data.id]) {
             newCursors[data.id].isFrozen = data.isFrozen;
+            newCursors[data.id].sleepingOnBed = data.sleepingOnBed;
             if (data.isFrozen && data.frozenPosition) {
               newCursors[data.id].frozenPosition = data.frozenPosition;
             } else {
               delete newCursors[data.id].frozenPosition;
+              delete newCursors[data.id].sleepingOnBed;
             }
           }
           return newCursors;
@@ -608,15 +612,14 @@ function App() {
   // Add click handler to unfreeze cursor
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
-      // Don't unfreeze if clicking on furniture controls or panel
+      // Don't unfreeze if clicking on furniture controls
       const target = e.target as HTMLElement;
-      if (target.closest('[data-furniture-control="true"]') || 
-          target.closest('.panel-container')) {
+      if (target.closest('[data-furniture-control="true"]')) {
         return;
       }
 
-      // Only unfreeze if clicking on the main app area
-      if (target.closest('#app-root') && isCursorFrozen && socketRef.current) {
+      // Unfreeze if clicking anywhere in the app (including panel)
+      if (isCursorFrozen && socketRef.current) {
         // Unfreeze the cursor
         setFrozenCursorPosition(null);
         setIsCursorFrozen(false);
@@ -649,7 +652,8 @@ function App() {
           socketRef.current.emit('cursorFreeze', { 
             isFrozen: true,
             x: frozenPos.x,
-            y: frozenPos.y
+            y: frozenPos.y,
+            sleepingOnBed: item.type === 'bed'
           });
         }
       } else {
@@ -659,7 +663,8 @@ function App() {
           socketRef.current.emit('cursorFreeze', { 
             isFrozen: false,
             x: e.clientX,
-            y: e.clientY
+            y: e.clientY,
+            sleepingOnBed: false
           });
         }
       }
@@ -982,12 +987,6 @@ function App() {
           ? `cursor-${cursorType}`
           : (cursor.cursorType ? `cursor-${cursor.cursorType}` : 'cursor-default');
 
-        // For my cursor:
-        // - If frozen: use frozen position for everyone (including me)
-        // - If not frozen: use current position
-        // For other users' cursors:
-        // - If frozen: ONLY use frozen position (ignore current position)
-        // - If not frozen: use current position
         const cursorX = isMe 
           ? (isCursorFrozen && frozenCursorPosition ? frozenCursorPosition.x : cursor.x)
           : (cursor.isFrozen && cursor.frozenPosition ? cursor.frozenPosition.x : cursor.x);
@@ -995,36 +994,48 @@ function App() {
           ? (isCursorFrozen && frozenCursorPosition ? frozenCursorPosition.y : cursor.y)
           : (cursor.isFrozen && cursor.frozenPosition ? cursor.frozenPosition.y : cursor.y);
 
-        // Show cursor if:
-        // 1. It's someone else's cursor (always show)
-        // 2. It's my cursor and I'm connected (show custom cursor)
         const shouldShowCursor = !isMe || hasConnected;
-
         if (!shouldShowCursor) return null;
-
-        // For other users' cursors, only show if they have a valid position
-        // (either frozen position when frozen, or current position when not frozen)
         if (!isMe && cursor.isFrozen && !cursor.frozenPosition) return null;
 
         return (
-          <div
-            key={id}
-            className="cursor-wrapper"
-            style={{
-              left: cursorX,
-              top: cursorY,
-              fontWeight: isMe ? 'bold' : 'normal',
-              zIndex: Z_INDEX_LAYERS.CURSORS
-            }}
-          >
-            <div className={`cursor-circle ${cursorClass}`} />
-            <div className="cursor-labels">
-              {cursor.stillTime >= 30 && (
-                <div className="cursor-timer">AFK {formatTime(cursor.stillTime)}</div>
-              )}
-              <div className="cursor-id-label">{cursor.name}</div>
+          <React.Fragment key={id}>
+            <div
+              className="cursor-wrapper"
+              style={{
+                left: cursorX,
+                top: cursorY,
+                fontWeight: isMe ? 'bold' : 'normal',
+                zIndex: Z_INDEX_LAYERS.CURSORS
+              }}
+            >
+              <div className={`cursor-circle ${cursorClass}`} />
+              <div className="cursor-labels">
+                {cursor.stillTime >= 30 && (
+                  <div className="cursor-timer">AFK {formatTime(cursor.stillTime)}</div>
+                )}
+                <div className="cursor-id-label" style={{ position: 'relative' }}>
+                  {cursor.name}
+                  {cursor.isFrozen && cursor.sleepingOnBed && (
+                    <img
+                      src="./UI/sleeping.gif"
+                      alt="Sleeping"
+                      style={{
+                        position: 'absolute',
+                        left: '100%', // Position to the right of the label
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        marginLeft: '6px', // Spacing between label and gif
+                        paddingBottom: '4px', // Increased bottom padding
+                        zIndex: Z_INDEX_LAYERS.CURSORS,
+                        pointerEvents: 'none'
+                      }}
+                    />
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
+          </React.Fragment>
         );
       })}
     </div>
