@@ -35,7 +35,7 @@ function getValidCursors() {
 
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
-  
+
   // Initialize cursor for new user
   cursors[socket.id] = { x: 0, y: 0, username: '', type: 'default' };
   lastMoveTimestamps[socket.id] = Date.now();
