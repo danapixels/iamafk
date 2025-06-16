@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState  from 'react';
+import React, { useEffect, useRef, useState  from 'react';
 import { io, Socket  from 'socket.io-client';
 import './App.css';
 import Panel from './Panel';
@@ -40,6 +40,7 @@ id: string;
 type: string;
 x: number;
 y: number;
+zIndex?: number;
 
 
 interface PanelProps {
@@ -82,6 +83,8 @@ const clickEnabledTimeRef = useRef<number | null>(null);
 const [cursorType, setCursorType] = useState<string>('default');
 const [isDeleteButtonHovered, setIsDeleteButtonHovered] = useState(false);
 const [selectedFurnitureId, setSelectedFurnitureId] = useState<string | null>(null);
+const [furnitureZIndices, setFurnitureZIndices] = useState<{ [key: string]: number >({);
+const furnitureRefs = useRef<{ [key: string]: HTMLImageElement | null >({);
 
 const HEART_DURATION = 800;
 const CIRCLE_DURATION = 600;
@@ -530,6 +533,30 @@ draggedFurnitureId.current = furnitureId;
 dragStartPos.current = { x: e.clientX, y: e.clientY ;
 ;
 
+const handleMoveUp = (furnitureId: string) => {
+if (socketRef.current) {
+const currentZIndex = furnitureZIndices[furnitureId] || 0;
+const newZIndex = currentZIndex + 1;
+setFurnitureZIndices(prev => ({
+...prev,
+[furnitureId]: newZIndex
+));
+socketRef.current.emit('updateFurnitureZIndex', { furnitureId, zIndex: newZIndex );
+
+;
+
+const handleMoveDown = (furnitureId: string) => {
+if (socketRef.current) {
+const currentZIndex = furnitureZIndices[furnitureId] || 0;
+const newZIndex = Math.max(0, currentZIndex - 1);
+setFurnitureZIndices(prev => ({
+...prev,
+[furnitureId]: newZIndex
+));
+socketRef.current.emit('updateFurnitureZIndex', { furnitureId, zIndex: newZIndex );
+
+;
+
 // Deselect furniture when clicking on the background
 useEffect(() => {
 const handleDeselect = (e: MouseEvent) => {
@@ -541,6 +568,50 @@ setSelectedFurnitureId(null);
 window.addEventListener('mousedown', handleDeselect);
 return () => window.removeEventListener('mousedown', handleDeselect);
 , []);
+
+// Add function to get container position
+const getContainerPosition = (item: Furniture) => {
+const imgElement = furnitureRefs.current[item.id];
+if (!imgElement) return { left: item.x + 50, top: item.y ;
+
+const rect = imgElement.getBoundingClientRect();
+const borderWidth = selectedFurnitureId === item.id ? 1 : 0; // Account for selection border
+const containerOffset = 4; // Space between furniture and container
+
+return {
+left: rect.right + containerOffset,
+top: rect.top + (rect.height / 2),
+bottom: rect.bottom + containerOffset
+;
+;
+
+const handleMoveLeft = (furnitureId: string) => {
+if (socketRef.current) {
+const item = furniture[furnitureId];
+if (item) {
+const newX = item.x - 10; // Move 10 pixels left
+socketRef.current.emit('updateFurniturePosition', {
+furnitureId,
+x: newX,
+y: item.y
+);
+
+
+;
+
+const handleMoveRight = (furnitureId: string) => {
+if (socketRef.current) {
+const item = furniture[furnitureId];
+if (item) {
+const newX = item.x + 10; // Move 10 pixels right
+socketRef.current.emit('updateFurniturePosition', {
+furnitureId,
+x: newX,
+y: item.y
+);
+
+
+;
 
 return (
 <div 
@@ -694,8 +765,11 @@ draggable={false
 ))
 
 {Object.values(furniture).map((item) => (
+<React.Fragment key={`${item.id-${item.x-${item.y`>
 <img
-key={`${item.id-${item.x-${item.y`
+ref={(el) => {
+furnitureRefs.current[item.id] = el;
+
 src={FURNITURE_IMAGES[item.type]
 alt={item.type
 data-furniture="true"
@@ -706,7 +780,7 @@ top: item.y,
 transform: 'translate(-50%, -50%)',
 pointerEvents: 'all',
 cursor: hasConnected ? 'none' : 'grab',
-zIndex: 9993,
+zIndex: 9993 + (furnitureZIndices[item.id] || 0),
 touchAction: 'none',
 userSelect: 'none',
 WebkitUserSelect: 'none',
@@ -724,6 +798,75 @@ boxSizing: 'border-box',
 onMouseDown={(e) => handleFurnitureMouseDown(e, item.id)
 draggable={false
 />
+{selectedFurnitureId === item.id && (
+<>
+<div
+style={{
+position: 'fixed',
+left: getContainerPosition(item).left,
+top: getContainerPosition(item).top,
+transform: 'translateY(-50%)',
+display: 'flex',
+flexDirection: 'column',
+gap: '4px',
+zIndex: 9996,
+pointerEvents: 'all',
+
+>
+<img
+src="./UI/up.png"
+alt="Move Up"
+className="furniture-control-button"
+onMouseOver={(e) => e.currentTarget.src = './UI/uphover.png'
+onMouseOut={(e) => e.currentTarget.src = './UI/up.png'
+onClick={() => handleMoveUp(item.id)
+style={{ cursor: 'pointer' 
+/>
+<img
+src="./UI/down.png"
+alt="Move Down"
+className="furniture-control-button"
+onMouseOver={(e) => e.currentTarget.src = './UI/downhover.png'
+onMouseOut={(e) => e.currentTarget.src = './UI/down.png'
+onClick={() => handleMoveDown(item.id)
+style={{ cursor: 'pointer' 
+/>
+</div>
+<div
+style={{
+position: 'fixed',
+left: item.x,
+top: getContainerPosition(item).bottom,
+transform: 'translateX(-50%)',
+display: 'flex',
+flexDirection: 'row',
+gap: '4px',
+zIndex: 9996,
+pointerEvents: 'all',
+
+>
+<img
+src="./UI/left.png"
+alt="Move Left"
+className="furniture-control-button"
+onMouseOver={(e) => e.currentTarget.src = './UI/lefthover.png'
+onMouseOut={(e) => e.currentTarget.src = './UI/left.png'
+onClick={() => handleMoveLeft(item.id)
+style={{ cursor: 'pointer' 
+/>
+<img
+src="./UI/right.png"
+alt="Move Right"
+className="furniture-control-button"
+onMouseOver={(e) => e.currentTarget.src = './UI/righthover.png'
+onMouseOut={(e) => e.currentTarget.src = './UI/right.png'
+onClick={() => handleMoveRight(item.id)
+style={{ cursor: 'pointer' 
+/>
+</div>
+</>
+)
+</React.Fragment>
 ))
 
 {Object.entries(cursors).map(([id, cursor]) => {
