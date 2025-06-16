@@ -40,6 +40,8 @@ id: string;
 type: string;
 x: number;
 y: number;
+width?: number;
+height?: number;
 
 
 interface PanelProps {
@@ -81,6 +83,8 @@ const [hasConnected, setHasConnected] = useState(false);
 const clickEnabledTimeRef = useRef<number | null>(null);
 const [cursorType, setCursorType] = useState<string>('default');
 const [isDeleteButtonHovered, setIsDeleteButtonHovered] = useState(false);
+const [selectedFurnitureId, setSelectedFurnitureId] = useState<string | null>(null);
+const [selectedFurniturePos, setSelectedFurniturePos] = useState<{ x: number; y: number  | null>(null);
 
 const HEART_DURATION = 800;
 const CIRCLE_DURATION = 600;
@@ -523,11 +527,23 @@ dragStartPos.current = { x: e.clientX, y: e.clientY ;
 const handleFurnitureMouseDown = (e: React.MouseEvent, furnitureId: string) => {
 e.preventDefault();
 e.stopPropagation();
-
+setSelectedFurnitureId(furnitureId);
 // Allow any user to drag any furniture
 draggedFurnitureId.current = furnitureId;
 dragStartPos.current = { x: e.clientX, y: e.clientY ;
 ;
+
+// Deselect furniture when clicking on the background
+useEffect(() => {
+const handleDeselect = (e: MouseEvent) => {
+// Only deselect if the click is not on a furniture image
+if (!(e.target instanceof HTMLImageElement && e.target.dataset.furniture === 'true')) {
+setSelectedFurnitureId(null);
+
+;
+window.addEventListener('mousedown', handleDeselect);
+return () => window.removeEventListener('mousedown', handleDeselect);
+, []);
 
 return (
 <div 
@@ -685,6 +701,7 @@ draggable={false
 key={`${item.id-${item.x-${item.y`
 src={FURNITURE_IMAGES[item.type]
 alt={item.type
+data-furniture="true"
 style={{
 position: 'fixed',
 left: item.x,
@@ -702,12 +719,34 @@ willChange: 'transform',
 backfaceVisibility: 'hidden',
 WebkitBackfaceVisibility: 'hidden',
 WebkitTransform: 'translate(-50%, -50%)',
-transformStyle: 'preserve-3d'
+transformStyle: 'preserve-3d',
+border: selectedFurnitureId === item.id ? '1px dashed #fff' : 'none',
+borderRadius: selectedFurnitureId === item.id ? '6px' : '0',
+boxSizing: 'border-box',
 
 onMouseDown={(e) => handleFurnitureMouseDown(e, item.id)
 draggable={false
 />
 ))
+
+{selectedFurnitureId && (() => {
+const item = furniture[selectedFurnitureId];
+if (!item) return null;
+return (
+<>
+{/* Right container (up/down buttons) – placed on the right of the furniture's selected box */
+<div style={{ position: 'absolute', left: item.x + (item.width || 0) + 4, top: item.y, zIndex: 9998, pointerEvents: 'all', display: 'flex', flexDirection: 'column', gap: '4px' >
+ <img src="./UI/up.png" alt="up" onMouseEnter={(e) => e.currentTarget.src = './UI/uphover.png' onMouseLeave={(e) => e.currentTarget.src = './UI/up.png' />
+ <img src="./UI/down.png" alt="down" onMouseEnter={(e) => e.currentTarget.src = './UI/downhover.png' onMouseLeave={(e) => e.currentTarget.src = './UI/down.png' />
+</div>
+{/* Bottom container (left/right buttons) – placed at the bottom of the furniture's selected box */
+<div style={{ position: 'absolute', left: item.x, top: item.y + (item.height || 0) + 4, zIndex: 9998, pointerEvents: 'all' >
+ <img src="./UI/left.png" alt="left" onMouseEnter={(e) => { e.currentTarget.src = './UI/lefthover.png';  onMouseLeave={(e) => { e.currentTarget.src = './UI/left.png';  />
+ <img src="./UI/right.png" alt="right" onMouseEnter={(e) => { e.currentTarget.src = './UI/righthover.png';  onMouseLeave={(e) => { e.currentTarget.src = './UI/right.png';  />
+</div>
+</>
+);
+)()
 
 {Object.entries(cursors).map(([id, cursor]) => {
 if (!hasConnected && id === socketRef.current?.id) return null;
