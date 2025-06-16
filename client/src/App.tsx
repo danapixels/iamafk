@@ -40,8 +40,6 @@ interface Furniture {
   type: string;
   x: number;
   y: number;
-  width?: number;
-  height?: number;
 }
 
 interface PanelProps {
@@ -84,7 +82,6 @@ function App() {
   const [cursorType, setCursorType] = useState<string>('default');
   const [isDeleteButtonHovered, setIsDeleteButtonHovered] = useState(false);
   const [selectedFurnitureId, setSelectedFurnitureId] = useState<string | null>(null);
-  const [selectedFurniturePos, setSelectedFurniturePos] = useState<{ x: number; y: number } | null>(null);
 
   const HEART_DURATION = 800;
   const CIRCLE_DURATION = 600;
@@ -728,25 +725,6 @@ function App() {
           draggable={false}
         />
       ))}
-
-      {selectedFurnitureId && (() => {
-        const item = furniture[selectedFurnitureId];
-        if (!item) return null;
-        return (
-          <>
-            {/* Right container (up/down buttons) – placed on the right of the furniture's selected box */}
-            <div style={{ position: 'absolute', left: item.x + (item.width || 0) + 4, top: item.y, zIndex: 9998, pointerEvents: 'all', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-               <img src="./UI/up.png" alt="up" onMouseEnter={(e) => e.currentTarget.src = './UI/uphover.png'} onMouseLeave={(e) => e.currentTarget.src = './UI/up.png'} />
-               <img src="./UI/down.png" alt="down" onMouseEnter={(e) => e.currentTarget.src = './UI/downhover.png'} onMouseLeave={(e) => e.currentTarget.src = './UI/down.png'} />
-            </div>
-            {/* Bottom container (left/right buttons) – placed at the bottom of the furniture's selected box */}
-            <div style={{ position: 'absolute', left: item.x, top: item.y + (item.height || 0) + 4, zIndex: 9998, pointerEvents: 'all' }}>
-               <img src="./UI/left.png" alt="left" onMouseEnter={(e) => { e.currentTarget.src = './UI/lefthover.png'; }} onMouseLeave={(e) => { e.currentTarget.src = './UI/left.png'; }} />
-               <img src="./UI/right.png" alt="right" onMouseEnter={(e) => { e.currentTarget.src = './UI/righthover.png'; }} onMouseLeave={(e) => { e.currentTarget.src = './UI/right.png'; }} />
-            </div>
-          </>
-        );
-      })()}
 
       {Object.entries(cursors).map(([id, cursor]) => {
         if (!hasConnected && id === socketRef.current?.id) return null;
