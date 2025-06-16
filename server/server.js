@@ -150,19 +150,28 @@ const furnitureId = `${socket.id-${Date.now()`;
 // Create furniture without position - client will set it
 furniture[furnitureId] = {
 id: furnitureId,
-type: data.type
+type: data.type,
+isFlipped: false // Initialize isFlipped state
 ;
 // Broadcast to all clients including sender
 io.emit('furnitureSpawned', furniture[furnitureId]);
 );
 
 socket.on('updateFurniturePosition', (data) => {
-const { furnitureId, x, y  = data;
+const { furnitureId, x, y, isFlipped  = data;
 if (furniture[furnitureId]) {
 furniture[furnitureId].x = x;
 furniture[furnitureId].y = y;
+if (typeof isFlipped === 'boolean') {
+furniture[furnitureId].isFlipped = isFlipped;
+
 // Broadcast to ALL clients including sender
-io.emit('furnitureMoved', { id: furnitureId, x, y );
+io.emit('furnitureMoved', { 
+id: furnitureId, 
+x, 
+y,
+isFlipped: furniture[furnitureId].isFlipped 
+);
 
 );
 

@@ -41,6 +41,7 @@ type: string;
 x: number;
 y: number;
 zIndex?: number;
+isFlipped?: boolean;
 
 
 interface PanelProps {
@@ -49,6 +50,7 @@ onCursorChange: (type: string) => void;
 isDeleteMode: boolean;
 onDeleteModeChange: (isDeleteMode: boolean) => void;
 isDeleteButtonHovered: boolean;
+style?: React.CSSProperties;
 
 
 const FURNITURE_IMAGES: { [key: string]: string  = {
@@ -85,9 +87,20 @@ const [isDeleteButtonHovered, setIsDeleteButtonHovered] = useState(false);
 const [selectedFurnitureId, setSelectedFurnitureId] = useState<string | null>(null);
 const [furnitureZIndices, setFurnitureZIndices] = useState<{ [key: string]: number >({);
 const furnitureRefs = useRef<{ [key: string]: HTMLImageElement | null >({);
+const [furnitureFlipped, setFurnitureFlipped] = useState<{ [key: string]: boolean >({);
 
 const HEART_DURATION = 800;
 const CIRCLE_DURATION = 600;
+
+// Add constants for z-index layers
+const Z_INDEX_LAYERS = {
+CURSORS: 9997,
+PANEL: 9996,
+LOGO: 9995,
+FURNITURE: 9993, // Base z-index for furniture
+MIN_FURNITURE: 9993, // Minimum z-index for furniture
+MAX_FURNITURE: 9994// Maximum z-index for furniture (below cursors and panel)
+;
 
 useEffect(() => {
 usernameRef.current = username;
@@ -153,6 +166,14 @@ console.log('Received initial state');
 setCursors(data.cursors);
 setChairs(data.chairs);
 setFurniture(data.furniture);
+// Initialize flipped state from furniture data
+const initialFlippedState: { [key: string]: boolean  = {;
+Object.entries(data.furniture).forEach(([id, item]) => {
+if (item.isFlipped === true || item.isFlipped === false) {
+initialFlippedState[id] = item.isFlipped;
+
+);
+setFurnitureFlipped(initialFlippedState);
 );
 
 socket.on('clientConnected', (data: { id: string, cursors: CursorsMap ) => {
@@ -217,6 +238,9 @@ setFurniture(prev => ({
 [furniture.id]: initialFurniture
 ));
 
+// Deselect any currently selected furniture
+setSelectedFurnitureId(null);
+
 // Send initial position to server
 if (socketRef.current) {
 socketRef.current.emit('updateFurniturePosition', {
@@ -227,11 +251,22 @@ y: initialFurniture.y
 
 );
 
-socket.on('furnitureMoved', (data: { id: string, x: number, y: number ) => {
+socket.on('furnitureMoved', (data: { id: string, x: number, y: number, isFlipped?: boolean ) => {
 setFurniture(prev => ({
 ...prev,
-[data.id]: { ...prev[data.id], x: data.x, y: data.y 
+[data.id]: { 
+...prev[data.id], 
+x: data.x, 
+y: data.y,
+isFlipped: data.isFlipped
+
 ));
+if (data.isFlipped === true || data.isFlipped === false) {
+setFurnitureFlipped(prev => ({
+...prev,
+[data.id]: data.isFlipped as boolean
+));
+
 );
 
 socket.on('furnitureDeleted', (data: { id: string ) => {
@@ -536,7 +571,7 @@ dragStartPos.current = { x: e.clientX, y: e.clientY ;
 const handleMoveUp = (furnitureId: string) => {
 if (socketRef.current) {
 const currentZIndex = furnitureZIndices[furnitureId] || 0;
-const newZIndex = currentZIndex + 1;
+const newZIndex = Math.min(currentZIndex + 1, Z_INDEX_LAYERS.MAX_FURNITURE - Z_INDEX_LAYERS.FURNITURE);
 setFurnitureZIndices(prev => ({
 ...prev,
 [furnitureId]: newZIndex
@@ -560,8 +595,9 @@ socketRef.current.emit('updateFurnitureZIndex', { furnitureId, zIndex: newZIndex
 // Deselect furniture when clicking on the background
 useEffect(() => {
 const handleDeselect = (e: MouseEvent) => {
-// Only deselect if the click is not on a furniture image
-if (!(e.target instanceof HTMLImageElement && e.target.dataset.furniture === 'true')) {
+const target = e.target as HTMLElement;
+// Only deselect if clicking on the background (app-root)
+if (target.id === 'app-root' || target.closest('#app-root') === target) {
 setSelectedFurnitureId(null);
 
 ;
@@ -576,12 +612,14 @@ if (!imgElement) return { left: item.x + 50, top: item.y ;
 
 const rect = imgElement.getBoundingClientRect();
 const borderWidth = selectedFurnitureId === item.id ? 1 : 0; // Account for selection border
-const containerOffset = 4; // Space between furniture and container
+const containerOffset = 2; // Space between furniture and container
 
 return {
 left: rect.right + containerOffset,
 top: rect.top + (rect.height / 2),
-bottom: rect.bottom + containerOffset
+bottom: rect.bottom + containerOffset,
+topEdge: rect.top - containerOffset, // Add top edge position
+bottomEdge: rect.bottom + containerOffset // Add bottom edge position
 ;
 ;
 
@@ -589,11 +627,20 @@ const handleMoveLeft = (furnitureId: string) => {
 if (socketRef.current) {
 const item = furniture[furnitureId];
 if (item) {
-const newX = item.x - 10; // Move 10 pixels left
+const newFlipped = !furnitureFlipped[furnitureId];
+
+// Update local state
+setFurnitureFlipped(prev => ({
+...prev,
+[furnitureId]: newFlipped
+));
+
+// Emit to server
 socketRef.current.emit('updateFurniturePosition', {
 furnitureId,
-x: newX,
-y: item.y
+x: item.x,
+y: item.y,
+isFlipped: newFlipped
 );
 
 
@@ -603,15 +650,36 @@ const handleMoveRight = (furnitureId: string) => {
 if (socketRef.current) {
 const item = furniture[furnitureId];
 if (item) {
-const newX = item.x + 10; // Move 10 pixels right
+const newFlipped = !furnitureFlipped[furnitureId];
+
+// Update local state
+setFurnitureFlipped(prev => ({
+...prev,
+[furnitureId]: newFlipped
+));
+
+// Emit to server
 socketRef.current.emit('updateFurniturePosition', {
 furnitureId,
-x: newX,
-y: item.y
+x: item.x,
+y: item.y,
+isFlipped: newFlipped
 );
 
 
 ;
+
+// Add socket listener for furniture flip updates
+useEffect(() => {
+if (socketRef.current) {
+socketRef.current.on('furnitureFlipped', (data: { id: string, isFlipped: boolean ) => {
+setFurnitureFlipped(prev => ({
+...prev,
+[data.id]: data.isFlipped
+));
+);
+
+, []);
 
 return (
 <div 
@@ -630,8 +698,9 @@ onCursorChange={handleCursorChange
 isDeleteMode={isDeleteMode
 onDeleteModeChange={setIsDeleteMode
 isDeleteButtonHovered={isDeleteButtonHovered
+style={{ zIndex: Z_INDEX_LAYERS.PANEL 
 />
-<div id="logo-container">
+<div id="logo-container" style={{ zIndex: Z_INDEX_LAYERS.LOGO >
 <div className="logo-row">
 <img src="./UI/logo.png" alt="Logo" id="logo" />
 <a 
@@ -777,10 +846,10 @@ style={{
 position: 'fixed',
 left: item.x,
 top: item.y,
-transform: 'translate(-50%, -50%)',
+transform: `translate(-50%, -50%) ${furnitureFlipped[item.id] ? 'scaleX(-1)' : ''`,
 pointerEvents: 'all',
 cursor: hasConnected ? 'none' : 'grab',
-zIndex: 9993 + (furnitureZIndices[item.id] || 0),
+zIndex: Z_INDEX_LAYERS.FURNITURE + (furnitureZIndices[item.id] || 0),
 touchAction: 'none',
 userSelect: 'none',
 WebkitUserSelect: 'none',
@@ -789,7 +858,7 @@ height: 'auto',
 willChange: 'transform',
 backfaceVisibility: 'hidden',
 WebkitBackfaceVisibility: 'hidden',
-WebkitTransform: 'translate(-50%, -50%)',
+WebkitTransform: `translate(-50%, -50%) ${furnitureFlipped[item.id] ? 'scaleX(-1)' : ''`,
 transformStyle: 'preserve-3d',
 border: selectedFurnitureId === item.id ? '1px dashed #fff' : 'none',
 borderRadius: selectedFurnitureId === item.id ? '6px' : '0',
@@ -803,6 +872,78 @@ draggable={false
 <div
 style={{
 position: 'fixed',
+left: item.x,
+top: getContainerPosition(item).topEdge,
+transform: 'translate(-50%, -100%)',
+display: 'flex',
+flexDirection: 'column',
+gap: '4px',
+zIndex: 9996,
+pointerEvents: 'all',
+
+>
+<div 
+style={{ 
+position: 'relative', 
+width: '48px', 
+height: '48px', 
+display: 'flex', 
+alignItems: 'center', 
+justifyContent: 'center',
+cursor: 'pointer'
+
+onClick={() => handleMoveUp(item.id)
+className="furniture-control-button"
+data-furniture-control="true"
+>
+<img
+src="./UI/up.png"
+alt="Move Up"
+onMouseOver={(e) => e.currentTarget.src = './UI/uphover.png'
+onMouseOut={(e) => e.currentTarget.src = './UI/up.png'
+style={{ position: 'absolute' 
+/>
+</div>
+</div>
+<div
+style={{
+position: 'fixed',
+left: item.x,
+top: getContainerPosition(item).bottomEdge,
+transform: 'translate(-50%, 0)',
+display: 'flex',
+flexDirection: 'column',
+gap: '4px',
+zIndex: 9996,
+pointerEvents: 'all',
+
+>
+<div 
+style={{ 
+position: 'relative', 
+width: '48px', 
+height: '48px', 
+display: 'flex', 
+alignItems: 'center', 
+justifyContent: 'center',
+cursor: 'pointer'
+
+onClick={() => handleMoveDown(item.id)
+className="furniture-control-button"
+data-furniture-control="true"
+>
+<img
+src="./UI/down.png"
+alt="Move Down"
+onMouseOver={(e) => e.currentTarget.src = './UI/downhover.png'
+onMouseOut={(e) => e.currentTarget.src = './UI/down.png'
+style={{ position: 'absolute' 
+/>
+</div>
+</div>
+<div
+style={{
+position: 'fixed',
 left: getContainerPosition(item).left,
 top: getContainerPosition(item).top,
 transform: 'translateY(-50%)',
@@ -813,56 +954,42 @@ zIndex: 9996,
 pointerEvents: 'all',
 
 >
-<img
-src="./UI/up.png"
-alt="Move Up"
-className="furniture-control-button"
-onMouseOver={(e) => e.currentTarget.src = './UI/uphover.png'
-onMouseOut={(e) => e.currentTarget.src = './UI/up.png'
-onClick={() => handleMoveUp(item.id)
-style={{ cursor: 'pointer' 
-/>
-<img
-src="./UI/down.png"
-alt="Move Down"
-className="furniture-control-button"
-onMouseOver={(e) => e.currentTarget.src = './UI/downhover.png'
-onMouseOut={(e) => e.currentTarget.src = './UI/down.png'
-onClick={() => handleMoveDown(item.id)
-style={{ cursor: 'pointer' 
-/>
-</div>
-<div
-style={{
-position: 'fixed',
-left: item.x,
-top: getContainerPosition(item).bottom,
-transform: 'translateX(-50%)',
-display: 'flex',
-flexDirection: 'row',
-gap: '4px',
-zIndex: 9996,
-pointerEvents: 'all',
+<div 
+style={{ 
+position: 'relative', 
+width: '48px', 
+height: '48px', 
+display: 'flex', 
+alignItems: 'center', 
+justifyContent: 'center',
+cursor: 'pointer'
 
+onClick={() => {
+const newFlipped = !furnitureFlipped[item.id];
+setFurnitureFlipped(prev => ({
+...prev,
+[item.id]: newFlipped
+));
+if (socketRef.current) {
+socketRef.current.emit('updateFurniturePosition', {
+furnitureId: item.id,
+x: item.x,
+y: item.y,
+isFlipped: newFlipped
+);
+
+
+className="furniture-control-button"
+data-furniture-control="true"
 >
 <img
-src="./UI/left.png"
-alt="Move Left"
-className="furniture-control-button"
-onMouseOver={(e) => e.currentTarget.src = './UI/lefthover.png'
-onMouseOut={(e) => e.currentTarget.src = './UI/left.png'
-onClick={() => handleMoveLeft(item.id)
-style={{ cursor: 'pointer' 
+src="./UI/flip.png"
+alt="Flip"
+onMouseOver={(e) => e.currentTarget.src = './UI/fliphover.png'
+onMouseOut={(e) => e.currentTarget.src = './UI/flip.png'
+style={{ position: 'absolute' 
 />
-<img
-src="./UI/right.png"
-alt="Move Right"
-className="furniture-control-button"
-onMouseOver={(e) => e.currentTarget.src = './UI/righthover.png'
-onMouseOut={(e) => e.currentTarget.src = './UI/right.png'
-onClick={() => handleMoveRight(item.id)
-style={{ cursor: 'pointer' 
-/>
+</div>
 </div>
 </>
 )
@@ -886,7 +1013,7 @@ style={{
 left: cursor.x,
 top: cursor.y,
 fontWeight: isMe ? 'bold' : 'normal',
-zIndex: 9997,
+zIndex: Z_INDEX_LAYERS.CURSORS,
 
 >
 <div className={`cursor-circle ${cursorClass` />

@@ -8,9 +8,10 @@ onCursorChange: (cursor: { type: string ) => void;
 isDeleteMode: boolean;
 onDeleteModeChange: (isDeleteMode: boolean) => void;
 isDeleteButtonHovered: boolean;
+style?: React.CSSProperties;
 
 
-const Panel: React.FC<PanelProps> = ({ socket, onCursorChange, isDeleteMode, onDeleteModeChange, isDeleteButtonHovered ) => {
+const Panel: React.FC<PanelProps> = ({ socket, onCursorChange, isDeleteMode, onDeleteModeChange, isDeleteButtonHovered, style ) => {
 const handleHatClick = (hatType: string) => {
 if (socket) {
 socket.emit('changeCursor', { type: hatType );
@@ -29,7 +30,7 @@ onDeleteModeChange(!isDeleteMode);
 ;
 
 return (
-<div className="panel-container">
+<div className="panel-container" style={style>
 <img src="./UI/transparentpanel.png" alt="Panel" className="panel-background" />
 
 <div className="panel-content">
