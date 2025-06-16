@@ -17,9 +17,6 @@ const io = new Server(server, {
 let cursors = {};
 let lastMoveTimestamps = {};
 
-// Track chairs globally like cursors
-const chairs = {};
-
 // Track furniture globally like cursors
 const furniture = {};
 
@@ -43,7 +40,6 @@ io.on('connection', (socket) => {
   // Send current state to new user
   socket.emit('initialState', {
     cursors: getValidCursors(),
-    chairs: chairs,
     furniture: furniture
   });
   
@@ -107,43 +103,6 @@ io.on('connection', (socket) => {
     io.emit('circleSpawned', circleData);
   });
 
-  socket.on('spawnChair', () => {
-    console.log('User', socket.id, 'spawning chair');
-    const chairId = `${socket.id}-${Date.now()}`;
-    // Create chair without position - client will set it
-    chairs[chairId] = {
-      id: chairId
-    };
-    // Broadcast to all clients including sender
-    io.emit('chairSpawned', chairs[chairId]);
-  });
-
-  socket.on('updateChairPosition', (data) => {
-    const { chairId, x, y } = data;
-    if (chairs[chairId]) {
-      chairs[chairId].x = x;
-      chairs[chairId].y = y;
-      // Broadcast to ALL clients including sender
-      io.emit('chairMoved', { id: chairId, x, y });
-    }
-  });
-
-  socket.on('deleteChair', (chairId) => {
-    if (chairs[chairId]) {
-      delete chairs[chairId];
-      io.emit('chairDeleted', { id: chairId });
-    }
-  });
-
-  socket.on('changeCursor', ({ type }) => {
-    console.log('User', socket.id, 'changing cursor to:', type);
-    if (cursors[socket.id]) {
-      cursors[socket.id].cursorType = type;
-      console.log('Emitting cursorChanged to all clients:', { id: socket.id, type });
-      io.emit('cursorChanged', { id: socket.id, type });
-    }
-  });
-
   socket.on('spawnFurniture', (data) => {
     console.log('User', socket.id, 'spawning furniture:', data.type);
     const furnitureId = `${socket.id}-${Date.now()}`;
@@ -182,14 +141,46 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('disconnect', () => {
-    // Remove all chairs and furniture owned by this user
-    Object.keys(chairs).forEach(chairId => {
-      if (chairId.startsWith(socket.id)) {
-        delete chairs[chairId];
-        io.emit('chairDeleted', { id: chairId });
+  socket.on('cursorFreeze', ({ isFrozen, x, y }) => {
+    console.log('User', socket.id, 'cursor freeze state:', isFrozen);
+    if (cursors[socket.id]) {
+      // Update the cursor's frozen state
+      cursors[socket.id].isFrozen = isFrozen;
+      
+      if (isFrozen) {
+        // Store the frozen position when freezing
+        cursors[socket.id].frozenPosition = { x, y };
+      } else {
+        // Remove frozen position when unfreezing
+        delete cursors[socket.id].frozenPosition;
       }
-    });
+
+      // Broadcast to all clients that this cursor is frozen/unfrozen
+      io.emit('cursorFrozen', { 
+        id: socket.id, 
+        isFrozen,
+        frozenPosition: cursors[socket.id].frozenPosition
+      });
+
+      // Update the cursors state for all clients
+      io.emit('cursors', getValidCursors());
+    }
+  });
+
+  socket.on('changeCursor', ({ type }) => {
+    console.log('User', socket.id, 'changing cursor to:', type);
+    if (cursors[socket.id]) {
+      // Update the cursor type
+      cursors[socket.id].cursorType = type;
+      // Broadcast the cursor change to all clients
+      io.emit('cursorChanged', { id: socket.id, type });
+      // Update the cursors state for all clients
+      io.emit('cursors', getValidCursors());
+    }
+  });
+
+  socket.on('disconnect', () => {
+    // Remove all furniture owned by this user
     Object.keys(furniture).forEach(furnitureId => {
       if (furnitureId.startsWith(socket.id)) {
         delete furniture[furnitureId];
