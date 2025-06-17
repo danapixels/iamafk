@@ -8,10 +8,12 @@ onCursorChange: (cursor: { type: string ) => void;
 isDeleteMode: boolean;
 onDeleteModeChange: (isDeleteMode: boolean) => void;
 isDeleteButtonHovered: boolean;
+cursorPosition?: { x: number; y: number; name?: string; stillTime: number; cursorType?: string; isFrozen?: boolean; frozenPosition?: { x: number; y: number ; sleepingOnBed?: boolean ;
+viewportOffset?: { x: number; y: number ;
 style?: React.CSSProperties;
 
 
-const Panel: React.FC<PanelProps> = ({ socket, onCursorChange, isDeleteMode, onDeleteModeChange, isDeleteButtonHovered, style ) => {
+const Panel: React.FC<PanelProps> = ({ socket, onCursorChange, isDeleteMode, onDeleteModeChange, isDeleteButtonHovered, cursorPosition, viewportOffset, style ) => {
 const handleHatClick = (hatType: string) => {
 if (socket) {
 socket.emit('changeCursor', { type: hatType );
@@ -21,7 +23,20 @@ onCursorChange({ type: hatType );
 
 const handleFurnitureClick = (type: string) => {
 if (socket) {
-socket.emit('spawnFurniture', { type );
+// Spawn furniture in the center of the screen
+const centerX = window.innerWidth / 2;
+const centerY = window.innerHeight / 2;
+
+// Convert screen coordinates to canvas coordinates
+// We need to add the viewport offset to get the actual canvas position
+const canvasX = centerX + (viewportOffset?.x || 0);
+const canvasY = centerY + (viewportOffset?.y || 0);
+
+socket.emit('spawnFurniture', { 
+type,
+x: canvasX,
+y: canvasY
+);
 
 ;
 
@@ -228,7 +243,15 @@ isDeleteButtonHovered
 
 alt="Delete Furniture"
 className="button"
-onClick={() => onDeleteModeChange(!isDeleteMode)
+onClick={(e) => {
+// Prevent click if furniture is being dragged over this button
+if (isDeleteButtonHovered) {
+e.preventDefault();
+e.stopPropagation();
+return;
+
+onDeleteModeChange(!isDeleteMode);
+
 onMouseEnter={(e) => {
 e.currentTarget.src = './UI/furnitureselectedbutton.png';
 
