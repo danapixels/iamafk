@@ -2,6 +2,8 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
 
 const app = express();
 app.use(cors());
@@ -17,8 +19,108 @@ const io = new Server(server, {
 let cursors = {};
 let lastMoveTimestamps = {};
 
-// Track furniture globally like cursors
-const furniture = {};
+// Persistent furniture storage with expiration
+const FURNITURE_FILE = path.join(__dirname, 'furniture.json');
+const FURNITURE_EXPIRY_HOURS = 24;
+const USER_ACTIVITY_FILE = path.join(__dirname, 'user_activity.json');
+
+// Load persistent furniture from file
+let furniture = {};
+let userActivity = {};
+
+// Z-index management
+let nextZIndex = 5000; // Base z-index for furniture
+
+function getNextZIndex() {
+  return nextZIndex++;
+}
+
+function updateZIndexFromFurniture() {
+  // Find the highest z-index currently in use
+  let maxZIndex = 4999; // Base z-index - 1
+  Object.values(furniture).forEach(item => {
+    if (item.zIndex && item.zIndex > maxZIndex) {
+      maxZIndex = item.zIndex;
+    }
+  });
+  nextZIndex = maxZIndex + 1;
+}
+
+function loadPersistentData() {
+  try {
+    if (fs.existsSync(FURNITURE_FILE)) {
+      const furnitureData = JSON.parse(fs.readFileSync(FURNITURE_FILE, 'utf8'));
+      furniture = furnitureData;
+      console.log('Loaded furniture data:', Object.keys(furniture).length, 'items');
+      // Update z-index counter from loaded furniture
+      updateZIndexFromFurniture();
+    }
+  } catch (error) {
+    console.error('Error loading furniture data:', error);
+  }
+
+  try {
+    if (fs.existsSync(USER_ACTIVITY_FILE)) {
+      const activityData = JSON.parse(fs.readFileSync(USER_ACTIVITY_FILE, 'utf8'));
+      userActivity = activityData;
+      console.log('Loaded user activity data:', Object.keys(userActivity).length, 'users');
+    }
+  } catch (error) {
+    console.error('Error loading user activity data:', error);
+  }
+}
+
+function savePersistentData() {
+  try {
+    fs.writeFileSync(FURNITURE_FILE, JSON.stringify(furniture, null, 2));
+  } catch (error) {
+    console.error('Error saving furniture data:', error);
+  }
+
+  try {
+    fs.writeFileSync(USER_ACTIVITY_FILE, JSON.stringify(userActivity, null, 2));
+  } catch (error) {
+    console.error('Error saving user activity data:', error);
+  }
+}
+
+function updateUserActivity(socketId, username) {
+  const now = Date.now();
+  userActivity[socketId] = {
+    lastSeen: now,
+    username: username || 'Anonymous',
+    socketId: socketId
+  };
+  savePersistentData();
+}
+
+function cleanupExpiredFurniture() {
+  const now = Date.now();
+  const expiryTime = FURNITURE_EXPIRY_HOURS * 60 * 60 * 1000; // 24 hours in milliseconds
+  let cleanedCount = 0;
+
+  Object.keys(furniture).forEach(furnitureId => {
+    const item = furniture[furnitureId];
+    if (item.timestamp && (now - item.timestamp) > expiryTime) {
+      // Check if the user who placed this furniture has been inactive for 24 hours
+      const userId = furnitureId.split('-')[0];
+      const userLastSeen = userActivity[userId]?.lastSeen || 0;
+      
+      if ((now - userLastSeen) > expiryTime) {
+        delete furniture[furnitureId];
+        cleanedCount++;
+        console.log('Cleaned up expired furniture:', furnitureId);
+      }
+    }
+  });
+
+  if (cleanedCount > 0) {
+    console.log(`Cleaned up ${cleanedCount} expired furniture items`);
+    savePersistentData();
+    // Notify all clients about the cleanup
+    io.emit('furnitureCleanup', { cleanedCount });
+  }
+}
 
 function getValidCursors() {
   const filtered = {};
@@ -30,12 +132,24 @@ function getValidCursors() {
   return filtered;
 }
 
+// Load data on startup
+loadPersistentData();
+
+// Clean up expired furniture every hour
+setInterval(cleanupExpiredFurniture, 60 * 60 * 1000);
+
+// Initial cleanup on startup
+cleanupExpiredFurniture();
+
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
   // Initialize cursor for new user
   cursors[socket.id] = { x: 0, y: 0, username: '', type: 'default' };
   lastMoveTimestamps[socket.id] = Date.now();
+  
+  // Update user activity on connection
+  updateUserActivity(socket.id, 'Anonymous');
   
   // Send current state to new user
   socket.emit('initialState', {
@@ -48,7 +162,10 @@ io.on('connection', (socket) => {
 
   socket.on('setName', ({ name }) => {
     if (cursors[socket.id]) {
-      cursors[socket.id].name = name?.trim() || 'Anonymous';
+      const username = name?.trim() || 'Anonymous';
+      cursors[socket.id].name = username;
+      // Update user activity with the username
+      updateUserActivity(socket.id, username);
       io.emit('cursors', getValidCursors());
     }
   });
@@ -78,6 +195,8 @@ io.on('connection', (socket) => {
 
       if (name && name.trim() !== '') {
         cursors[socket.id].name = name.trim();
+        // Update user activity on movement
+        updateUserActivity(socket.id, name.trim());
       }
     }
 
@@ -89,6 +208,8 @@ io.on('connection', (socket) => {
     if (cursors[socket.id]) {
       cursors[socket.id].stillTime = 0;
       lastMoveTimestamps[socket.id] = Date.now();
+      // Update user activity on interaction
+      updateUserActivity(socket.id, cursors[socket.id].name);
       io.emit('cursors', getValidCursors());
     }
   });
@@ -114,14 +235,26 @@ io.on('connection', (socket) => {
   });
 
   socket.on('spawnFurniture', (data) => {
-    console.log('User', socket.id, 'spawning furniture:', data.type);
+    console.log('User', socket.id, 'spawning furniture:', data.type, 'at:', data.x, data.y);
     const furnitureId = `${socket.id}-${Date.now()}`;
-    // Create furniture without position - client will set it
+    const now = Date.now();
+    
+    // Create furniture with timestamp for persistence and z-index
     furniture[furnitureId] = {
       id: furnitureId,
       type: data.type,
-      isFlipped: false // Initialize isFlipped state
+      x: data.x || 0,
+      y: data.y || 0,
+      isFlipped: false,
+      timestamp: now,
+      ownerId: socket.id,
+      ownerName: cursors[socket.id]?.name || 'Anonymous',
+      zIndex: getNextZIndex() // Assign z-index from server
     };
+    
+    // Save to persistent storage
+    savePersistentData();
+    
     // Broadcast to all clients including sender
     io.emit('furnitureSpawned', furniture[furnitureId]);
   });
@@ -134,6 +267,13 @@ io.on('connection', (socket) => {
       if (typeof isFlipped === 'boolean') {
         furniture[furnitureId].isFlipped = isFlipped;
       }
+      
+      // Update timestamp when furniture is moved
+      furniture[furnitureId].timestamp = Date.now();
+      
+      // Save to persistent storage
+      savePersistentData();
+      
       // Broadcast to ALL clients including sender
       io.emit('furnitureMoved', { 
         id: furnitureId, 
@@ -144,9 +284,124 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('flipFurniture', (data) => {
+    const { furnitureId } = data;
+    if (furniture[furnitureId]) {
+      // Toggle the flipped state
+      furniture[furnitureId].isFlipped = !furniture[furnitureId].isFlipped;
+      
+      // Update timestamp when furniture is flipped
+      furniture[furnitureId].timestamp = Date.now();
+      
+      // Save to persistent storage
+      savePersistentData();
+      
+      // Broadcast to ALL clients including sender
+      io.emit('furnitureFlipped', { 
+        id: furnitureId, 
+        isFlipped: furniture[furnitureId].isFlipped 
+      });
+    }
+  });
+
+  socket.on('updateFurnitureZIndex', (data) => {
+    const { furnitureId, zIndex } = data;
+    if (furniture[furnitureId]) {
+      furniture[furnitureId].zIndex = zIndex;
+      
+      // Update timestamp when furniture z-index is changed
+      furniture[furnitureId].timestamp = Date.now();
+      
+      // Save to persistent storage
+      savePersistentData();
+      
+      // Broadcast to ALL clients including sender
+      io.emit('furnitureZIndexChanged', { 
+        id: furnitureId, 
+        zIndex: furniture[furnitureId].zIndex 
+      });
+    }
+  });
+
+  socket.on('moveFurnitureUp', (data) => {
+    const { furnitureId } = data;
+    if (furniture[furnitureId]) {
+      // Find the furniture with the next higher z-index
+      const currentZIndex = furniture[furnitureId].zIndex || 100;
+      let targetFurniture = null;
+      let minHigherZIndex = Infinity;
+      
+      Object.values(furniture).forEach(item => {
+        if (item.zIndex > currentZIndex && item.zIndex < minHigherZIndex) {
+          minHigherZIndex = item.zIndex;
+          targetFurniture = item;
+        }
+      });
+      
+      if (targetFurniture) {
+        // Swap z-indices
+        const tempZIndex = furniture[furnitureId].zIndex;
+        furniture[furnitureId].zIndex = targetFurniture.zIndex;
+        targetFurniture.zIndex = tempZIndex;
+        
+        // Update timestamps
+        furniture[furnitureId].timestamp = Date.now();
+        targetFurniture.timestamp = Date.now();
+        
+        // Save to persistent storage
+        savePersistentData();
+        
+        // Broadcast to ALL clients
+        io.emit('furnitureZIndexChanged', [
+          { id: furnitureId, zIndex: furniture[furnitureId].zIndex },
+          { id: targetFurniture.id, zIndex: targetFurniture.zIndex }
+        ]);
+      }
+    }
+  });
+
+  socket.on('moveFurnitureDown', (data) => {
+    const { furnitureId } = data;
+    if (furniture[furnitureId]) {
+      // Find the furniture with the next lower z-index
+      const currentZIndex = furniture[furnitureId].zIndex || 100;
+      let targetFurniture = null;
+      let maxLowerZIndex = -Infinity;
+      
+      Object.values(furniture).forEach(item => {
+        if (item.zIndex < currentZIndex && item.zIndex > maxLowerZIndex) {
+          maxLowerZIndex = item.zIndex;
+          targetFurniture = item;
+        }
+      });
+      
+      if (targetFurniture) {
+        // Swap z-indices
+        const tempZIndex = furniture[furnitureId].zIndex;
+        furniture[furnitureId].zIndex = targetFurniture.zIndex;
+        targetFurniture.zIndex = tempZIndex;
+        
+        // Update timestamps
+        furniture[furnitureId].timestamp = Date.now();
+        targetFurniture.timestamp = Date.now();
+        
+        // Save to persistent storage
+        savePersistentData();
+        
+        // Broadcast to ALL clients
+        io.emit('furnitureZIndexChanged', [
+          { id: furnitureId, zIndex: furniture[furnitureId].zIndex },
+          { id: targetFurniture.id, zIndex: targetFurniture.zIndex }
+        ]);
+      }
+    }
+  });
+
   socket.on('deleteFurniture', (furnitureId) => {
     if (furniture[furnitureId]) {
       delete furniture[furnitureId];
+      // Save to persistent storage
+      savePersistentData();
       io.emit('furnitureDeleted', { id: furnitureId });
     }
   });
@@ -193,13 +448,9 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    // Remove all furniture owned by this user
-    Object.keys(furniture).forEach(furnitureId => {
-      if (furnitureId.startsWith(socket.id)) {
-        delete furniture[furnitureId];
-        io.emit('furnitureDeleted', { id: furnitureId });
-      }
-    });
+    // Update user activity on disconnect (don't delete furniture immediately)
+    updateUserActivity(socket.id, cursors[socket.id]?.name || 'Anonymous');
+    
     console.log('User disconnected:', socket.id);
     delete cursors[socket.id];
     delete lastMoveTimestamps[socket.id];
