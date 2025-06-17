@@ -151,10 +151,6 @@
   content: url('./UI/whitecatbuttonhover.png');
 }
 
-.button[src*="deletefurniturebutton.png"]:hover {
-  content: url('./UI/furniturehoverbutton.png');
-}
-
 /* Custom cursor classes */
 .cursor-bunny {
   background-image: url('./UI/bunny.png') !important;

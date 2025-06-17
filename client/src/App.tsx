@@ -2,6 +2,18 @@ import React, { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import './App.css';
 import Panel from './Panel';
+import { 
+  CANVAS_SIZE, 
+  Z_INDEX_LAYERS, 
+  HEART_DURATION, 
+  CIRCLE_DURATION, 
+  THUMBSUP_DURATION,
+  FURNITURE_IMAGES,
+  FURNITURE_DIMENSIONS,
+  BUTTON_DIMENSIONS,
+  UI_IMAGES,
+  GITHUB_URL
+} from './constants';
 
 interface CursorData {
   x: number;
@@ -68,39 +80,12 @@ interface PanelProps {
   style?: React.CSSProperties;
 }
 
-// Canvas configuration
-const CANVAS_SIZE = 4000;
-
-const FURNITURE_IMAGES: { [key: string]: string } = {
-  chair: './UI/chair.png',
-  lamp: './UI/lamp.png',
-  bed: './UI/bed.png',
-  walls: './UI/walls1.png',
-  plant1: './UI/plant1.png',
-  plant2: './UI/plant2.png',
-  blackcat: './UI/blackcat.png',
-  whitecat: './UI/whitecat.png'
-};
-
-const FURNITURE_DIMENSIONS: { [key: string]: { width: number; height: number } } = {
-  'bed': { width: 120, height: 80 },
-  'chair': { width: 60, height: 60 },
-  'lamp': { width: 40, height: 80 },
-  'plant1': { width: 50, height: 70 },
-  'plant2': { width: 50, height: 70 },
-  'blackcat': { width: 60, height: 40 },
-  'whitecat': { width: 60, height: 40 },
-  'walls1': { width: 120, height: 120 },
-  'walls2': { width: 120, height: 120 }
-};
-
 function App() {
   const [cursors, setCursors] = useState<CursorsMap>({});
   const [hearts, setHearts] = useState<Heart[]>([]);
   const [circles, setCircles] = useState<Circle[]>([]);
   const [emojis, setEmojis] = useState<Emoji[]>([]);
   const [furniture, setFurniture] = useState<{ [key: string]: Furniture }>({});
-  const [isDeleteMode, setIsDeleteMode] = useState(false);
   const socketRef = useRef<Socket | null>(null);
   const heartCounterRef = useRef(0);
   const circleCounterRef = useRef(0);
@@ -113,7 +98,6 @@ function App() {
   const [hasConnected, setHasConnected] = useState(false);
   const clickEnabledTimeRef = useRef<number | null>(null);
   const [cursorType, setCursorType] = useState<string>('default');
-  const [isDeleteButtonHovered, setIsDeleteButtonHovered] = useState(false);
   const [selectedFurnitureId, setSelectedFurnitureId] = useState<string | null>(null);
   const furnitureRefs = useRef<{ [key: string]: HTMLImageElement | null }>({});
   const [isCursorFrozen, setIsCursorFrozen] = useState(false);
@@ -137,20 +121,6 @@ function App() {
     lastY: 0,
     lastEvent: null as MouseEvent | null,
   });
-
-  const HEART_DURATION = 800;
-  const CIRCLE_DURATION = 600;
-  const THUMBSUP_DURATION = 1000;
-
-  // Add constants for z-index layers
-  const Z_INDEX_LAYERS = {
-    CURSORS: 9997,
-    PANEL: 9996,
-    LOGO: 9995,
-    FURNITURE: 100, // Base z-index for furniture
-    MIN_FURNITURE: 100, // Minimum z-index for furniture
-    MAX_FURNITURE: 9994  // Maximum z-index for furniture (below cursors and panel)
-  };
 
   // Helper function to convert screen coordinates to canvas coordinates
   const screenToCanvas = (screenX: number, screenY: number) => {
@@ -326,12 +296,14 @@ function App() {
     });
 
     socket.on('furnitureDeleted', (data: any) => {
-      if (data && data.furnitureId) {
+      if (data && data.id) {
         setFurniture(prev => {
           const newFurniture = { ...prev };
-          delete newFurniture[data.furnitureId];
+          delete newFurniture[data.id];
           return newFurniture;
         });
+        // Clear selection if the deleted furniture was selected
+        setSelectedFurnitureId(prev => prev === data.id ? null : prev);
       }
     });
 
@@ -539,20 +511,8 @@ function App() {
         }
         // Update drag start for next frame
         dragStart.current = { x: mouseStateRef.current.lastX, y: mouseStateRef.current.lastY };
-        
-        // Check if dragging over trash can button
-        const trashButton = document.querySelector('img[alt="Delete Furniture"]');
-        if (trashButton) {
-          const trashRect = trashButton.getBoundingClientRect();
-          const mouseX = mouseStateRef.current.lastX;
-          const mouseY = mouseStateRef.current.lastY;
-          
-          const isOverTrash = mouseX >= trashRect.left && mouseX <= trashRect.right &&
-                             mouseY >= trashRect.top && mouseY <= trashRect.bottom;
-          
-          setIsDeleteButtonHovered(isOverTrash);
-        }
       }
+
       if (mouseStateRef.current.isDraggingViewport && viewportDrag.current && mouseStateRef.current.lastEvent) {
         const dx = mouseStateRef.current.lastX - viewportDrag.current.x;
         const dy = mouseStateRef.current.lastY - viewportDrag.current.y;
@@ -568,6 +528,7 @@ function App() {
         });
         viewportDrag.current = { x: mouseStateRef.current.lastX, y: mouseStateRef.current.lastY };
       }
+
       // Always update cursor position for server (but not during viewport dragging)
       if (socketRef.current?.connected && !isCursorFrozen && hasConnected && mouseStateRef.current.lastEvent && !mouseStateRef.current.isDraggingViewport) {
         const canvasCoords = screenToCanvas(mouseStateRef.current.lastX, mouseStateRef.current.lastY);
@@ -578,22 +539,17 @@ function App() {
           name: usernameRef.current.trim(),
         });
       }
+
       lastFrame = requestAnimationFrame(animationLoop);
-    }
+    };
 
     // Mouse event handlers
     function onMouseMove(e: MouseEvent) {
       mouseStateRef.current.lastX = e.clientX;
       mouseStateRef.current.lastY = e.clientY;
       mouseStateRef.current.lastEvent = e;
-      
-      // Check if furniture is being dragged over the trash can button
-      if (mouseStateRef.current.isDraggingFurniture) {
-        const target = e.target as HTMLElement;
-        const trashButton = target.closest('img[alt="Delete Furniture"]');
-        setIsDeleteButtonHovered(!!trashButton);
-      }
     }
+
     function onMouseDown(e: MouseEvent) {
       const target = e.target as HTMLElement;
       
@@ -614,19 +570,6 @@ function App() {
               x: e.clientX,
               y: e.clientY
             });
-          }
-          
-          // Handle delete mode
-          if (isDeleteMode) {
-            if (socketRef.current) {
-              socketRef.current.emit('deleteFurniture', furnitureId);
-              setFurniture(prev => {
-                const newFurniture = { ...prev };
-                delete newFurniture[furnitureId];
-                return newFurniture;
-              });
-            }
-            return;
           }
           
           // Always start dragging when clicking on furniture
@@ -660,35 +603,19 @@ function App() {
         viewportDrag.current = { x: e.clientX, y: e.clientY };
       }
     }
+
     function onMouseUp(e: MouseEvent) {
       if (mouseStateRef.current.isDraggingViewport) {
         mouseStateRef.current.isDraggingViewport = false;
         viewportDrag.current = null;
       }
       if (mouseStateRef.current.isDraggingFurniture) {
-        // Check if furniture was dropped over the trash can button
-        const target = e.target as HTMLElement;
-        const trashButton = target.closest('img[alt="Delete Furniture"]');
-        
-        if (trashButton && draggedFurnitureId.current) {
-          // Delete the furniture if dropped over the trash can button
-          if (socketRef.current) {
-            socketRef.current.emit('deleteFurniture', draggedFurnitureId.current);
-            setFurniture(prev => {
-              const newFurniture = { ...prev };
-              delete newFurniture[draggedFurnitureId.current!];
-              return newFurniture;
-            });
-          }
-        }
-        
         mouseStateRef.current.isDraggingFurniture = false;
         draggedFurnitureId.current = null;
         dragStart.current = null;
-        setIsDeleteButtonHovered(false);
-        // Update React state for furniture position here if needed
       }
     }
+
     function onClick(e: MouseEvent) {
       const now = Date.now();
       
@@ -724,94 +651,11 @@ function App() {
         id: circleId,
       });
     }
-    function onDblClick(e: MouseEvent) {
-      const now = Date.now();
-      
-      // Check if double-clicking on furniture
-      const target = e.target as HTMLElement;
-      const furnitureElement = target.closest('[data-furniture-id]');
-      if (furnitureElement) {
-        const furnitureId = furnitureElement.getAttribute('data-furniture-id');
-        if (furnitureId) {
-          e.preventDefault();
-          e.stopPropagation();
-          
-          const item = furniture[furnitureId];
-          if (item && (item.type === 'bed' || item.type === 'chair')) {
-            // Clear selection state when double-clicking bed or chair
-            setSelectedFurnitureId(null);
-            
-            // Convert screen coordinates to canvas coordinates
-            const canvasCoords = screenToCanvas(e.clientX, e.clientY);
-            
-            if (!isCursorFrozen) {
-              // When freezing, store the current cursor position in canvas coordinates
-              const frozenPos = { x: canvasCoords.x, y: canvasCoords.y };
-              setFrozenCursorPosition(frozenPos);
-              if (socketRef.current) {
-                socketRef.current.emit('cursorFreeze', { 
-                  isFrozen: true,
-                  x: frozenPos.x,
-                  y: frozenPos.y,
-                  sleepingOnBed: item.type === 'bed'
-                });
-              }
-            } else {
-              // When unfreezing via double-click on furniture, clear the frozen position
-              setFrozenCursorPosition(null);
-              if (socketRef.current) {
-                socketRef.current.emit('cursorFreeze', { 
-                  isFrozen: false,
-                  x: canvasCoords.x,
-                  y: canvasCoords.y,
-                  sleepingOnBed: false
-                });
-              }
-            }
-            setIsCursorFrozen(!isCursorFrozen);
-            return;
-          }
-        }
-      }
-      
-      // Check if double-clicking on UI elements (buttons, controls, etc.)
-      const isUIElement = target.closest('button') || 
-                         target.closest('input') || 
-                         target.closest('img[alt]') || 
-                         target.closest('.furniture-control-button') ||
-                         target.closest('[data-furniture-control]') ||
-                         target.closest('#logo-container') ||
-                         target.closest('#modal-overlay') ||
-                         target.closest('.form-container');
-      
-      if (isUIElement) {
-        e.preventDefault();
-        e.stopPropagation();
-        return;
-      }
-      
-      // Handle regular double-click for hearts
-      if (!socketRef.current?.connected || !hasConnected) return;
-
-      socketRef.current.emit('resetStillTime');
-
-      // Convert screen coordinates to canvas coordinates
-      const canvasCoords = screenToCanvas(e.clientX, e.clientY);
-      const clampedCoords = clampToCanvas(canvasCoords.x, canvasCoords.y);
-
-      const heartId = `${socketRef.current.id}-${now}-${++heartCounterRef.current}`;
-      socketRef.current.emit('spawnHeart', {
-        x: clampedCoords.x,
-        y: clampedCoords.y,
-        id: heartId,
-      });
-    }
 
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mousedown', onMouseDown);
     window.addEventListener('mouseup', onMouseUp);
     window.addEventListener('click', onClick);
-    window.addEventListener('dblclick', onDblClick);
     lastFrame = requestAnimationFrame(animationLoop);
 
     return () => {
@@ -819,10 +663,9 @@ function App() {
       window.removeEventListener('mousedown', onMouseDown);
       window.removeEventListener('mouseup', onMouseUp);
       window.removeEventListener('click', onClick);
-      window.removeEventListener('dblclick', onDblClick);
       cancelAnimationFrame(lastFrame);
     };
-  }, [furniture, isDeleteButtonHovered, isDraggingViewport, hasConnected, isCursorFrozen, viewportOffset]);
+  }, [furniture, isDraggingViewport, hasConnected, isCursorFrozen, viewportOffset]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -884,35 +727,6 @@ function App() {
     return highestAFK;
   };
 
-  const handleFurnitureMouseDown = (e: React.MouseEvent, furnitureId: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    if (isDeleteMode) {
-      if (socketRef.current) {
-        socketRef.current.emit('deleteFurniture', furnitureId);
-        setFurniture(prev => {
-          const newFurniture = { ...prev };
-          delete newFurniture[furnitureId];
-          return newFurniture;
-        });
-      }
-      return;
-    }
-
-    // Convert screen coordinates to canvas coordinates for drag start
-    const canvasCoords = screenToCanvas(e.clientX, e.clientY);
-    dragStartPos.current = { x: e.clientX, y: e.clientY };
-    draggedFurnitureId.current = furnitureId;
-    setSelectedFurnitureId(furnitureId);
-    
-    // Set the mouse state for the optimized system
-    mouseStateRef.current.isDraggingFurniture = true;
-    mouseStateRef.current.lastX = e.clientX;
-    mouseStateRef.current.lastY = e.clientY;
-    mouseStateRef.current.lastEvent = e.nativeEvent;
-  };
-
   const handleMoveUp = (furnitureId: string) => {
     if (socketRef.current) {
       socketRef.current.emit('moveFurnitureUp', { furnitureId });
@@ -922,78 +736,6 @@ function App() {
   const handleMoveDown = (furnitureId: string) => {
     if (socketRef.current) {
       socketRef.current.emit('moveFurnitureDown', { furnitureId });
-    }
-  };
-
-  // Add function to get container position
-  const getContainerPosition = (item: Furniture) => {
-    // Use estimated dimensions based on furniture type instead of getBoundingClientRect
-    // This ensures control buttons stay positioned relative to canvas coordinates
-    const FURNITURE_DIMENSIONS: { [key: string]: { width: number; height: number } } = {
-      'bed': { width: 120, height: 80 },
-      'chair': { width: 60, height: 60 },
-      'lamp': { width: 40, height: 80 },
-      'plant1': { width: 50, height: 70 },
-      'plant2': { width: 50, height: 70 },
-      'sprout': { width: 40, height: 60 },
-      'slime': { width: 60, height: 40 },
-      'bunny': { width: 50, height: 50 },
-      'blackcat': { width: 60, height: 40 },
-      'whitecat': { width: 60, height: 40 },
-      'astronaut': { width: 50, height: 60 },
-      'beanie': { width: 50, height: 50 },
-      'cap': { width: 50, height: 50 },
-      'cathat': { width: 50, height: 50 },
-      'headphones': { width: 50, height: 50 },
-      'walls1': { width: 100, height: 60 },
-      'walls2': { width: 100, height: 60 }
-    };
-
-    const dimensions = FURNITURE_DIMENSIONS[item.type] || { width: 50, height: 50 };
-    const halfWidth = dimensions.width / 2;
-    const halfHeight = dimensions.height / 2;
-
-    return {
-      // For the right button: item's right edge (x + halfWidth) + 4px
-      right: item.x + halfWidth + 4,
-      // For the top button: item's top edge (y - halfHeight) - 4px
-      top: item.y - halfHeight - 4,
-      // For the bottom button: item's bottom edge (y + halfHeight) + 4px
-      bottom: item.y + halfHeight + 4
-    };
-  };
-
-  const handleMoveLeft = (furnitureId: string) => {
-    if (socketRef.current) {
-      const item = furniture[furnitureId];
-      if (item) {
-        const newFlipped = !item.isFlipped;
-        
-        // Emit to server
-        socketRef.current.emit('updateFurniturePosition', {
-          furnitureId,
-          x: item.x,
-          y: item.y,
-          isFlipped: newFlipped
-        });
-      }
-    }
-  };
-
-  const handleMoveRight = (furnitureId: string) => {
-    if (socketRef.current) {
-      const item = furniture[furnitureId];
-      if (item) {
-        const newFlipped = !item.isFlipped;
-        
-        // Emit to server
-        socketRef.current.emit('updateFurniturePosition', {
-          furnitureId,
-          x: item.x,
-          y: item.y,
-          isFlipped: newFlipped
-        });
-      }
     }
   };
 
@@ -1036,6 +778,81 @@ function App() {
       setIsCursorFrozen(!isCursorFrozen);
     }
   };
+
+  useEffect(() => {
+    // Double-click handler
+    const onDblClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      // Check if double-clicking on furniture
+      const furnitureElement = target.closest('[data-furniture-id]');
+      if (furnitureElement) {
+        const furnitureId = furnitureElement.getAttribute('data-furniture-id');
+        if (furnitureId) {
+          e.preventDefault();
+          e.stopPropagation();
+          const item = furniture[furnitureId];
+          if (item && (item.type === 'bed' || item.type === 'chair')) {
+            setSelectedFurnitureId(null);
+            // Convert screen coordinates to canvas coordinates
+            const canvasCoords = screenToCanvas(e.clientX, e.clientY);
+            if (!isCursorFrozen) {
+              const frozenPos = { x: canvasCoords.x, y: canvasCoords.y };
+              setFrozenCursorPosition(frozenPos);
+              if (socketRef.current) {
+                socketRef.current.emit('cursorFreeze', { 
+                  isFrozen: true,
+                  x: frozenPos.x,
+                  y: frozenPos.y,
+                  sleepingOnBed: item.type === 'bed'
+                });
+              }
+            } else {
+              setFrozenCursorPosition(null);
+              if (socketRef.current) {
+                socketRef.current.emit('cursorFreeze', { 
+                  isFrozen: false,
+                  x: canvasCoords.x,
+                  y: canvasCoords.y,
+                  sleepingOnBed: false
+                });
+              }
+            }
+            setIsCursorFrozen(!isCursorFrozen);
+            return;
+          }
+        }
+      }
+      // Check if double-clicking on UI elements (buttons, controls, etc.)
+      const isUIElement = target.closest('button') || 
+                         target.closest('input') || 
+                         target.closest('img[alt]') || 
+                         target.closest('.furniture-control-button') ||
+                         target.closest('[data-furniture-control]') ||
+                         target.closest('#logo-container') ||
+                         target.closest('#modal-overlay') ||
+                         target.closest('.form-container');
+      if (isUIElement) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+      // Handle regular double-click for hearts
+      if (!socketRef.current?.connected || !hasConnected) return;
+      socketRef.current.emit('resetStillTime');
+      const canvasCoords = screenToCanvas(e.clientX, e.clientY);
+      const clampedCoords = clampToCanvas(canvasCoords.x, canvasCoords.y);
+      const heartId = `${socketRef.current.id}-${Date.now()}-${++heartCounterRef.current}`;
+      socketRef.current.emit('spawnHeart', {
+        x: clampedCoords.x,
+        y: clampedCoords.y,
+        id: heartId,
+      });
+    };
+    window.addEventListener('dblclick', onDblClick);
+    return () => {
+      window.removeEventListener('dblclick', onDblClick);
+    };
+  }, [furniture, isCursorFrozen, hasConnected, viewportOffset]);
 
   return (
     <div 
@@ -1101,7 +918,7 @@ function App() {
           return (
             <img
               key={heart.id}
-              src="./UI/smile.gif"
+              src={UI_IMAGES.SMILE_GIF}
               alt="Heart"
               style={{
                 position: 'absolute',
@@ -1187,12 +1004,12 @@ function App() {
             />
             {selectedFurnitureId === item.id && (
               <>
-                {/* Top button - positioned directly above */}
+                {/* Left button - positioned directly to the left */}
                 <div
                   style={{
                     position: 'absolute',
-                    left: item.x - 24, // Half of button width (48/2)
-                    top: item.y - (FURNITURE_DIMENSIONS[item.type]?.height || 50)/2 - 48, // Button height
+                    left: item.x - (FURNITURE_DIMENSIONS[item.type]?.width || 50)/2 - BUTTON_DIMENSIONS.CONTROL_BUTTON_SIZE,
+                    top: item.y - BUTTON_DIMENSIONS.CONTROL_BUTTON_SIZE/2,
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '0',
@@ -1203,8 +1020,50 @@ function App() {
                   <div 
                     style={{ 
                       position: 'relative', 
-                      width: '48px', 
-                      height: '48px', 
+                      width: `${BUTTON_DIMENSIONS.CONTROL_BUTTON_SIZE}px`, 
+                      height: `${BUTTON_DIMENSIONS.CONTROL_BUTTON_SIZE}px`, 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center',
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => {
+                      if (socketRef.current) {
+                        socketRef.current.emit('deleteFurniture', item.id);
+                        // Clear selection when deleting
+                        setSelectedFurnitureId(null);
+                      }
+                    }}
+                    className="furniture-control-button"
+                    data-furniture-control="true"
+                  >
+                    <img
+                      src={UI_IMAGES.DELETE_FURNITURE_BUTTON}
+                      alt="Delete Furniture"
+                      onMouseOver={(e) => e.currentTarget.src = UI_IMAGES.DELETE_FURNITURE_BUTTON_HOVER}
+                      onMouseOut={(e) => e.currentTarget.src = UI_IMAGES.DELETE_FURNITURE_BUTTON}
+                      style={{ position: 'absolute' }}
+                    />
+                  </div>
+                </div>
+                {/* Top button - positioned directly above */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: item.x - BUTTON_DIMENSIONS.CONTROL_BUTTON_SIZE/2,
+                    top: item.y - (FURNITURE_DIMENSIONS[item.type]?.height || 50)/2 - BUTTON_DIMENSIONS.CONTROL_BUTTON_SIZE,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0',
+                    zIndex: 9996,
+                    pointerEvents: 'all',
+                  }}
+                >
+                  <div 
+                    style={{ 
+                      position: 'relative', 
+                      width: `${BUTTON_DIMENSIONS.CONTROL_BUTTON_SIZE}px`, 
+                      height: `${BUTTON_DIMENSIONS.CONTROL_BUTTON_SIZE}px`, 
                       display: 'flex', 
                       alignItems: 'center', 
                       justifyContent: 'center',
@@ -1215,10 +1074,10 @@ function App() {
                     data-furniture-control="true"
                   >
                     <img
-                      src="./UI/up.png"
+                      src={UI_IMAGES.UP_BUTTON}
                       alt="Move Up"
-                      onMouseOver={(e) => e.currentTarget.src = './UI/uphover.png'}
-                      onMouseOut={(e) => e.currentTarget.src = './UI/up.png'}
+                      onMouseOver={(e) => e.currentTarget.src = UI_IMAGES.UP_BUTTON_HOVER}
+                      onMouseOut={(e) => e.currentTarget.src = UI_IMAGES.UP_BUTTON}
                       style={{ position: 'absolute' }}
                     />
                   </div>
@@ -1227,8 +1086,8 @@ function App() {
                 <div
                   style={{
                     position: 'absolute',
-                    left: item.x - 24, // Half of button width (48/2)
-                    top: item.y + (FURNITURE_DIMENSIONS[item.type]?.height || 50)/2, // No gap
+                    left: item.x - BUTTON_DIMENSIONS.CONTROL_BUTTON_SIZE/2,
+                    top: item.y + (FURNITURE_DIMENSIONS[item.type]?.height || 50)/2,
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '0',
@@ -1239,8 +1098,8 @@ function App() {
                   <div 
                     style={{ 
                       position: 'relative', 
-                      width: '48px', 
-                      height: '48px', 
+                      width: `${BUTTON_DIMENSIONS.CONTROL_BUTTON_SIZE}px`, 
+                      height: `${BUTTON_DIMENSIONS.CONTROL_BUTTON_SIZE}px`, 
                       display: 'flex', 
                       alignItems: 'center', 
                       justifyContent: 'center',
@@ -1251,10 +1110,10 @@ function App() {
                     data-furniture-control="true"
                   >
                     <img
-                      src="./UI/down.png"
+                      src={UI_IMAGES.DOWN_BUTTON}
                       alt="Move Down"
-                      onMouseOver={(e) => e.currentTarget.src = './UI/downhover.png'}
-                      onMouseOut={(e) => e.currentTarget.src = './UI/down.png'}
+                      onMouseOver={(e) => e.currentTarget.src = UI_IMAGES.DOWN_BUTTON_HOVER}
+                      onMouseOut={(e) => e.currentTarget.src = UI_IMAGES.DOWN_BUTTON}
                       style={{ position: 'absolute' }}
                     />
                   </div>
@@ -1263,8 +1122,8 @@ function App() {
                 <div
                   style={{
                     position: 'absolute',
-                    left: item.x + (FURNITURE_DIMENSIONS[item.type]?.width || 50)/2, // No gap
-                    top: item.y - 24, // Half of button height (48/2)
+                    left: item.x + (FURNITURE_DIMENSIONS[item.type]?.width || 50)/2,
+                    top: item.y - BUTTON_DIMENSIONS.CONTROL_BUTTON_SIZE/2,
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '0',
@@ -1275,8 +1134,8 @@ function App() {
                   <div 
                     style={{ 
                       position: 'relative', 
-                      width: '48px', 
-                      height: '48px', 
+                      width: `${BUTTON_DIMENSIONS.CONTROL_BUTTON_SIZE}px`, 
+                      height: `${BUTTON_DIMENSIONS.CONTROL_BUTTON_SIZE}px`, 
                       display: 'flex', 
                       alignItems: 'center', 
                       justifyContent: 'center',
@@ -1291,10 +1150,10 @@ function App() {
                     data-furniture-control="true"
                   >
                     <img
-                      src="./UI/flip.png"
+                      src={UI_IMAGES.FLIP_BUTTON}
                       alt="Flip"
-                      onMouseOver={(e) => e.currentTarget.src = './UI/fliphover.png'}
-                      onMouseOut={(e) => e.currentTarget.src = './UI/flip.png'}
+                      onMouseOver={(e) => e.currentTarget.src = UI_IMAGES.FLIP_BUTTON_HOVER}
+                      onMouseOut={(e) => e.currentTarget.src = UI_IMAGES.FLIP_BUTTON}
                       style={{ position: 'absolute' }}
                     />
                   </div>
@@ -1364,27 +1223,24 @@ function App() {
       <Panel 
         socket={socketRef.current} 
         onCursorChange={handleCursorChange} 
-        isDeleteMode={isDeleteMode}
-        onDeleteModeChange={setIsDeleteMode}
-        isDeleteButtonHovered={isDeleteButtonHovered}
-        cursorPosition={socketRef.current?.id ? cursors[socketRef.current.id] : undefined}
+        cursorPosition={cursors[socketRef.current?.id || '']}
         viewportOffset={viewportOffset}
         style={{ zIndex: Z_INDEX_LAYERS.PANEL }}
       />
       <div id="logo-container" style={{ zIndex: Z_INDEX_LAYERS.LOGO }}>
         <div className="logo-row">
-        <img src="./UI/logo.png" alt="Logo" id="logo" />
+        <img src={UI_IMAGES.LOGO} alt="Logo" id="logo" />
           <a 
-            href="https://github.com/danafk/iamafk" 
+            href={GITHUB_URL} 
             target="_blank" 
             rel="noopener noreferrer"
             style={{ pointerEvents: 'all' }}
           >
-            <img src="./UI/github.png" alt="GitHub" id="github-logo" />
+            <img src={UI_IMAGES.GITHUB_LOGO} alt="GitHub" id="github-logo" />
           </a>
         </div>
         <div style={{ position: 'relative', margin: 0, padding: 0 }}>
-          <img src="./UI/leaderboard.png" alt="Leaderboard" id="leaderboard" />
+          <img src={UI_IMAGES.LEADERBOARD} alt="Leaderboard" id="leaderboard" />
           <div style={{ 
             position: 'absolute', 
             top: 'calc(50% + 12px)', 

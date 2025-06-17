@@ -1,19 +1,17 @@
 import React from 'react';
-import { io, Socket } from 'socket.io-client';
+import { Socket } from 'socket.io-client';
+import { UI_IMAGES } from './constants';
 import './Panel.css';
 
 interface PanelProps {
   socket: Socket | null;
   onCursorChange: (cursor: { type: string }) => void;
-  isDeleteMode: boolean;
-  onDeleteModeChange: (isDeleteMode: boolean) => void;
-  isDeleteButtonHovered: boolean;
   cursorPosition?: { x: number; y: number; name?: string; stillTime: number; cursorType?: string; isFrozen?: boolean; frozenPosition?: { x: number; y: number }; sleepingOnBed?: boolean };
   viewportOffset?: { x: number; y: number };
   style?: React.CSSProperties;
 }
 
-const Panel: React.FC<PanelProps> = ({ socket, onCursorChange, isDeleteMode, onDeleteModeChange, isDeleteButtonHovered, cursorPosition, viewportOffset, style }) => {
+const Panel: React.FC<PanelProps> = ({ socket, onCursorChange, cursorPosition, viewportOffset, style }) => {
   const handleHatClick = (hatType: string) => {
     if (socket) {
       socket.emit('changeCursor', { type: hatType });
@@ -38,10 +36,6 @@ const Panel: React.FC<PanelProps> = ({ socket, onCursorChange, isDeleteMode, onD
         y: canvasY
       });
     }
-  };
-
-  const handleDeleteClick = () => {
-    onDeleteModeChange(!isDeleteMode);
   };
 
   return (
@@ -232,37 +226,6 @@ const Panel: React.FC<PanelProps> = ({ socket, onCursorChange, isDeleteMode, onD
                 onMouseLeave={(e) => {
                   e.currentTarget.src = './UI/whitecatbutton.png';
                 }}
-              />
-              <img
-                src={
-                  isDeleteButtonHovered 
-                    ? "./UI/furnitureselectedbutton.png"
-                    : isDeleteMode 
-                      ? "./UI/furnitureselectedbutton.png" 
-                      : "./UI/deletefurniturebutton.png"
-                }
-                alt="Delete Furniture"
-                className="button"
-                onClick={(e) => {
-                  // Prevent click if furniture is being dragged over this button
-                  if (isDeleteButtonHovered) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    return;
-                  }
-                  onDeleteModeChange(!isDeleteMode);
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.src = './UI/furnitureselectedbutton.png';
-                }}
-                onMouseLeave={(e) => {
-                  if (isDeleteMode) {
-                    e.currentTarget.src = './UI/furnitureselectedbutton.png';
-                  } else {
-                    e.currentTarget.src = './UI/deletefurniturebutton.png';
-                  }
-                }}
-                style={{ cursor: 'pointer' }}
               />
             </div>
           </div>
