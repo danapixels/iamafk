@@ -12,7 +12,10 @@ import {
   FURNITURE_DIMENSIONS,
   BUTTON_DIMENSIONS,
   UI_IMAGES,
-  GITHUB_URL
+  GITHUB_URL,
+  ANIMATION_CONSTANTS,
+  SERVER_CONFIG,
+  UI_STATE
 } from './constants';
 
 interface CursorData {
@@ -87,9 +90,9 @@ function App() {
   const [emojis, setEmojis] = useState<Emoji[]>([]);
   const [furniture, setFurniture] = useState<{ [key: string]: Furniture }>({});
   const socketRef = useRef<Socket | null>(null);
-  const heartCounterRef = useRef(0);
-  const circleCounterRef = useRef(0);
-  const emojiCounterRef = useRef(0);
+  const heartCounterRef = useRef(UI_STATE.INITIAL_COUNTERS);
+  const circleCounterRef = useRef(UI_STATE.INITIAL_COUNTERS);
+  const emojiCounterRef = useRef(UI_STATE.INITIAL_COUNTERS);
   const dragStartPos = useRef<{ x: number; y: number } | null>(null);
   const draggedFurnitureId = useRef<string | null>(null);
 
@@ -97,20 +100,20 @@ function App() {
   const usernameRef = useRef(username);
   const [hasConnected, setHasConnected] = useState(false);
   const clickEnabledTimeRef = useRef<number | null>(null);
-  const [cursorType, setCursorType] = useState<string>('default');
+  const [cursorType, setCursorType] = useState<string>(SERVER_CONFIG.DEFAULT_CURSOR_TYPE);
   const [selectedFurnitureId, setSelectedFurnitureId] = useState<string | null>(null);
   const furnitureRefs = useRef<{ [key: string]: HTMLImageElement | null }>({});
   const [isCursorFrozen, setIsCursorFrozen] = useState(false);
   const [frozenCursorPosition, setFrozenCursorPosition] = useState<{ x: number; y: number } | null>(null);
 
   // Canvas viewport state
-  const [viewportOffset, setViewportOffset] = useState({ x: 0, y: 0 });
+  const [viewportOffset, setViewportOffset] = useState(UI_STATE.INITIAL_VIEWPORT_OFFSET);
   const [isDraggingViewport, setIsDraggingViewport] = useState(false);
   const viewportDragStart = useRef<{ x: number; y: number } | null>(null);
 
   // Performance optimization refs
   const animationFrameRef = useRef<number | null>(null);
-  const lastMousePosition = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const lastMousePosition = useRef<{ x: number; y: number }>(UI_STATE.INITIAL_MOUSE_POSITION);
   const isMouseMoving = useRef(false);
   
   // Mouse state ref for optimized handling
@@ -147,7 +150,7 @@ function App() {
   };
 
   // Helper function to check if an element is visible in the current viewport
-  const isElementVisible = (x: number, y: number, buffer: number = 100) => {
+  const isElementVisible = (x: number, y: number, buffer: number = ANIMATION_CONSTANTS.DEFAULT_VISIBILITY_BUFFER) => {
     const visibleBounds = {
       left: viewportOffset.x - buffer,
       right: viewportOffset.x + window.innerWidth + buffer,
@@ -163,25 +166,25 @@ function App() {
 
   // Filter elements to only those visible in the current viewport
   const visibleCircles = circles.filter(circle => 
-    isElementVisible(circle.x, circle.y, 50) // Smaller buffer for circles
+    isElementVisible(circle.x, circle.y, ANIMATION_CONSTANTS.CIRCLE_VISIBILITY_BUFFER)
   );
 
   const visibleHearts = hearts.filter(heart => 
-    isElementVisible(heart.x, heart.y, 50) // Smaller buffer for hearts
+    isElementVisible(heart.x, heart.y, ANIMATION_CONSTANTS.HEART_VISIBILITY_BUFFER)
   );
 
   const visibleEmojis = emojis.filter(emoji => 
-    isElementVisible(emoji.x, emoji.y, 50) // Smaller buffer for emojis
+    isElementVisible(emoji.x, emoji.y, ANIMATION_CONSTANTS.EMOJI_VISIBILITY_BUFFER)
   );
 
   const visibleFurniture = Object.values(furniture).filter(item => 
-    isElementVisible(item.x, item.y, 200) // Larger buffer for furniture
+    isElementVisible(item.x, item.y, ANIMATION_CONSTANTS.FURNITURE_VISIBILITY_BUFFER)
   );
 
   const visibleCursors = Object.entries(cursors).filter(([id, cursor]) => {
     if (!cursor) return false; // Guard against undefined
     if (!hasConnected && id === socketRef.current?.id) return false;
-    if (!cursor.name || cursor.name === 'Anonymous') return false;
+    if (!cursor.name || cursor.name === SERVER_CONFIG.ANONYMOUS_NAME) return false;
 
     const cursorX = id === socketRef.current?.id
       ? (isCursorFrozen && frozenCursorPosition ? frozenCursorPosition.x : cursor.x)
@@ -194,7 +197,7 @@ function App() {
     if (!shouldShowCursor) return false;
     if (!(id === socketRef.current?.id) && cursor.isFrozen && !cursor.frozenPosition) return false;
 
-    return isElementVisible(cursorX, cursorY, 100); // Medium buffer for cursors
+    return isElementVisible(cursorX, cursorY, ANIMATION_CONSTANTS.CURSOR_VISIBILITY_BUFFER);
   });
 
   useEffect(() => {
@@ -202,7 +205,7 @@ function App() {
   }, [username]);
 
   useEffect(() => {
-    const socket = io('http://localhost:3001');
+    const socket = io(SERVER_CONFIG.SOCKET_URL);
     socketRef.current = socket;
 
     socket.on('connect', () => {
@@ -371,7 +374,7 @@ function App() {
         const cursorY = isCursorFrozen && frozenCursorPosition ? frozenCursorPosition.y : cursors[socketRef.current.id]?.y || 0;
         
         // Position emoji to the left of the cursor in canvas coordinates
-        const emojiX = cursorX - 30; // 30px to the left
+        const emojiX = cursorX - ANIMATION_CONSTANTS.EMOJI_OFFSET_X;
         const emojiY = cursorY;
         
         const now = Date.now();
@@ -720,7 +723,7 @@ function App() {
     let highestAFK = { name: '', time: 0 };
     Object.entries(cursors).forEach(([_, cursor]) => {
       if (!cursor) return; // Guard against undefined
-      if (cursor.stillTime > highestAFK.time && cursor.name && cursor.name !== 'Anonymous') {
+      if (cursor.stillTime > highestAFK.time && cursor.name && cursor.name !== SERVER_CONFIG.ANONYMOUS_NAME) {
         highestAFK = { name: cursor.name, time: cursor.stillTime };
       }
     });
@@ -870,28 +873,44 @@ function App() {
         className="canvas-container"
         style={{
           position: 'absolute',
-          left: -viewportOffset.x,
-          top: -viewportOffset.y,
-          width: CANVAS_SIZE,
-          height: CANVAS_SIZE,
-          pointerEvents: 'none'
+          left: -viewportOffset.x - 4, // Account for margin
+          top: -viewportOffset.y - 4, // Account for margin
+          width: CANVAS_SIZE + 8, // Add margin on both sides
+          height: CANVAS_SIZE + 8, // Add margin on both sides
+          pointerEvents: 'none',
+          border: '1px solid white',
+          margin: '4px'
         }}
       >
+        {/* Tutorial Image */}
+        <img
+          src={UI_IMAGES.TUTORIAL}
+          alt="Tutorial"
+          style={{
+            position: 'absolute',
+            left: 30,
+            top: 140,
+            opacity: 0.2,
+            pointerEvents: 'none',
+            zIndex: 50,
+          }}
+        />
+
         {/* Circles */}
         {visibleCircles.map((circle) => {
           const age = Date.now() - circle.timestamp;
           if (age >= CIRCLE_DURATION) return null;
 
           const progress = age / CIRCLE_DURATION;
-          let opacity = progress < 0.2 ? progress / 0.2 : 1 - (progress - 0.2) / 0.8;
-          const scale = 0.5 + progress * 0.5;
-          const size = 40 * scale;
+          const scale = ANIMATION_CONSTANTS.CIRCLE_SCALE_MIN + progress * (ANIMATION_CONSTANTS.CIRCLE_SCALE_MAX - ANIMATION_CONSTANTS.CIRCLE_SCALE_MIN);
+          const size = ANIMATION_CONSTANTS.CIRCLE_BASE_SIZE * scale;
+          const opacity = 1 - progress;
 
           return (
             <img
               key={circle.id}
-              src="./UI/echo.png"
-              alt="Circle"
+              src={UI_IMAGES.ECHO}
+              alt="Click"
               style={{
                 position: 'absolute',
                 left: circle.x - size / 2,
@@ -900,7 +919,7 @@ function App() {
                 height: size,
                 opacity,
                 pointerEvents: 'none',
-                zIndex: 9995,
+                zIndex: 9996,
               }}
             />
           );
@@ -913,7 +932,7 @@ function App() {
 
           const progress = age / HEART_DURATION;
           const opacity = 1 - progress;
-          const rise = (1 - Math.pow(1 - progress, 3)) * 20;
+          const rise = (1 - Math.pow(1 - progress, 3)) * ANIMATION_CONSTANTS.HEART_RISE_DISTANCE;
 
           return (
             <img
@@ -951,7 +970,7 @@ function App() {
           }
           
           // Move to the left over time
-          const moveLeft = progress * 30; // Move 30px to the left over the duration
+          const moveLeft = progress * ANIMATION_CONSTANTS.EMOJI_MOVE_DISTANCE;
 
           return (
             <img
