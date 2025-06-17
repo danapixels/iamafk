@@ -103,6 +103,16 @@ console.log('Circle spawned by:', socket.id, 'at:', circleData.x, circleData.y);
 io.emit('circleSpawned', circleData);
 );
 
+socket.on('spawnThumbsUp', (thumbsUpData) => {
+console.log('Thumbs up spawned by:', socket.id, 'at:', thumbsUpData.x, thumbsUpData.y);
+io.emit('thumbsUpSpawned', thumbsUpData);
+);
+
+socket.on('spawnEmoji', (emojiData) => {
+console.log('Emoji spawned by:', socket.id, 'at:', emojiData.x, emojiData.y, 'type:', emojiData.type);
+io.emit('emojiSpawned', emojiData);
+);
+
 socket.on('spawnFurniture', (data) => {
 console.log('User', socket.id, 'spawning furniture:', data.type);
 const furnitureId = `${socket.id-${Date.now()`;
