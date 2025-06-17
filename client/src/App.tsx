@@ -32,6 +32,21 @@ interface Circle {
   timestamp: number;
 }
 
+interface Emoji {
+  id: string;
+  x: number;
+  y: number;
+  timestamp: number;
+  type: string;
+}
+
+interface ThumbsUp {
+  id: string;
+  x: number;
+  y: number;
+  timestamp: number;
+}
+
 interface Furniture {
   id: string;
   type: string;
@@ -65,11 +80,13 @@ function App() {
   const [cursors, setCursors] = useState<CursorsMap>({});
   const [hearts, setHearts] = useState<Heart[]>([]);
   const [circles, setCircles] = useState<Circle[]>([]);
+  const [emojis, setEmojis] = useState<Emoji[]>([]);
   const [furniture, setFurniture] = useState<{ [key: string]: Furniture }>({});
   const [isDeleteMode, setIsDeleteMode] = useState(false);
   const socketRef = useRef<Socket | null>(null);
   const heartCounterRef = useRef(0);
   const circleCounterRef = useRef(0);
+  const emojiCounterRef = useRef(0);
   const dragStartPos = useRef<{ x: number; y: number } | null>(null);
   const draggedFurnitureId = useRef<string | null>(null);
 
@@ -88,6 +105,7 @@ function App() {
 
   const HEART_DURATION = 800;
   const CIRCLE_DURATION = 600;
+  const THUMBSUP_DURATION = 1000;
 
   // Add constants for z-index layers
   const Z_INDEX_LAYERS = {
@@ -117,6 +135,7 @@ function App() {
       setCursors({});
       setHearts([]);
       setCircles([]);
+      setEmojis([]);
     });
 
     socket.on('cursors', (newCursors: CursorsMap) => {
@@ -129,6 +148,10 @@ function App() {
 
     socket.on('circleSpawned', (circleData) => {
       setCircles((prev) => [...prev, { ...circleData, timestamp: Date.now() }]);
+    });
+
+    socket.on('emojiSpawned', (emojiData) => {
+      setEmojis((prev) => [...prev, { ...emojiData, timestamp: Date.now() }]);
     });
 
     socket.on('clientDisconnected', (id: string) => {
@@ -298,6 +321,50 @@ function App() {
   }, [hasConnected]);
 
   useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (socketRef.current?.connected && hasConnected && socketRef.current.id) {
+        // Get current cursor position
+        const cursorX = isCursorFrozen && frozenCursorPosition ? frozenCursorPosition.x : cursors[socketRef.current.id]?.x || 0;
+        const cursorY = isCursorFrozen && frozenCursorPosition ? frozenCursorPosition.y : cursors[socketRef.current.id]?.y || 0;
+        
+        // Position emoji to the left of the cursor
+        const emojiX = cursorX - 30; // 30px to the left
+        const emojiY = cursorY;
+        
+        const now = Date.now();
+        const emojiId = `${socketRef.current.id}-${now}-${++emojiCounterRef.current}`;
+        
+        // Map keys to emoji types
+        const emojiMap: { [key: string]: string } = {
+          '1': 'thumbsup',
+          '2': 'thumbsdown',
+          '3': 'happyt',
+          '4': 'sad',
+          '5': 'angry',
+          '6': 'surprised',
+          '7': 'blank',
+          '8': 'exclamationpoint',
+          '9': 'pointleft',
+          '0': 'pointright'
+        };
+        
+        const emojiType = emojiMap[e.key];
+        if (emojiType) {
+          socketRef.current.emit('spawnEmoji', {
+            x: emojiX,
+            y: emojiY,
+            id: emojiId,
+            type: emojiType
+          });
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [hasConnected, isCursorFrozen, frozenCursorPosition, cursors]);
+
+  useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (draggedFurnitureId.current && dragStartPos.current) {
         const dx = e.clientX - dragStartPos.current.x;
@@ -384,6 +451,7 @@ function App() {
       const now = Date.now();
       setHearts((prev) => prev.filter((heart) => now - heart.timestamp < HEART_DURATION));
       setCircles((prev) => prev.filter((circle) => now - circle.timestamp < CIRCLE_DURATION));
+      setEmojis((prev) => prev.filter((emoji) => now - emoji.timestamp < THUMBSUP_DURATION));
     }, 16);
 
     const handleVisibilityChange = () => {
@@ -391,6 +459,7 @@ function App() {
         const now = Date.now();
         setHearts((prev) => prev.filter((heart) => now - heart.timestamp < HEART_DURATION));
         setCircles((prev) => prev.filter((circle) => now - circle.timestamp < CIRCLE_DURATION));
+        setEmojis((prev) => prev.filter((emoji) => now - emoji.timestamp < THUMBSUP_DURATION));
       }
     };
 
@@ -794,6 +863,41 @@ function App() {
               top: heart.y - 80 - rise,
               width: 48,
               height: 48,
+              opacity,
+              pointerEvents: 'none',
+              zIndex: 9996,
+            }}
+          />
+        );
+      })}
+
+      {emojis.map((emoji) => {
+        const age = Date.now() - emoji.timestamp;
+        if (age >= THUMBSUP_DURATION) return null;
+
+        const progress = age / THUMBSUP_DURATION;
+        // Fade in for first 20%, stay visible for 60%, fade out for last 20%
+        let opacity;
+        if (progress < 0.2) {
+          opacity = progress / 0.2; // Fade in
+        } else if (progress < 0.8) {
+          opacity = 1; // Stay visible
+        } else {
+          opacity = 1 - ((progress - 0.8) / 0.2); // Fade out
+        }
+        
+        // Move to the left over time
+        const moveLeft = progress * 30; // Move 30px to the left over the duration
+
+        return (
+          <img
+            key={emoji.id}
+            src={`./UI/${emoji.type}.png`}
+            alt={emoji.type}
+            style={{
+              position: 'absolute',
+              left: emoji.x - moveLeft,
+              top: emoji.y - 24, // Center vertically
               opacity,
               pointerEvents: 'none',
               zIndex: 9996,
