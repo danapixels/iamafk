@@ -27,7 +27,7 @@
 "x": 915,
 "y": 328,
 "isFlipped": true,
-"timestamp": 1750146788793,
+"timestamp": 1750151303455,
 "ownerId": "xpNcBsnBsgZ3i5t8AAAe",
 "ownerName": "dana",
 "zIndex": 5010
@@ -38,21 +38,10 @@
 "x": 992,
 "y": 335,
 "isFlipped": true,
-"timestamp": 1750150325910,
+"timestamp": 1750152103111,
 "ownerId": "xpNcBsnBsgZ3i5t8AAAe",
 "ownerName": "dana",
 "zIndex": 5011
-,
-"xpNcBsnBsgZ3i5t8AAAe-1750146027429": {
-"id": "xpNcBsnBsgZ3i5t8AAAe-1750146027429",
-"type": "chair",
-"x": 985,
-"y": 397,
-"isFlipped": false,
-"timestamp": 1750150399658,
-"ownerId": "xpNcBsnBsgZ3i5t8AAAe",
-"ownerName": "dana",
-"zIndex": 5026
 ,
 "Y4x_nJYueGsgUUbXAAAJ-1750146550979": {
 "id": "Y4x_nJYueGsgUUbXAAAJ-1750146550979",
@@ -60,7 +49,7 @@
 "x": 627,
 "y": 337,
 "isFlipped": false,
-"timestamp": 1750149864589,
+"timestamp": 1750152951081,
 "ownerId": "Y4x_nJYueGsgUUbXAAAJ",
 "ownerName": "dana",
 "zIndex": 5031
@@ -178,10 +167,10 @@
 "Y4x_nJYueGsgUUbXAAAJ-1750146690642": {
 "id": "Y4x_nJYueGsgUUbXAAAJ-1750146690642",
 "type": "walls",
-"x": 1019,
-"y": 384,
+"x": 1014,
+"y": 382,
 "isFlipped": true,
-"timestamp": 1750150388322,
+"timestamp": 1750152105037,
 "ownerId": "Y4x_nJYueGsgUUbXAAAJ",
 "ownerName": "dana",
 "zIndex": 5019
@@ -291,7 +280,7 @@
 "x": 632,
 "y": 250,
 "isFlipped": true,
-"timestamp": 1750149577821,
+"timestamp": 1750152072440,
 "ownerId": "Y4x_nJYueGsgUUbXAAAJ",
 "ownerName": "dana",
 "zIndex": 5036
@@ -302,7 +291,7 @@
 "x": 585,
 "y": 281,
 "isFlipped": true,
-"timestamp": 1750149703508,
+"timestamp": 1750152812048,
 "ownerId": "Y4x_nJYueGsgUUbXAAAJ",
 "ownerName": "dana",
 "zIndex": 5037
@@ -335,7 +324,7 @@
 "x": 757,
 "y": 305,
 "isFlipped": false,
-"timestamp": 1750150386403,
+"timestamp": 1750152945735,
 "ownerId": "Y4x_nJYueGsgUUbXAAAJ",
 "ownerName": "dana",
 "zIndex": 5039
@@ -346,7 +335,7 @@
 "x": 753,
 "y": 242,
 "isFlipped": false,
-"timestamp": 1750149347958,
+"timestamp": 1750151299736,
 "ownerId": "Y4x_nJYueGsgUUbXAAAJ",
 "ownerName": "dana",
 "zIndex": 5021
@@ -390,7 +379,7 @@
 "x": 866,
 "y": 482,
 "isFlipped": true,
-"timestamp": 1750149999686,
+"timestamp": 1750152833070,
 "ownerId": "Y4x_nJYueGsgUUbXAAAJ",
 "ownerName": "dana",
 "zIndex": 5043
@@ -401,7 +390,7 @@
 "x": 850,
 "y": 173,
 "isFlipped": true,
-"timestamp": 1750148152875,
+"timestamp": 1750151301780,
 "ownerId": "Y4x_nJYueGsgUUbXAAAJ",
 "ownerName": "dana",
 "zIndex": 5044
@@ -423,7 +412,7 @@
 "x": 710,
 "y": 434,
 "isFlipped": false,
-"timestamp": 1750150385354,
+"timestamp": 1750152070382,
 "ownerId": "Y4x_nJYueGsgUUbXAAAJ",
 "ownerName": "dana",
 "zIndex": 5051
@@ -434,7 +423,7 @@
 "x": 763,
 "y": 464,
 "isFlipped": false,
-"timestamp": 1750150328918,
+"timestamp": 1750152071635,
 "ownerId": "Y4x_nJYueGsgUUbXAAAJ",
 "ownerName": "dana",
 "zIndex": 5049
@@ -467,7 +456,7 @@
 "x": 826,
 "y": 460,
 "isFlipped": false,
-"timestamp": 1750149981745,
+"timestamp": 1750152068019,
 "ownerId": "Y4x_nJYueGsgUUbXAAAJ",
 "ownerName": "dana",
 "zIndex": 5052
@@ -489,7 +478,7 @@
 "x": 815,
 "y": 507,
 "isFlipped": true,
-"timestamp": 1750149976837,
+"timestamp": 1750152833674,
 "ownerId": "Y4x_nJYueGsgUUbXAAAJ",
 "ownerName": "dana",
 "zIndex": 5056
@@ -498,9 +487,9 @@
 "id": "Y4x_nJYueGsgUUbXAAAJ-1750146994641",
 "type": "walls",
 "x": 708,
-"y": 483,
+"y": 482,
 "isFlipped": false,
-"timestamp": 1750149901484,
+"timestamp": 1750152117084,
 "ownerId": "Y4x_nJYueGsgUUbXAAAJ",
 "ownerName": "dana",
 "zIndex": 5055
@@ -549,17 +538,6 @@
 "ownerName": "dana",
 "zIndex": 5057
 ,
-"Y4x_nJYueGsgUUbXAAAJ-1750147097039": {
-"id": "Y4x_nJYueGsgUUbXAAAJ-1750147097039",
-"type": "whitecat",
-"x": 641,
-"y": 463,
-"isFlipped": true,
-"timestamp": 1750149998485,
-"ownerId": "Y4x_nJYueGsgUUbXAAAJ",
-"ownerName": "dana",
-"zIndex": 5058
-,
 "Y4x_nJYueGsgUUbXAAAJ-1750147105400": {
 "id": "Y4x_nJYueGsgUUbXAAAJ-1750147105400",
 "type": "walls",
@@ -577,7 +555,7 @@
 "x": 882,
 "y": 203,
 "isFlipped": false,
-"timestamp": 1750150386876,
+"timestamp": 1750153073338,
 "ownerId": "Y4x_nJYueGsgUUbXAAAJ",
 "ownerName": "dana",
 "zIndex": 5062
@@ -599,7 +577,7 @@
 "x": 958,
 "y": 229,
 "isFlipped": true,
-"timestamp": 1750149819765,
+"timestamp": 1750151302850,
 "ownerId": "UQTmTjv3WoDbicHWAAAN",
 "ownerName": "dana",
 "zIndex": 5061
@@ -615,14 +593,14 @@
 "ownerName": "dana",
 "zIndex": 5063
 ,
-"UQTmTjv3WoDbicHWAAAN-1750147443653": {
-"id": "UQTmTjv3WoDbicHWAAAN-1750147443653",
+"U2Pb6PJjd-625arqAABV-1750153141750": {
+"id": "U2Pb6PJjd-625arqAABV-1750153141750",
 "type": "chair",
-"x": 955,
-"y": 384,
+"x": 984,
+"y": 386,
 "isFlipped": false,
-"timestamp": 1750150389309,
-"ownerId": "UQTmTjv3WoDbicHWAAAN",
-"ownerName": "dana",
-"zIndex": 5023
+"timestamp": 1750153143362,
+"ownerId": "U2Pb6PJjd-625arqAABV",
+"ownerName": "cda",
+"zIndex": 5070
 
