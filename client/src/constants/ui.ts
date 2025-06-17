@@ -20,6 +20,7 @@ DELETE_FURNITURE_BUTTON_HOVER: './UI/deletefurniturebuttonhover.png',
 LOGO: './UI/logo.png',
 GITHUB_LOGO: './UI/github.png',
 LEADERBOARD: './UI/leaderboard.png',
+TUTORIAL: './UI/tutorial.png',
 
 // Effects
 SMILE_GIF: './UI/smile.gif',
@@ -40,4 +41,18 @@ POINT_RIGHT: './UI/pointright.png',
  as const;
 
 // GitHub repository URL
-export const GITHUB_URL = 'https://github.com/danapixels/iamafk'; 
+export const GITHUB_URL = 'https://github.com/danapixels/iamafk';
+
+// Server and connection constants
+export const SERVER_CONFIG = {
+SOCKET_URL: 'http://localhost:3001',
+DEFAULT_CURSOR_TYPE: 'default',
+ANONYMOUS_NAME: 'Anonymous'
+ as const;
+
+// UI state constants
+export const UI_STATE = {
+INITIAL_VIEWPORT_OFFSET: { x: 0, y: 0 ,
+INITIAL_MOUSE_POSITION: { x: 0, y: 0 ,
+INITIAL_COUNTERS: 0
+; 

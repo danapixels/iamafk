@@ -27,7 +27,7 @@
 "x": 915,
 "y": 328,
 "isFlipped": true,
-"timestamp": 1750151303455,
+"timestamp": 1750153546092,
 "ownerId": "xpNcBsnBsgZ3i5t8AAAe",
 "ownerName": "dana",
 "zIndex": 5010
@@ -38,7 +38,7 @@
 "x": 992,
 "y": 335,
 "isFlipped": true,
-"timestamp": 1750152103111,
+"timestamp": 1750153555880,
 "ownerId": "xpNcBsnBsgZ3i5t8AAAe",
 "ownerName": "dana",
 "zIndex": 5011
@@ -49,7 +49,7 @@
 "x": 627,
 "y": 337,
 "isFlipped": false,
-"timestamp": 1750152951081,
+"timestamp": 1750156166793,
 "ownerId": "Y4x_nJYueGsgUUbXAAAJ",
 "ownerName": "dana",
 "zIndex": 5031
@@ -310,10 +310,10 @@
 "Y4x_nJYueGsgUUbXAAAJ-1750146834585": {
 "id": "Y4x_nJYueGsgUUbXAAAJ-1750146834585",
 "type": "plant1",
-"x": 811,
+"x": 824,
 "y": 187,
 "isFlipped": false,
-"timestamp": 1750148152547,
+"timestamp": 1750153545153,
 "ownerId": "Y4x_nJYueGsgUUbXAAAJ",
 "ownerName": "dana",
 "zIndex": 5046
@@ -324,7 +324,7 @@
 "x": 757,
 "y": 305,
 "isFlipped": false,
-"timestamp": 1750152945735,
+"timestamp": 1750156170894,
 "ownerId": "Y4x_nJYueGsgUUbXAAAJ",
 "ownerName": "dana",
 "zIndex": 5039
@@ -398,13 +398,13 @@
 "Y4x_nJYueGsgUUbXAAAJ-1750146943385": {
 "id": "Y4x_nJYueGsgUUbXAAAJ-1750146943385",
 "type": "chair",
-"x": 774,
-"y": 486,
+"x": 806,
+"y": 469,
 "isFlipped": false,
-"timestamp": 1750149987325,
+"timestamp": 1750154946178,
 "ownerId": "Y4x_nJYueGsgUUbXAAAJ",
 "ownerName": "dana",
-"zIndex": 5050
+"zIndex": 5051
 ,
 "Y4x_nJYueGsgUUbXAAAJ-1750146947209": {
 "id": "Y4x_nJYueGsgUUbXAAAJ-1750146947209",
@@ -412,10 +412,10 @@
 "x": 710,
 "y": 434,
 "isFlipped": false,
-"timestamp": 1750152070382,
+"timestamp": 1750156157791,
 "ownerId": "Y4x_nJYueGsgUUbXAAAJ",
 "ownerName": "dana",
-"zIndex": 5051
+"zIndex": 5052
 ,
 "Y4x_nJYueGsgUUbXAAAJ-1750146949624": {
 "id": "Y4x_nJYueGsgUUbXAAAJ-1750146949624",
@@ -423,10 +423,10 @@
 "x": 763,
 "y": 464,
 "isFlipped": false,
-"timestamp": 1750152071635,
+"timestamp": 1750154946506,
 "ownerId": "Y4x_nJYueGsgUUbXAAAJ",
 "ownerName": "dana",
-"zIndex": 5049
+"zIndex": 5050
 ,
 "Y4x_nJYueGsgUUbXAAAJ-1750146952689": {
 "id": "Y4x_nJYueGsgUUbXAAAJ-1750146952689",
@@ -453,13 +453,13 @@
 "Y4x_nJYueGsgUUbXAAAJ-1750146978849": {
 "id": "Y4x_nJYueGsgUUbXAAAJ-1750146978849",
 "type": "plant2",
-"x": 826,
-"y": 460,
+"x": 829,
+"y": 458,
 "isFlipped": false,
-"timestamp": 1750152068019,
+"timestamp": 1750154947634,
 "ownerId": "Y4x_nJYueGsgUUbXAAAJ",
 "ownerName": "dana",
-"zIndex": 5052
+"zIndex": 5049
 ,
 "Y4x_nJYueGsgUUbXAAAJ-1750146982825": {
 "id": "Y4x_nJYueGsgUUbXAAAJ-1750146982825",
@@ -475,10 +475,10 @@
 "Y4x_nJYueGsgUUbXAAAJ-1750146990952": {
 "id": "Y4x_nJYueGsgUUbXAAAJ-1750146990952",
 "type": "walls",
-"x": 815,
-"y": 507,
+"x": 813,
+"y": 508,
 "isFlipped": true,
-"timestamp": 1750152833674,
+"timestamp": 1750154942761,
 "ownerId": "Y4x_nJYueGsgUUbXAAAJ",
 "ownerName": "dana",
 "zIndex": 5056
@@ -553,9 +553,9 @@
 "id": "Y4x_nJYueGsgUUbXAAAJ-1750147110161",
 "type": "bed",
 "x": 882,
-"y": 203,
+"y": 198,
 "isFlipped": false,
-"timestamp": 1750153073338,
+"timestamp": 1750156165785,
 "ownerId": "Y4x_nJYueGsgUUbXAAAJ",
 "ownerName": "dana",
 "zIndex": 5062
@@ -577,7 +577,7 @@
 "x": 958,
 "y": 229,
 "isFlipped": true,
-"timestamp": 1750151302850,
+"timestamp": 1750153545628,
 "ownerId": "UQTmTjv3WoDbicHWAAAN",
 "ownerName": "dana",
 "zIndex": 5061
@@ -599,7 +599,7 @@
 "x": 984,
 "y": 386,
 "isFlipped": false,
-"timestamp": 1750153143362,
+"timestamp": 1750153692396,
 "ownerId": "U2Pb6PJjd-625arqAABV",
 "ownerName": "cda",
 "zIndex": 5070
