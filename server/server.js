@@ -151,7 +151,7 @@ cleanupExpiredFurniture();
 
 io.on('connection', (socket) => {
 // Initialize cursor for new user
-cursors[socket.id] = { x: 0, y: 0, username: '', type: 'default' ;
+cursors[socket.id] = { x: 0, y: 0, username: '', cursorType: 'default' ;
 lastMoveTimestamps[socket.id] = Date.now();
 
 // Update user activity on connection
@@ -164,7 +164,10 @@ furniture: furniture,
 );
 
 // Notify other users about new connection
-socket.broadcast.emit('clientConnected', { id: socket.id, cursors: getValidCursors() );
+socket.broadcast.emit('clientConnected', { 
+socketId: socket.id, 
+cursor: cursors[socket.id] 
+);
 
 socket.on('setName', ({ name ) => {
 if (cursors[socket.id]) {
@@ -449,6 +452,11 @@ io.emit('cursors', getValidCursors());
 socket.on('gachaponWin', ({ winnerId, winnerName ) => {
 // Broadcast to ALL currently online clients
 io.emit('gachaponWin', { winnerId, winnerName );
+);
+
+socket.on('gachaponAnimation', ({ userId, hasEnoughTime ) => {
+// Broadcast the animation event to all clients except the sender
+socket.broadcast.emit('gachaponAnimation', { userId, hasEnoughTime );
 );
 
 socket.on('disconnect', () => {
