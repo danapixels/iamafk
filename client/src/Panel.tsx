@@ -1,6 +1,5 @@
 import React, { useState, useEffect  from 'react';
 import { Socket  from 'socket.io-client';
-import { UI_IMAGES  from './constants';
 import './Panel.css';
 
 interface PanelProps {
@@ -14,22 +13,33 @@ socketId?: string | null;
 style?: React.CSSProperties;
 
 
-const Panel: React.FC<PanelProps> = ({ socket, onCursorChange, onFurnitureSpawn, cursorPosition, viewportOffset, gachaponWinner, socketId, style ) => {
+const Panel: React.FC<PanelProps> = ({ 
+socket, 
+onCursorChange, 
+onFurnitureSpawn, 
+// @ts-ignore - cursorPosition is required by PanelProps but not used in this component
+cursorPosition, 
+viewportOffset, 
+gachaponWinner, 
+socketId, 
+style 
+) => {
 const [showTooltip, setShowTooltip] = useState(false);
 const [gachaponWin, setGachaponWin] = useState(false);
 const [localGachaponWinner, setLocalGachaponWinner] = useState<string | null>(null);
+const [storedWinnerId, setStoredWinnerId] = useState<string | null>(null);
 
 // Check for gachapon win on component mount
 useEffect(() => {
 const hasWon = localStorage.getItem('gachaponWin') === 'true';
 const winnerId = localStorage.getItem('gachaponWinner');
-const winnerName = localStorage.getItem('gachaponWinnerName');
 const buttonChanged = localStorage.getItem('gachaponButtonChanged') === 'true';
 
 // Show easter egg button for all users who were online at the time of win
 if (hasWon && buttonChanged) {
 setGachaponWin(true);
-setLocalGachaponWinner(winnerName);
+setLocalGachaponWinner(localStorage.getItem('gachaponWinnerName'));
+setStoredWinnerId(winnerId);
 
 , []);
 
@@ -149,15 +159,15 @@ src={gachaponWin ? './UI/easteregg1button.png' : './UI/lockedbutton.png'
 alt="Locked" 
 className="button"
 style={{ cursor: 'pointer' 
-onMouseEnter={(e) => {
-e.currentTarget.src = gachaponWin ? './UI/easteregg1buttonhover.png' : './UI/lockedbuttonhover.png';
+onMouseEnter={({ currentTarget ) => {
+currentTarget.src = gachaponWin ? './UI/easteregg1buttonhover.png' : './UI/lockedbuttonhover.png';
 setShowTooltip(true);
 
 onMouseLeave={(e) => {
 e.currentTarget.src = gachaponWin ? './UI/easteregg1button.png' : './UI/lockedbutton.png';
 setShowTooltip(false);
 
-onClick={(e) => {
+onClick={() => {
 if (gachaponWin) {
 handleHatClick('easteregg1');
 
@@ -184,7 +194,7 @@ zIndex: 99999,
 
 >
 {gachaponWin && localGachaponWinner ? 
-(socketId && socketId === localStorage.getItem('gachaponWinner') ? 
+(socketId && socketId === storedWinnerId ? 
 'You won the 1%!' : 
 `${localGachaponWinner won the 1%!`
 ) : 

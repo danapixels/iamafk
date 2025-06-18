@@ -39,13 +39,6 @@ timestamp: number;
 type: string;
 
 
-export interface ThumbsUp {
-id: string;
-x: number;
-y: number;
-timestamp: number;
-
-
 // Furniture types
 export interface Furniture {
 id: string;

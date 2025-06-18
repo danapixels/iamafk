@@ -8,14 +8,6 @@ y: screenY + viewportOffset.y
 ;
 ;
 
-// Helper function to convert canvas coordinates to screen coordinates
-export const canvasToScreen = (canvasX: number, canvasY: number, viewportOffset: { x: number; y: number ) => {
-return {
-x: canvasX - viewportOffset.x,
-y: canvasY - viewportOffset.y
-;
-;
-
 // Helper function to clamp coordinates within canvas bounds
 export const clampToCanvas = (x: number, y: number) => {
 return {
