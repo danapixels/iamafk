@@ -72,7 +72,7 @@
 "x": 648.5,
 "y": 292,
 "isFlipped": true,
-"timestamp": 1750234365724,
+"timestamp": 1750266623349,
 "ownerId": "JsSbsFgW8iw8qlbmAAAm",
 "ownerName": "bub",
 "zIndex": 5009
@@ -87,17 +87,6 @@
 "ownerId": "JsSbsFgW8iw8qlbmAAAm",
 "ownerName": "bub",
 "zIndex": 5010
-,
-"JsSbsFgW8iw8qlbmAAAm-1750226897600": {
-"id": "JsSbsFgW8iw8qlbmAAAm-1750226897600",
-"type": "lamp",
-"x": 586.5,
-"y": 307,
-"isFlipped": false,
-"timestamp": 1750232963863,
-"ownerId": "JsSbsFgW8iw8qlbmAAAm",
-"ownerName": "bub",
-"zIndex": 5011
 ,
 "JsSbsFgW8iw8qlbmAAAm-1750226902343": {
 "id": "JsSbsFgW8iw8qlbmAAAm-1750226902343",
@@ -124,12 +113,23 @@
 "VQp4KqOS2YtsJM9qAADp-1750232877901": {
 "id": "VQp4KqOS2YtsJM9qAADp-1750232877901",
 "type": "bed",
-"x": 592,
-"y": 360,
+"x": 358,
+"y": 335,
 "isFlipped": false,
-"timestamp": 1750234359488,
+"timestamp": 1750275084345,
 "ownerId": "VQp4KqOS2YtsJM9qAADp",
 "ownerName": "dana",
 "zIndex": 5014
+,
+"YMLiwV241QgkDFbYAABP-1750273338437": {
+"id": "YMLiwV241QgkDFbYAABP-1750273338437",
+"type": "lamp",
+"x": 569.5,
+"y": 300.5,
+"isFlipped": false,
+"timestamp": 1750274463917,
+"ownerId": "YMLiwV241QgkDFbYAABP",
+"ownerName": "dana",
+"zIndex": 5015
 
 

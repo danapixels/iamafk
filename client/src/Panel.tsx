@@ -9,8 +9,8 @@ onFurnitureSpawn?: (type: string, x: number, y: number) => void;
 cursorPosition?: { x: number; y: number; name?: string; stillTime: number; cursorType?: string; isFrozen?: boolean; frozenPosition?: { x: number; y: number ; sleepingOnBed?: boolean ;
 viewportOffset?: { x: number; y: number ;
 gachaponWinner?: string | null;
-socketId?: string | null;
 style?: React.CSSProperties;
+username?: string;
 
 
 const Panel: React.FC<PanelProps> = ({ 
@@ -21,25 +21,22 @@ onFurnitureSpawn,
 cursorPosition, 
 viewportOffset, 
 gachaponWinner, 
-socketId, 
-style 
+style, 
+username
 ) => {
 const [showTooltip, setShowTooltip] = useState(false);
 const [gachaponWin, setGachaponWin] = useState(false);
 const [localGachaponWinner, setLocalGachaponWinner] = useState<string | null>(null);
-const [storedWinnerId, setStoredWinnerId] = useState<string | null>(null);
 
 // Check for gachapon win on component mount
 useEffect(() => {
 const hasWon = localStorage.getItem('gachaponWin') === 'true';
-const winnerId = localStorage.getItem('gachaponWinner');
 const buttonChanged = localStorage.getItem('gachaponButtonChanged') === 'true';
 
 // Show easter egg button for all users who were online at the time of win
 if (hasWon && buttonChanged) {
 setGachaponWin(true);
 setLocalGachaponWinner(localStorage.getItem('gachaponWinnerName'));
-setStoredWinnerId(winnerId);
 
 , []);
 
@@ -178,8 +175,8 @@ className="tooltip"
 style={{
 position: 'absolute',
 top: '10px',
-left: '-230%',
-transform: 'translateX(-50%)',
+right: '100%',
+marginRight: '10px',
 backgroundColor: 'rgba(0, 0, 0, 0.7)',
 color: 'white',
 padding: '4px 8px',
@@ -194,8 +191,8 @@ zIndex: 99999,
 
 >
 {gachaponWin && localGachaponWinner ? 
-(socketId && socketId === storedWinnerId ? 
-'You won the 1%!' : 
+(username && username === localGachaponWinner ? 
+'You did it!' : 
 `${localGachaponWinner won the 1%!`
 ) : 
 '30m = 1 gacha play'

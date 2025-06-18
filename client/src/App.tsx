@@ -314,12 +314,13 @@ console.log(`Cleaned up ${data.cleanedCount furniture items that were inactive f
 
 );
 
-socket.on('gachaponWin', (data: { winnerId: string ) => {
+socket.on('gachaponWin', (data: { winnerId: string, winnerName: string ) => {
 setGachaponWinner(data.winnerId);
 
 // Set localStorage for ALL users online at the time of win (not just the winner)
 localStorage.setItem('gachaponWin', 'true');
 localStorage.setItem('gachaponWinner', data.winnerId);
+localStorage.setItem('gachaponWinnerName', data.winnerName);
 localStorage.setItem('gachaponButtonChanged', 'true');
 );
 
@@ -714,8 +715,8 @@ if (myCursor) {
 const currentStillTime = myCursor.stillTime;
 const isFrozen = myCursor.isFrozen || false;
 
-// Start tracking if user is already inactive
-if (currentStillTime > 0 && !isFrozen && !afkStartTimeRef.current) {
+// Start tracking if user is already inactive for 30+ seconds
+if (currentStillTime >= 30 && !isFrozen && !afkStartTimeRef.current) {
 const inactiveStartTime = Date.now() - (currentStillTime * 1000);
 afkStartTimeRef.current = inactiveStartTime;
 
@@ -738,13 +739,6 @@ if (!afkStartTimeRef.current) {
 const inactiveStartTime = Date.now() - (currentStillTime * 1000);
 afkStartTimeRef.current = inactiveStartTime;
 
-
-
-// Also start tracking if user becomes inactive but hasn't reached 30 seconds yet
-if (currentStillTime > 0 && !isFrozen && !afkStartTimeRef.current) {
-// Calculate when the user actually became inactive
-const inactiveStartTime = Date.now() - (currentStillTime * 1000);
-afkStartTimeRef.current = inactiveStartTime;
 
 
 // Check if user is no longer AFK (stillTime < 30 AND not frozen)
@@ -1395,15 +1389,31 @@ src={'./UI/gacha.gif'
 alt="Gacha"
 username={username
 socket={socketRef.current
-onWin={(winnerId) => {
+onWin={(winnerId, winnerName) => {
 setGachaponWinner(winnerId);
-// Update locked button to easter egg button
+// Update locked button to easter egg button and set winner info immediately for the winner
 localStorage.setItem('gachaponButtonChanged', 'true');
+localStorage.setItem('gachaponWin', 'true');
+localStorage.setItem('gachaponWinner', winnerId);
+localStorage.setItem('gachaponWinnerName', winnerName);
 
 onUse={() => {
 // Refresh userStats immediately after gachapon use
 const updatedStats = getUserStats();
 setUserStats(updatedStats);
+
+isCursorFrozen={isCursorFrozen
+onUnfreeze={() => {
+// Unfreeze the cursor
+setFrozenCursorPosition(null);
+setIsCursorFrozen(false);
+if (socketRef.current) {
+socketRef.current.emit('cursorFreeze', { 
+isFrozen: false,
+x: 0,
+y: 0
+);
+
 
 style={{
 position: 'absolute',
@@ -1422,7 +1432,7 @@ onFurnitureSpawn={handleFurnitureSpawn
 cursorPosition={cursors[socketRef.current?.id || '']
 viewportOffset={viewportOffset
 gachaponWinner={gachaponWinner
-socketId={socketRef.current?.id || null
+username={username
 style={{ zIndex: Z_INDEX_LAYERS.PANEL 
 />
 
