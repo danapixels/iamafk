@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { getUserStats, updateAFKTime, deductAFKBalance } from '../utils/localStorage';
+import { getUserStats, deductAFKBalance } from '../utils/localStorage';
 import { Socket } from 'socket.io-client';
 
 interface GachaponMachineProps {
@@ -11,6 +11,8 @@ interface GachaponMachineProps {
   onWin: (winnerId: string, winnerName: string) => void;
   socket: Socket | null;
   onUse: () => void;
+  isCursorFrozen?: boolean;
+  onUnfreeze?: () => void;
 }
 
 const GachaponMachine: React.FC<GachaponMachineProps> = ({
@@ -21,14 +23,14 @@ const GachaponMachine: React.FC<GachaponMachineProps> = ({
   username,
   onWin,
   socket,
-  onUse
+  onUse,
+  isCursorFrozen,
+  onUnfreeze
 }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [showMessage, setShowMessage] = useState(false);
   const [messageType, setMessageType] = useState<'win' | 'tryAgain' | null>(null);
-  const [hasEnoughTime, setHasEnoughTime] = useState(false);
   const [gifTimestamp, setGifTimestamp] = useState(0);
-  const [isFrozen, setIsFrozen] = useState(false);
   const [currentImageSrc, setCurrentImageSrc] = useState(src);
   const [showNotification, setShowNotification] = useState(false);
   const [notificationText, setNotificationText] = useState('');
@@ -85,11 +87,20 @@ const GachaponMachine: React.FC<GachaponMachineProps> = ({
   }, [socket, src]);
 
   const handleClick = () => {
-    if (isPlaying) {
-      return; // Prevent multiple clicks while playing
+    if (isPlaying || showMessage) {
+      return; // Prevent multiple clicks while playing or when message is showing
+    }
+
+    if (socket) {
+      socket.emit('resetStillTime');
     }
 
     const enoughTime = checkAFKTime();
+    
+    // Unfreeze cursor if user has enough AFK time and is currently frozen
+    if (enoughTime && isCursorFrozen && onUnfreeze) {
+      onUnfreeze();
+    }
     
     // Show notification immediately when clicked
     if (enoughTime) {
@@ -105,15 +116,13 @@ const GachaponMachine: React.FC<GachaponMachineProps> = ({
       setNotificationText('');
     }, 2000);
 
-    setHasEnoughTime(enoughTime || false);
     setIsPlaying(true);
-    setIsFrozen(false);
     
     // Reset to animated GIF and force restart
     setCurrentImageSrc(src);
     setGifTimestamp(Date.now());
 
-    // Emit animation event to other users with enoughTime flag
+    // Emit animation event to other users with enoughTime flag (only when actually processing the click)
     if (socket) {
       socket.emit('gachaponAnimation', { 
         userId: socket.id,
@@ -147,7 +156,7 @@ const GachaponMachine: React.FC<GachaponMachineProps> = ({
 
   const determinePayout = () => {
     const random = Math.random();
-    const isWin = random < 0.01; // 1% chance
+    const isWin = random < 0.5; // 50% chance for testing
 
     if (isWin) {
       setMessageType('win');
@@ -162,12 +171,17 @@ const GachaponMachine: React.FC<GachaponMachineProps> = ({
       // Emit win event to server
       socket?.emit('gachaponWin', { winnerId: socket?.id, winnerName: username });
       
-      // Hide message after 1 second
+      // Hide message after 3 seconds (reduced from 7 seconds)
       messageRef.current = setTimeout(() => {
+        console.log('Win message timeout triggered - hiding message');
         setShowMessage(false);
         setMessageType(null);
         setIsPlaying(false); // Re-enable clicking after message disappears
-      }, 1000);
+        // Reset back to animated GIF
+        setCurrentImageSrc(src);
+        setGifTimestamp(Date.now());
+        console.log('Message state should now be: showMessage=false, isPlaying=false');
+      }, 3000);
     } else {
       setMessageType('tryAgain');
       setShowMessage(true);
@@ -177,9 +191,14 @@ const GachaponMachine: React.FC<GachaponMachineProps> = ({
       
       // Hide message after 2 seconds
       messageRef.current = setTimeout(() => {
+        console.log('Try again message timeout triggered - hiding message');
         setShowMessage(false);
         setMessageType(null);
         setIsPlaying(false); // Re-enable clicking after message disappears
+        // Reset back to animated GIF
+        setCurrentImageSrc(src);
+        setGifTimestamp(Date.now());
+        console.log('Message state should now be: showMessage=false, isPlaying=false');
       }, 2000);
     }
   };
@@ -206,7 +225,11 @@ const GachaponMachine: React.FC<GachaponMachineProps> = ({
         alt={alt}
         style={{
           ...style,
-          cursor: isPlaying ? 'default' : 'pointer',
+          cursor: (() => {
+            const shouldBeClickable = !(isPlaying || showMessage);
+            console.log('Gachapon cursor state:', { isPlaying, showMessage, shouldBeClickable });
+            return shouldBeClickable ? 'pointer' : 'default';
+          })(),
           userSelect: 'none',
           transform: 'scaleX(-1)', // Flip horizontally
         }}
@@ -215,7 +238,7 @@ const GachaponMachine: React.FC<GachaponMachineProps> = ({
         onLoad={() => {
           // Image loaded successfully
         }}
-        onError={(e) => {
+        onError={() => {
           // Image failed to load
         }}
       />
@@ -254,7 +277,9 @@ const GachaponMachine: React.FC<GachaponMachineProps> = ({
             transform: 'translate(-50%, -50%)', // Center in viewport
             zIndex: 100000,
             opacity: 0,
-            animation: 'messageRiseAndFall 2s ease-in-out forwards'
+            animation: messageType === 'win' 
+              ? 'messageRiseAndFallWin 3s ease-in-out forwards'
+              : 'messageRiseAndFall 2s ease-in-out forwards'
           }}
         >
           <img
@@ -283,6 +308,25 @@ const GachaponMachine: React.FC<GachaponMachineProps> = ({
               transform: translate(-50%, -20%);
             }
             70% {
+              opacity: 1;
+              transform: translate(-50%, -20%);
+            }
+            100% {
+              opacity: 0;
+              transform: translate(-50%, -15vh);
+            }
+          }
+          
+          @keyframes messageRiseAndFallWin {
+            0% {
+              opacity: 0;
+              transform: translate(-50%, -15vh);
+            }
+            20% {
+              opacity: 1;
+              transform: translate(-50%, -20%);
+            }
+            80% {
               opacity: 1;
               transform: translate(-50%, -20%);
             }

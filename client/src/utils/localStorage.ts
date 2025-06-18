@@ -24,7 +24,6 @@ export interface LocalUserData {
 const STORAGE_KEYS = {
   USER_DATA: 'iamafk_user_data',
   USERNAME: 'iamafk_username',
-  CURSOR_TYPE: 'iamafk_cursor_type',
   DEVICE_ID: 'iamafk_device_id'
 } as const;
 
@@ -197,21 +196,13 @@ export const getSavedUsername = (): string => {
   }
 };
 
-// Save cursor type
-export const saveCursorType = (cursorType: string): void => {
-  try {
-    localStorage.setItem(STORAGE_KEYS.CURSOR_TYPE, cursorType);
-  } catch (error) {
-    console.error('Error saving cursor type to localStorage:', error);
-  }
-};
-
 // Get saved cursor type
 export const getSavedCursorType = (): string => {
   try {
-    return localStorage.getItem(STORAGE_KEYS.CURSOR_TYPE) || 'default';
+    const userData = getUserData();
+    return userData?.preferences.cursorType || 'default';
   } catch (error) {
-    console.error('Error reading cursor type from localStorage:', error);
+    console.error('Error reading cursor type from preferences:', error);
     return 'default';
   }
 };
@@ -221,7 +212,6 @@ export const clearUserData = (): void => {
   try {
     localStorage.removeItem(STORAGE_KEYS.USER_DATA);
     localStorage.removeItem(STORAGE_KEYS.USERNAME);
-    localStorage.removeItem(STORAGE_KEYS.CURSOR_TYPE);
   } catch (error) {
     console.error('Error clearing user data from localStorage:', error);
   }

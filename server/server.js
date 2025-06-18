@@ -140,6 +140,19 @@ function getValidCursors() {
   return filtered;
 }
 
+function cleanupOldUserActivity() {
+  const now = Date.now();
+  const ONE_HOUR = 60 * 60 * 1000; // 1 hour in milliseconds
+  
+  // Remove entries older than 1 hour
+  for (const socketId in userActivity) {
+    if (now - userActivity[socketId].lastSeen > ONE_HOUR) {
+      delete userActivity[socketId];
+    }
+  }
+  savePersistentData();
+}
+
 // Load data on startup
 loadPersistentData();
 
@@ -148,6 +161,9 @@ setInterval(cleanupExpiredFurniture, 60 * 60 * 1000);
 
 // Initial cleanup on startup
 cleanupExpiredFurniture();
+
+// Run cleanup every 5 minutes
+setInterval(cleanupOldUserActivity, 5 * 60 * 1000);
 
 io.on('connection', (socket) => {
   // Initialize cursor for new user
