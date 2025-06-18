@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect  from 'react';
 import { Socket  from 'socket.io-client';
 import { UI_IMAGES  from './constants';
 import './Panel.css';
@@ -6,12 +6,44 @@ import './Panel.css';
 interface PanelProps {
 socket: Socket | null;
 onCursorChange: (cursor: { type: string ) => void;
+onFurnitureSpawn?: (type: string, x: number, y: number) => void;
 cursorPosition?: { x: number; y: number; name?: string; stillTime: number; cursorType?: string; isFrozen?: boolean; frozenPosition?: { x: number; y: number ; sleepingOnBed?: boolean ;
 viewportOffset?: { x: number; y: number ;
+gachaponWinner?: string | null;
+socketId?: string | null;
 style?: React.CSSProperties;
 
 
-const Panel: React.FC<PanelProps> = ({ socket, onCursorChange, cursorPosition, viewportOffset, style ) => {
+const Panel: React.FC<PanelProps> = ({ socket, onCursorChange, onFurnitureSpawn, cursorPosition, viewportOffset, gachaponWinner, socketId, style ) => {
+const [showTooltip, setShowTooltip] = useState(false);
+const [gachaponWin, setGachaponWin] = useState(false);
+const [localGachaponWinner, setLocalGachaponWinner] = useState<string | null>(null);
+
+// Check for gachapon win on component mount
+useEffect(() => {
+const hasWon = localStorage.getItem('gachaponWin') === 'true';
+const winnerId = localStorage.getItem('gachaponWinner');
+const winnerName = localStorage.getItem('gachaponWinnerName');
+const buttonChanged = localStorage.getItem('gachaponButtonChanged') === 'true';
+
+// Show easter egg button for all users who were online at the time of win
+if (hasWon && buttonChanged) {
+setGachaponWin(true);
+setLocalGachaponWinner(winnerName);
+
+, []);
+
+// Update gachapon state when prop changes
+useEffect(() => {
+// Show easter egg button for all users who were online at the time of win
+if (gachaponWinner) {
+setGachaponWin(true);
+// Get the winner name from localStorage
+const winnerName = localStorage.getItem('gachaponWinnerName');
+setLocalGachaponWinner(winnerName);
+
+, [gachaponWinner]);
+
 const handleHatClick = (hatType: string) => {
 if (socket) {
 socket.emit('changeCursor', { type: hatType );
@@ -20,7 +52,6 @@ onCursorChange({ type: hatType );
 ;
 
 const handleFurnitureClick = (type: string) => {
-if (socket) {
 // Spawn furniture in the center of the screen
 const centerX = window.innerWidth / 2;
 const centerY = window.innerHeight / 2;
@@ -30,6 +61,10 @@ const centerY = window.innerHeight / 2;
 const canvasX = centerX + (viewportOffset?.x || 0);
 const canvasY = centerY + (viewportOffset?.y || 0);
 
+if (onFurnitureSpawn) {
+onFurnitureSpawn(type, canvasX, canvasY);
+ else if (socket) {
+// Fallback to direct socket emission if no handler provided
 socket.emit('spawnFurniture', { 
 type,
 x: canvasX,
@@ -108,6 +143,55 @@ onClick={() => handleHatClick('cathat')
 />
 </div>
 <div className="button-row">
+<div className="locked-button-container" style={{ position: 'relative', display: 'flex' >
+<img 
+src={gachaponWin ? './UI/easteregg1button.png' : './UI/lockedbutton.png' 
+alt="Locked" 
+className="button"
+style={{ cursor: 'pointer' 
+onMouseEnter={(e) => {
+e.currentTarget.src = gachaponWin ? './UI/easteregg1buttonhover.png' : './UI/lockedbuttonhover.png';
+setShowTooltip(true);
+
+onMouseLeave={(e) => {
+e.currentTarget.src = gachaponWin ? './UI/easteregg1button.png' : './UI/lockedbutton.png';
+setShowTooltip(false);
+
+onClick={(e) => {
+if (gachaponWin) {
+handleHatClick('easteregg1');
+
+
+/>
+<div 
+className="tooltip" 
+style={{
+position: 'absolute',
+top: '10px',
+left: '-230%',
+transform: 'translateX(-50%)',
+backgroundColor: 'rgba(0, 0, 0, 0.7)',
+color: 'white',
+padding: '4px 8px',
+borderRadius: '14px',
+fontSize: '8px',
+fontFamily: '"Press Start 2P", monospace',
+whiteSpace: 'nowrap',
+opacity: showTooltip ? 1 : 0,
+visibility: showTooltip ? 'visible' : 'hidden',
+transition: 'opacity 0.3s, visibility 0.3s',
+zIndex: 99999,
+
+>
+{gachaponWin && localGachaponWinner ? 
+(socketId && socketId === localStorage.getItem('gachaponWinner') ? 
+'You won the 1%!' : 
+`${localGachaponWinner won the 1%!`
+) : 
+'30m = 1 gacha play'
+
+</div>
+</div>
 <img 
 src="./UI/deletehatbutton.png" 
 alt="Delete Hat" 

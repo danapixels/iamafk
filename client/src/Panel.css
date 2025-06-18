@@ -184,6 +184,29 @@ background-image: url('./UI/sprout.png') !important;
 background-image: url('./UI/cathat.png') !important;
 
 
+.cursor-easteregg1 {
+width: 32px;
+height: 34px;
+background-image: url('./UI/easteregg1.gif') !important;
+
+
 .cursor-default {
 background-image: url('./UI/cursor.png') !important;
+
+
+/* Locked button hover state */
+.button[src*="lockedbutton.png"]:hover {
+content: url('./UI/lockedbuttonhover.png');
+
+
+/* Easter egg button hover state */
+.button[src*="easteregg1button.png"]:hover {
+content: url('./UI/easteregg1buttonhover.png');
+
+
+/* Tooltip functionality */
+.locked-button-container:hover .tooltip,
+.locked-button-container.clicked .tooltip {
+opacity: 1;
+visibility: visible;
  

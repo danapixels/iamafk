@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState  from 'react';
 import { io, Socket  from 'socket.io-client';
 import './App.css';
 import Panel from './Panel';
+import GachaponMachine from './components/GachaponMachine';
 import { 
 CANVAS_SIZE, 
 Z_INDEX_LAYERS, 
@@ -29,7 +30,8 @@ saveUsername,
 saveCursorType,
 getUserStats,
 formatTotalTime,
-exportUserData
+exportUserData,
+setAFKTimeForTesting
  from './utils/localStorage';
 
 interface CursorData {
@@ -85,18 +87,6 @@ zIndex?: number;
 isFlipped?: boolean;
 
 
-interface PanelProps {
-socket: Socket | null;
-onCursorChange: (type: string) => void;
-isDeleteMode: boolean;
-onDeleteModeChange: (isDeleteMode: boolean) => void;
-isDeleteButtonHovered: boolean;
-isDraggingOverTrash: boolean;
-cursorPosition?: CursorData;
-viewportOffset: { x: number; y: number ;
-style?: React.CSSProperties;
-
-
 function App() {
 const [username, setUsername] = useState(getSavedUsername);
 const [hasConnected, setHasConnected] = useState(false);
@@ -118,6 +108,7 @@ const [selectedFurnitureId, setSelectedFurnitureId] = useState<string | null>(nu
 const furnitureRefs = useRef<{ [key: string]: HTMLImageElement | null >({);
 const [isCursorFrozen, setIsCursorFrozen] = useState(false);
 const [frozenCursorPosition, setFrozenCursorPosition] = useState<{ x: number; y: number  | null>(null);
+const [gachaponWinner, setGachaponWinner] = useState<string | null>(null);
 
 // Canvas viewport state
 const [viewportOffset, setViewportOffset] = useState({ x: 0, y: 0 );
@@ -225,11 +216,10 @@ const socket = io(SERVER_CONFIG.SOCKET_URL);
 socketRef.current = socket;
 
 socket.on('connect', () => {
-console.log('✅ Connected with id:', socket.id);
+// Connected successfully
 );
 
 socket.on('disconnect', () => {
-console.log('❌ Disconnected');
 setHasConnected(false);
 setCursors({);
 setHearts([]);
@@ -262,7 +252,6 @@ return newCursors;
 );
 
 socket.on('cursorChanged', (data: { id: string; type: string ) => {
-console.log('Cursor changed:', data.id, 'to type:', data.type);
 setCursors((prev) => {
 const newCursors = {
 ...prev,
@@ -271,11 +260,9 @@ const newCursors = {
 cursorType: data.type,
 ,
 ;
-console.log('Updated cursors:', newCursors);
 return newCursors;
 );
 if (data.id === socket.id) {
-console.log('Updating local cursor type to:', data.type);
 setCursorType(data.type);
 
 );
@@ -368,8 +355,18 @@ console.log(`Server cleaned up ${data.cleanedCount expired furniture items`);
 // Optionally show a notification to users about cleanup
 if (data.cleanedCount > 0) {
 // You could add a toast notification here if desired
-console.log(`Cleaned up ${data.cleanedCount furniture items that were inactive for 24+ hours`);
+console.log(`Cleaned up ${data.cleanedCount furniture items that were inactive for 48+ hours`);
 
+);
+
+socket.on('gachaponWin', (data: { winnerId: string, winnerName: string ) => {
+setGachaponWinner(data.winnerId);
+
+// Set localStorage for ALL users online at the time of win (not just the winner)
+localStorage.setItem('gachaponWin', 'true');
+localStorage.setItem('gachaponWinner', data.winnerId);
+localStorage.setItem('gachaponWinnerName', data.winnerName);
+localStorage.setItem('gachaponButtonChanged', 'true');
 );
 
 return () => {
@@ -574,7 +571,6 @@ const myCursor = cursors[socketRef.current?.id || ''];
 if (myCursor) {
 // Stop AFK timer immediately when user moves (regardless of server stillTime)
 const afkDuration = Math.floor((Date.now() - afkStartTimeRef.current) / 1000);
-console.log('⏰ STOPPED AFK - duration was:', afkDuration, 'seconds');
 updateAFKTime(afkDuration);
 const updatedStats = getUserStats();
 setUserStats(updatedStats);
@@ -592,7 +588,6 @@ const myCursor = cursors[socketRef.current?.id || ''];
 if (myCursor) {
 // Stop AFK timer immediately when user presses mouse down (regardless of server stillTime)
 const afkDuration = Math.floor((Date.now() - afkStartTimeRef.current) / 1000);
-console.log('⏰ STOPPED AFK - duration was:', afkDuration, 'seconds');
 updateAFKTime(afkDuration);
 const updatedStats = getUserStats();
 setUserStats(updatedStats);
@@ -693,7 +688,6 @@ const myCursor = cursors[socketRef.current?.id || ''];
 if (myCursor) {
 // Stop AFK timer immediately when user clicks (regardless of server stillTime)
 const afkDuration = Math.floor((Date.now() - afkStartTimeRef.current) / 1000);
-console.log('⏰ STOPPED AFK - duration was:', afkDuration, 'seconds');
 updateAFKTime(afkDuration);
 const updatedStats = getUserStats();
 setUserStats(updatedStats);
@@ -790,7 +784,6 @@ if (!afkStartTimeRef.current) {
 // The server's stillTime is in seconds, so we subtract that from now
 const inactiveStartTime = Date.now() - (currentStillTime * 1000);
 afkStartTimeRef.current = inactiveStartTime;
-console.log('🎯 BECAME AFK - starting timer from', currentStillTime, 'seconds ago');
 
 
 
@@ -805,7 +798,6 @@ afkStartTimeRef.current = inactiveStartTime;
 if (currentStillTime < 30 && !isFrozen && lastStillTime >= 30) {
 if (afkStartTimeRef.current) {
 const afkDuration = Math.floor((Date.now() - afkStartTimeRef.current) / 1000);
-console.log('⏰ STOPPED AFK - duration was:', afkDuration, 'seconds');
 updateAFKTime(afkDuration);
 const updatedStats = getUserStats();
 setUserStats(updatedStats);
@@ -1005,9 +997,7 @@ usernameRef.current = username;
 // Initialize user data when username changes
 useEffect(() => {
 if (username.trim()) {
-console.log('Initializing user data for username:', username.trim());
 const userData = initializeUserData(username.trim());
-console.log('Initialized user data:', userData);
 setUserStats(userData.stats);
 saveUsername(username.trim());
 
@@ -1022,7 +1012,7 @@ const currentStats = getUserStats();
 if (currentStats) {
 setUserStats(currentStats);
 
-, 5000); // Update every 5 seconds
+, 1000); // Update every 1 second (more responsive)
 
 return () => clearInterval(interval);
 , [hasConnected]);
@@ -1084,6 +1074,12 @@ name: username
 return () => clearInterval(interval);
 , [hasConnected, cursors, username]);
 
+// Make testing functions available globally
+useEffect(() => {
+(window as any).setAFKTimeForTesting = setAFKTimeForTesting;
+(window as any).exportUserData = exportUserData;
+, []);
+
 return (
 <div 
 id="app-root" 
@@ -1100,13 +1096,12 @@ overflow: 'hidden'
 className="canvas-container"
 style={{
 position: 'absolute',
-left: -viewportOffset.x - 4, // Account for margin
-top: -viewportOffset.y - 4, // Account for margin
-width: CANVAS_SIZE + 8, // Add margin on both sides
-height: CANVAS_SIZE + 8, // Add margin on both sides
+left: -viewportOffset.x,
+top: -viewportOffset.y,
+width: CANVAS_SIZE,
+height: CANVAS_SIZE,
 pointerEvents: 'none',
 border: '1px solid white',
-margin: '4px'
 
 >
 {/* Tutorial Image */
@@ -1465,6 +1460,42 @@ pointerEvents: 'none'
 )
 </div>
 
+{/* Gacha GIF - positioned outside canvas container to receive clicks */
+<div
+style={{
+position: 'absolute',
+left: 160 - viewportOffset.x,
+top: 280 - viewportOffset.y,
+width: 100, // Adjust based on gacha.gif size
+height: 100, // Adjust based on gacha.gif size
+zIndex: 9995, // Below cursors (9997) but above Panel (9996)
+pointerEvents: 'none', // Don't block clicks on the gif itself
+
+/>
+<GachaponMachine
+src={'./UI/gacha.gif'
+alt="Gacha"
+username={username
+socket={socketRef.current
+onWin={(winnerId, winnerName) => {
+setGachaponWinner(winnerId);
+// Update locked button to easter egg button
+localStorage.setItem('gachaponButtonChanged', 'true');
+
+onUse={() => {
+// Refresh userStats immediately after gachapon use
+const updatedStats = getUserStats();
+setUserStats(updatedStats);
+
+style={{
+position: 'absolute',
+left: 160 - viewportOffset.x,
+top: 280 - viewportOffset.y,
+zIndex: 9995, // Below cursors (9997) but above Panel (9996)
+transform: 'scaleX(-1)',
+
+/>
+
 {/* UI Elements (Panel, Logo, etc.) - positioned relative to viewport */
 <Panel 
 socket={socketRef.current 
@@ -1472,10 +1503,12 @@ onCursorChange={handleCursorChange
 onFurnitureSpawn={handleFurnitureSpawn
 cursorPosition={cursors[socketRef.current?.id || '']
 viewportOffset={viewportOffset
+gachaponWinner={gachaponWinner
+socketId={socketRef.current?.id || null
 style={{ zIndex: Z_INDEX_LAYERS.PANEL 
 />
 
-{/* Sticky Total AFK Container */
+{/* Sticky AFK Time Container */
 <div style={{
 position: 'fixed',
 bottom: '20px',
@@ -1483,30 +1516,22 @@ left: '20px',
 zIndex: Z_INDEX_LAYERS.PANEL,
 pointerEvents: 'none'
 >
-<img 
-src="./UI/totalafk.png" 
-alt="Total AFK" 
-style={{
-width: 'auto',
-height: 'auto',
-display: 'block'
-
-/>
+{/* Lifetime Total AFK Time (never deducted) */
+<div style={{
+marginBottom: '8px',
+position: 'relative'
+>
 {hasConnected && userStats && (
 <div style={{
-position: 'absolute',
-top: '50%',
-left: '50%',
-transform: 'translate(-50%, -50%)',
 fontFamily: '"Press Start 2P", monospace',
-fontSize: '0.6rem',
+fontSize: '0.5rem',
 color: 'white',
-textShadow: '2px 2px 0 #000',
 textAlign: 'left',
 whiteSpace: 'nowrap',
-marginLeft: '20px'
+pointerEvents: 'none',
+opacity: '0.2',
 >
-{(() => {
+You've been away for {(() => {
 const totalSeconds = userStats.totalAFKTime;
 const days = Math.floor(totalSeconds / 86400);
 const hours = Math.floor((totalSeconds % 86400) / 3600);
@@ -1523,6 +1548,52 @@ return timeString.trim();
 )()
 </div>
 )
+</div>
+
+{/* AFK Balance (spendable) */
+<div style={{
+position: 'relative'
+>
+<img 
+src="./UI/totalafk.png" 
+alt="AFK Balance" 
+style={{
+width: 'auto',
+height: 'auto',
+display: 'block'
+
+/>
+{hasConnected && userStats && (
+<div style={{
+position: 'absolute',
+top: '50%',
+left: '60%',
+transform: 'translate(-50%, -50%)',
+fontFamily: '"Press Start 2P", monospace',
+fontSize: '0.5rem',
+color: 'white',
+textAlign: 'left',
+whiteSpace: 'nowrap',
+marginLeft: '20px'
+>
+{(() => {
+const balanceSeconds = userStats.afkBalance;
+const days = Math.floor(balanceSeconds / 86400);
+const hours = Math.floor((balanceSeconds % 86400) / 3600);
+const minutes = Math.floor((balanceSeconds % 3600) / 60);
+const seconds = balanceSeconds % 60;
+
+let timeString = '';
+if (days > 0) timeString += `${daysd `;
+if (hours > 0) timeString += `${hoursh `;
+if (minutes > 0) timeString += `${minutesm `;
+if (seconds > 0 || timeString === '') timeString += `${secondss`;
+
+return timeString.trim();
+)()
+</div>
+)
+</div>
 </div>
 
 <div id="logo-container" style={{ zIndex: Z_INDEX_LAYERS.LOGO >
