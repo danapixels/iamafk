@@ -52,6 +52,38 @@ const GachaponMachine: React.FC<GachaponMachineProps> = ({
     return hasEnough;
   };
 
+  useEffect(() => {
+    if (socket) {
+      // Listen for animation events from other users
+      socket.on('gachaponAnimation', (data: { userId: string, hasEnoughTime: boolean }) => {
+        if (data.userId !== socket.id) {  // Only play if it's not our own animation
+          setIsPlaying(true);
+          setCurrentImageSrc(src);
+          setGifTimestamp(Date.now());
+          
+          // Use the same timing logic as the click handler
+          if (data.hasEnoughTime) {
+            // Let the full GIF play for 3 seconds
+            setTimeout(() => {
+              setIsPlaying(false);
+              setCurrentImageSrc('./UI/gachastill.png');
+            }, 3000);
+          } else {
+            // Switch to static image after 0.5 seconds
+            setTimeout(() => {
+              setCurrentImageSrc('./UI/gachastill.png');
+              setIsPlaying(false);
+            }, 500);
+          }
+        }
+      });
+
+      return () => {
+        socket.off('gachaponAnimation');
+      };
+    }
+  }, [socket, src]);
+
   const handleClick = () => {
     if (isPlaying) {
       return; // Prevent multiple clicks while playing
@@ -81,6 +113,14 @@ const GachaponMachine: React.FC<GachaponMachineProps> = ({
     setCurrentImageSrc(src);
     setGifTimestamp(Date.now());
 
+    // Emit animation event to other users with enoughTime flag
+    if (socket) {
+      socket.emit('gachaponAnimation', { 
+        userId: socket.id,
+        hasEnoughTime: enoughTime 
+      });
+    }
+
     if (enoughTime) {
       // Deduct 30 minutes (1800 seconds) from AFK balance
       const success = deductAFKBalance(1800);
@@ -95,14 +135,12 @@ const GachaponMachine: React.FC<GachaponMachineProps> = ({
       setTimeout(() => {
         determinePayout();
         setIsPlaying(false);
-      }, 3000); // Changed back to 3 seconds
+      }, 3000);
     } else {
       // Switch to static image after 0.5 seconds to stop the animation
       setTimeout(() => {
         setCurrentImageSrc('./UI/gachastill.png');
         setIsPlaying(false);
-        
-        // Don't determine payout or show any message if not enough AFK time
       }, 500);
     }
   };

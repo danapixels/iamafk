@@ -25,7 +25,6 @@ import {
   getSavedUsername,
   getSavedCursorType,
   saveUsername,
-  saveCursorType,
   getUserStats,
   exportUserData,
   setAFKTimeForTesting
@@ -776,10 +775,25 @@ function App() {
     };
   }, [hasConnected, userStats]);
 
+  const handleCursorChange = (cursor: { type: string }) => {
+    if (socketRef.current) {
+      setCursorType(cursor.type);
+      socketRef.current.emit('changeCursor', cursor);
+      updateCursorPreference(cursor.type);
+    }
+  };
+
   const handleConnect = () => {
     if (username.trim() === '') return;
     if (socketRef.current?.connected) {
       socketRef.current.emit('setName', { name: username.trim() });
+      
+      // Send the saved cursor type immediately after setting name
+      const savedCursorType = getSavedCursorType();
+      if (savedCursorType) {
+        socketRef.current.emit('changeCursor', { type: savedCursorType });
+      }
+      
       setHasConnected(true);
       clickEnabledTimeRef.current = Date.now() + 300;
       
@@ -787,7 +801,6 @@ function App() {
       const userData = initializeUserData(username.trim());
       setUserStats(userData.stats);
       saveUsername(username.trim());
-      saveCursorType(cursorType);
     }
   };
 
@@ -795,15 +808,6 @@ function App() {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}m ${secs}s`;
-  };
-
-  const handleCursorChange = (cursor: { type: string }) => {
-    if (socketRef.current) {
-      setCursorType(cursor.type);
-      socketRef.current.emit('changeCursor', cursor);
-      updateCursorPreference(cursor.type);
-      saveCursorType(cursor.type);
-    }
   };
 
   const getHighestAFKPlayer = () => {
