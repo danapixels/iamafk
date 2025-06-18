@@ -11,22 +11,30 @@ app.use(cors());
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: (origin, callback) => {
+      // Allow any localhost origin for development
+      if (!origin || origin.startsWith('http://localhost:')) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     methods: ["GET", "POST"],
   },
 });
 
 let cursors = {};
+let hearts = [];
+let circles = [];
+let emojis = [];
+let furniture = {};
 let lastMoveTimestamps = {};
+let userActivity = {};
 
 // Persistent furniture storage with expiration
 const FURNITURE_FILE = path.join(__dirname, 'furniture.json');
-const FURNITURE_EXPIRY_HOURS = 24;
+const FURNITURE_EXPIRY_HOURS = 48;
 const USER_ACTIVITY_FILE = path.join(__dirname, 'user_activity.json');
-
-// Load persistent furniture from file
-let furniture = {};
-let userActivity = {};
 
 // Z-index management
 let nextZIndex = 5000; // Base z-index for furniture
@@ -50,7 +58,7 @@ function loadPersistentData() {
   try {
     if (fs.existsSync(FURNITURE_FILE)) {
       const furnitureData = JSON.parse(fs.readFileSync(FURNITURE_FILE, 'utf8'));
-      furniture = furnitureData;
+      furniture = furnitureData.furniture || {};
       console.log('Loaded furniture data:', Object.keys(furniture).length, 'items');
       // Update z-index counter from loaded furniture
       updateZIndexFromFurniture();
@@ -62,7 +70,7 @@ function loadPersistentData() {
   try {
     if (fs.existsSync(USER_ACTIVITY_FILE)) {
       const activityData = JSON.parse(fs.readFileSync(USER_ACTIVITY_FILE, 'utf8'));
-      userActivity = activityData;
+      userActivity = activityData || {};
       console.log('Loaded user activity data:', Object.keys(userActivity).length, 'users');
     }
   } catch (error) {
@@ -72,7 +80,7 @@ function loadPersistentData() {
 
 function savePersistentData() {
   try {
-    fs.writeFileSync(FURNITURE_FILE, JSON.stringify(furniture, null, 2));
+    fs.writeFileSync(FURNITURE_FILE, JSON.stringify({ furniture }, null, 2));
   } catch (error) {
     console.error('Error saving furniture data:', error);
   }
@@ -96,13 +104,13 @@ function updateUserActivity(socketId, username) {
 
 function cleanupExpiredFurniture() {
   const now = Date.now();
-  const expiryTime = FURNITURE_EXPIRY_HOURS * 60 * 60 * 1000; // 24 hours in milliseconds
+  const expiryTime = FURNITURE_EXPIRY_HOURS * 60 * 60 * 1000; // 48 hours in milliseconds
   let cleanedCount = 0;
 
   Object.keys(furniture).forEach(furnitureId => {
     const item = furniture[furnitureId];
     if (item.timestamp && (now - item.timestamp) > expiryTime) {
-      // Check if the user who placed this furniture has been inactive for 24 hours
+      // Check if the user who placed this furniture has been inactive for 48 hours
       const userId = furnitureId.split('-')[0];
       const userLastSeen = userActivity[userId]?.lastSeen || 0;
       
@@ -142,8 +150,6 @@ setInterval(cleanupExpiredFurniture, 60 * 60 * 1000);
 cleanupExpiredFurniture();
 
 io.on('connection', (socket) => {
-  console.log('User connected:', socket.id);
-
   // Initialize cursor for new user
   cursors[socket.id] = { x: 0, y: 0, username: '', type: 'default' };
   lastMoveTimestamps[socket.id] = Date.now();
@@ -154,7 +160,7 @@ io.on('connection', (socket) => {
   // Send current state to new user
   socket.emit('initialState', {
     cursors: getValidCursors(),
-    furniture: furniture
+    furniture: furniture,
   });
   
   // Notify other users about new connection
@@ -215,27 +221,22 @@ io.on('connection', (socket) => {
   });
 
   socket.on('spawnHeart', (heartData) => {
-    console.log('Heart spawned by:', socket.id, 'at:', heartData.x, heartData.y);
     io.emit('heartSpawned', heartData);
   });
 
   socket.on('spawnCircle', (circleData) => {
-    console.log('Circle spawned by:', socket.id, 'at:', circleData.x, circleData.y);
     io.emit('circleSpawned', circleData);
   });
 
   socket.on('spawnThumbsUp', (thumbsUpData) => {
-    console.log('Thumbs up spawned by:', socket.id, 'at:', thumbsUpData.x, thumbsUpData.y);
     io.emit('thumbsUpSpawned', thumbsUpData);
   });
 
   socket.on('spawnEmoji', (emojiData) => {
-    console.log('Emoji spawned by:', socket.id, 'at:', emojiData.x, emojiData.y, 'type:', emojiData.type);
     io.emit('emojiSpawned', emojiData);
   });
 
   socket.on('spawnFurniture', (data) => {
-    console.log('User', socket.id, 'spawning furniture:', data.type, 'at:', data.x, data.y);
     const furnitureId = `${socket.id}-${Date.now()}`;
     const now = Date.now();
     
@@ -407,7 +408,6 @@ io.on('connection', (socket) => {
   });
 
   socket.on('cursorFreeze', ({ isFrozen, x, y, sleepingOnBed }) => {
-    console.log('User', socket.id, 'cursor freeze state:', isFrozen, 'sleepingOnBed:', sleepingOnBed);
     if (cursors[socket.id]) {
       // Update the cursor's frozen state
       cursors[socket.id].isFrozen = isFrozen;
@@ -436,7 +436,6 @@ io.on('connection', (socket) => {
   });
 
   socket.on('changeCursor', ({ type }) => {
-    console.log('User', socket.id, 'changing cursor to:', type);
     if (cursors[socket.id]) {
       // Update the cursor type
       cursors[socket.id].cursorType = type;
@@ -447,11 +446,15 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('gachaponWin', ({ winnerId, winnerName }) => {
+    // Broadcast to ALL currently online clients
+    io.emit('gachaponWin', { winnerId, winnerName });
+  });
+
   socket.on('disconnect', () => {
     // Update user activity on disconnect (don't delete furniture immediately)
     updateUserActivity(socket.id, cursors[socket.id]?.name || 'Anonymous');
     
-    console.log('User disconnected:', socket.id);
     delete cursors[socket.id];
     delete lastMoveTimestamps[socket.id];
     io.emit('clientDisconnected', socket.id);
