@@ -3,7 +3,6 @@
   right: 8px;
   top: 0;
   transform: none;
-  z-index: 1000;
   pointer-events: none;
   animation: fadeInFromRight 0.5s ease-out;
 }

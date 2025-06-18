@@ -15,24 +15,22 @@ import {
   UI_IMAGES,
   GITHUB_URL,
   ANIMATION_CONSTANTS,
-  SERVER_CONFIG,
-  UI_STATE
+  SERVER_CONFIG
 } from './constants';
 import { 
   initializeUserData, 
   updateAFKTime, 
   recordFurniturePlacement, 
   updateCursorPreference,
-  getUserPreferences,
   getSavedUsername,
   getSavedCursorType,
   saveUsername,
   saveCursorType,
   getUserStats,
-  formatTotalTime,
   exportUserData,
   setAFKTimeForTesting
 } from './utils/localStorage';
+import { screenToCanvas, clampToCanvas, isElementVisible } from './utils/canvas';
 
 interface CursorData {
   x: number;
@@ -71,13 +69,6 @@ interface Emoji {
   type: string;
 }
 
-interface ThumbsUp {
-  id: string;
-  x: number;
-  y: number;
-  timestamp: number;
-}
-
 interface Furniture {
   id: string;
   type: string;
@@ -112,14 +103,8 @@ function App() {
 
   // Canvas viewport state
   const [viewportOffset, setViewportOffset] = useState({ x: 0, y: 0 });
-  const [isDraggingViewport, setIsDraggingViewport] = useState(false);
   const viewportDragStart = useRef<{ x: number; y: number } | null>(null);
 
-  // Performance optimization refs
-  const animationFrameRef = useRef<number | null>(null);
-  const lastMousePosition = useRef<{ x: number; y: number }>(UI_STATE.INITIAL_MOUSE_POSITION);
-  const isMouseMoving = useRef(false);
-  
   // AFK tracking refs
   const afkStartTimeRef = useRef<number | null>(null);
   const lastStillTimeRef = useRef(0);
@@ -137,59 +122,30 @@ function App() {
   const usernameRef = useRef(username);
 
   // Helper function to convert screen coordinates to canvas coordinates
-  const screenToCanvas = (screenX: number, screenY: number) => {
-    return {
-      x: screenX + viewportOffset.x,
-      y: screenY + viewportOffset.y
-    };
-  };
-
-  // Helper function to convert canvas coordinates to screen coordinates
-  const canvasToScreen = (canvasX: number, canvasY: number) => {
-    return {
-      x: canvasX - viewportOffset.x,
-      y: canvasY - viewportOffset.y
-    };
-  };
-
-  // Helper function to clamp coordinates within canvas bounds
-  const clampToCanvas = (x: number, y: number) => {
-    return {
-      x: Math.max(0, Math.min(CANVAS_SIZE, x)),
-      y: Math.max(0, Math.min(CANVAS_SIZE, y))
-    };
+  const convertScreenToCanvas = (screenX: number, screenY: number) => {
+    return screenToCanvas(screenX, screenY, viewportOffset);
   };
 
   // Helper function to check if an element is visible in the current viewport
-  const isElementVisible = (x: number, y: number, buffer: number = ANIMATION_CONSTANTS.DEFAULT_VISIBILITY_BUFFER) => {
-    const visibleBounds = {
-      left: viewportOffset.x - buffer,
-      right: viewportOffset.x + window.innerWidth + buffer,
-      top: viewportOffset.y - buffer,
-      bottom: viewportOffset.y + window.innerHeight + buffer
-    };
-
-    return x >= visibleBounds.left && 
-           x <= visibleBounds.right && 
-           y >= visibleBounds.top && 
-           y <= visibleBounds.bottom;
+  const checkElementVisible = (x: number, y: number, buffer: number = ANIMATION_CONSTANTS.DEFAULT_VISIBILITY_BUFFER) => {
+    return isElementVisible(x, y, viewportOffset, buffer);
   };
 
   // Filter elements to only those visible in the current viewport
   const visibleCircles = circles.filter(circle => 
-    isElementVisible(circle.x, circle.y, ANIMATION_CONSTANTS.CIRCLE_VISIBILITY_BUFFER)
+    checkElementVisible(circle.x, circle.y, ANIMATION_CONSTANTS.CIRCLE_VISIBILITY_BUFFER)
   );
 
   const visibleHearts = hearts.filter(heart => 
-    isElementVisible(heart.x, heart.y, ANIMATION_CONSTANTS.HEART_VISIBILITY_BUFFER)
+    checkElementVisible(heart.x, heart.y, ANIMATION_CONSTANTS.HEART_VISIBILITY_BUFFER)
   );
 
   const visibleEmojis = emojis.filter(emoji => 
-    isElementVisible(emoji.x, emoji.y, ANIMATION_CONSTANTS.EMOJI_VISIBILITY_BUFFER)
+    checkElementVisible(emoji.x, emoji.y, ANIMATION_CONSTANTS.EMOJI_VISIBILITY_BUFFER)
   );
 
   const visibleFurniture = Object.values(furniture).filter(item => 
-    isElementVisible(item.x, item.y, ANIMATION_CONSTANTS.FURNITURE_VISIBILITY_BUFFER)
+    checkElementVisible(item.x, item.y, ANIMATION_CONSTANTS.FURNITURE_VISIBILITY_BUFFER)
   );
 
   const visibleCursors = Object.entries(cursors).filter(([id, cursor]) => {
@@ -208,7 +164,7 @@ function App() {
     if (!shouldShowCursor) return false;
     if (!(id === socketRef.current?.id) && cursor.isFrozen && !cursor.frozenPosition) return false;
 
-    return isElementVisible(cursorX, cursorY, ANIMATION_CONSTANTS.CURSOR_VISIBILITY_BUFFER);
+    return checkElementVisible(cursorX, cursorY, ANIMATION_CONSTANTS.CURSOR_VISIBILITY_BUFFER);
   });
 
   useEffect(() => {
@@ -359,13 +315,12 @@ function App() {
       }
     });
 
-    socket.on('gachaponWin', (data: { winnerId: string, winnerName: string }) => {
+    socket.on('gachaponWin', (data: { winnerId: string }) => {
       setGachaponWinner(data.winnerId);
       
       // Set localStorage for ALL users online at the time of win (not just the winner)
       localStorage.setItem('gachaponWin', 'true');
       localStorage.setItem('gachaponWinner', data.winnerId);
-      localStorage.setItem('gachaponWinnerName', data.winnerName);
       localStorage.setItem('gachaponButtonChanged', 'true');
     });
 
@@ -491,13 +446,12 @@ function App() {
   // Replace the multiple mouse event useEffects with a single optimized one:
   useEffect(() => {
     // Refs for drag state
-    const draggingFurnitureId = draggedFurnitureId;
     const dragStart = dragStartPos;
     const viewportDrag = viewportDragStart;
     let lastFrame = 0;
 
     // Animation loop for smooth updates
-    function animationLoop(ts: number) {
+    function animationLoop() {
       if (mouseStateRef.current.isDraggingFurniture && draggedFurnitureId.current && dragStart.current && mouseStateRef.current.lastEvent) {
         // Calculate delta
         const dx = mouseStateRef.current.lastX - dragStart.current.x;
@@ -547,7 +501,7 @@ function App() {
 
       // Always update cursor position for server (but not during viewport dragging)
       if (socketRef.current?.connected && !isCursorFrozen && hasConnected && mouseStateRef.current.lastEvent && !mouseStateRef.current.isDraggingViewport) {
-        const canvasCoords = screenToCanvas(mouseStateRef.current.lastX, mouseStateRef.current.lastY);
+        const canvasCoords = convertScreenToCanvas(mouseStateRef.current.lastX, mouseStateRef.current.lastY);
         const clampedCoords = clampToCanvas(canvasCoords.x, canvasCoords.y);
         socketRef.current.emit('cursorMove', {
           x: clampedCoords.x,
@@ -646,7 +600,7 @@ function App() {
       }
     }
 
-    function onMouseUp(e: MouseEvent) {
+    function onMouseUp() {
       if (mouseStateRef.current.isDraggingViewport) {
         mouseStateRef.current.isDraggingViewport = false;
         viewportDrag.current = null;
@@ -696,7 +650,7 @@ function App() {
       }
 
       // Convert screen coordinates to canvas coordinates
-      const canvasCoords = screenToCanvas(e.clientX, e.clientY);
+      const canvasCoords = convertScreenToCanvas(e.clientX, e.clientY);
       const clampedCoords = clampToCanvas(canvasCoords.x, canvasCoords.y);
 
       const circleId = `${socketRef.current.id}-${now}-${++circleCounterRef.current}`;
@@ -720,7 +674,7 @@ function App() {
       window.removeEventListener('click', onClick);
       cancelAnimationFrame(lastFrame);
     };
-  }, [furniture, isDraggingViewport, hasConnected, isCursorFrozen, viewportOffset]);
+  }, [furniture, isCursorFrozen, hasConnected, viewportOffset]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -875,46 +829,6 @@ function App() {
     }
   };
 
-  const handleFurnitureDoubleClick = (e: React.MouseEvent, furnitureId: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    const item = furniture[furnitureId];
-    if (item && (item.type === 'bed' || item.type === 'chair')) {
-      // Clear selection state when double-clicking bed or chair
-      setSelectedFurnitureId(null);
-      
-      // Convert screen coordinates to canvas coordinates
-      const canvasCoords = screenToCanvas(e.clientX, e.clientY);
-      
-      if (!isCursorFrozen) {
-        // When freezing, store the current cursor position in canvas coordinates
-        const frozenPos = { x: canvasCoords.x, y: canvasCoords.y };
-        setFrozenCursorPosition(frozenPos);
-        if (socketRef.current) {
-          socketRef.current.emit('cursorFreeze', { 
-            isFrozen: true,
-            x: frozenPos.x,
-            y: frozenPos.y,
-            sleepingOnBed: item.type === 'bed'
-          });
-        }
-      } else {
-        // When unfreezing via double-click on furniture, clear the frozen position
-        setFrozenCursorPosition(null);
-        if (socketRef.current) {
-          socketRef.current.emit('cursorFreeze', { 
-            isFrozen: false,
-            x: canvasCoords.x,
-            y: canvasCoords.y,
-            sleepingOnBed: false
-          });
-        }
-      }
-      setIsCursorFrozen(!isCursorFrozen);
-    }
-  };
-
   useEffect(() => {
     // Double-click handler
     const onDblClick = (e: MouseEvent) => {
@@ -930,7 +844,7 @@ function App() {
           if (item && (item.type === 'bed' || item.type === 'chair')) {
             setSelectedFurnitureId(null);
             // Convert screen coordinates to canvas coordinates
-            const canvasCoords = screenToCanvas(e.clientX, e.clientY);
+            const canvasCoords = convertScreenToCanvas(e.clientX, e.clientY);
             if (!isCursorFrozen) {
               const frozenPos = { x: canvasCoords.x, y: canvasCoords.y };
               setFrozenCursorPosition(frozenPos);
@@ -975,7 +889,7 @@ function App() {
       // Handle regular double-click for hearts
       if (!socketRef.current?.connected || !hasConnected) return;
       socketRef.current.emit('resetStillTime');
-      const canvasCoords = screenToCanvas(e.clientX, e.clientY);
+      const canvasCoords = convertScreenToCanvas(e.clientX, e.clientY);
       const clampedCoords = clampToCanvas(canvasCoords.x, canvasCoords.y);
       const heartId = `${socketRef.current.id}-${Date.now()}-${++heartCounterRef.current}`;
       socketRef.current.emit('spawnHeart', {
@@ -1477,7 +1391,7 @@ function App() {
         alt="Gacha"
         username={username}
         socket={socketRef.current}
-        onWin={(winnerId, winnerName) => {
+        onWin={(winnerId) => {
           setGachaponWinner(winnerId);
           // Update locked button to easter egg button
           localStorage.setItem('gachaponButtonChanged', 'true');
