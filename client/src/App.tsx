@@ -17,6 +17,20 @@ import {
   SERVER_CONFIG,
   UI_STATE
 } from './constants';
+import { 
+  initializeUserData, 
+  updateAFKTime, 
+  recordFurniturePlacement, 
+  updateCursorPreference,
+  getUserPreferences,
+  getSavedUsername,
+  getSavedCursorType,
+  saveUsername,
+  saveCursorType,
+  getUserStats,
+  formatTotalTime,
+  exportUserData
+} from './utils/localStorage';
 
 interface CursorData {
   x: number;
@@ -84,30 +98,29 @@ interface PanelProps {
 }
 
 function App() {
+  const [username, setUsername] = useState(getSavedUsername);
+  const [hasConnected, setHasConnected] = useState(false);
   const [cursors, setCursors] = useState<CursorsMap>({});
   const [hearts, setHearts] = useState<Heart[]>([]);
   const [circles, setCircles] = useState<Circle[]>([]);
   const [emojis, setEmojis] = useState<Emoji[]>([]);
   const [furniture, setFurniture] = useState<{ [key: string]: Furniture }>({});
   const socketRef = useRef<Socket | null>(null);
-  const heartCounterRef = useRef(UI_STATE.INITIAL_COUNTERS);
-  const circleCounterRef = useRef(UI_STATE.INITIAL_COUNTERS);
-  const emojiCounterRef = useRef(UI_STATE.INITIAL_COUNTERS);
+  const heartCounterRef = useRef(0);
+  const circleCounterRef = useRef(0);
+  const emojiCounterRef = useRef(0);
   const dragStartPos = useRef<{ x: number; y: number } | null>(null);
   const draggedFurnitureId = useRef<string | null>(null);
 
-  const [username, setUsername] = useState('');
-  const usernameRef = useRef(username);
-  const [hasConnected, setHasConnected] = useState(false);
-  const clickEnabledTimeRef = useRef<number | null>(null);
-  const [cursorType, setCursorType] = useState<string>(SERVER_CONFIG.DEFAULT_CURSOR_TYPE);
+  const [cursorType, setCursorType] = useState(getSavedCursorType);
+  const [userStats, setUserStats] = useState(getUserStats());
   const [selectedFurnitureId, setSelectedFurnitureId] = useState<string | null>(null);
   const furnitureRefs = useRef<{ [key: string]: HTMLImageElement | null }>({});
   const [isCursorFrozen, setIsCursorFrozen] = useState(false);
   const [frozenCursorPosition, setFrozenCursorPosition] = useState<{ x: number; y: number } | null>(null);
 
   // Canvas viewport state
-  const [viewportOffset, setViewportOffset] = useState(UI_STATE.INITIAL_VIEWPORT_OFFSET);
+  const [viewportOffset, setViewportOffset] = useState({ x: 0, y: 0 });
   const [isDraggingViewport, setIsDraggingViewport] = useState(false);
   const viewportDragStart = useRef<{ x: number; y: number } | null>(null);
 
@@ -116,14 +129,21 @@ function App() {
   const lastMousePosition = useRef<{ x: number; y: number }>(UI_STATE.INITIAL_MOUSE_POSITION);
   const isMouseMoving = useRef(false);
   
+  // AFK tracking refs
+  const afkStartTimeRef = useRef<number | null>(null);
+  const lastStillTimeRef = useRef(0);
+  
   // Mouse state ref for optimized handling
   const mouseStateRef = useRef({
-    isDraggingFurniture: false,
     isDraggingViewport: false,
+    isDraggingFurniture: false,
     lastX: 0,
     lastY: 0,
     lastEvent: null as MouseEvent | null,
   });
+
+  const clickEnabledTimeRef = useRef<number | null>(null);
+  const usernameRef = useRef(username);
 
   // Helper function to convert screen coordinates to canvas coordinates
   const screenToCanvas = (screenX: number, screenY: number) => {
@@ -199,10 +219,6 @@ function App() {
 
     return isElementVisible(cursorX, cursorY, ANIMATION_CONSTANTS.CURSOR_VISIBILITY_BUFFER);
   });
-
-  useEffect(() => {
-    usernameRef.current = username;
-  }, [username]);
 
   useEffect(() => {
     const socket = io(SERVER_CONFIG.SOCKET_URL);
@@ -539,7 +555,7 @@ function App() {
         socketRef.current.emit('cursorMove', {
           x: clampedCoords.x,
           y: clampedCoords.y,
-          name: usernameRef.current.trim(),
+          name: username,
         });
       }
 
@@ -551,10 +567,38 @@ function App() {
       mouseStateRef.current.lastX = e.clientX;
       mouseStateRef.current.lastY = e.clientY;
       mouseStateRef.current.lastEvent = e;
+      
+      // Immediate AFK detection on mouse movement
+      if (hasConnected && afkStartTimeRef.current) {
+        const myCursor = cursors[socketRef.current?.id || ''];
+        if (myCursor) {
+          // Stop AFK timer immediately when user moves (regardless of server stillTime)
+          const afkDuration = Math.floor((Date.now() - afkStartTimeRef.current) / 1000);
+          console.log('⏰ STOPPED AFK - duration was:', afkDuration, 'seconds');
+          updateAFKTime(afkDuration);
+          const updatedStats = getUserStats();
+          setUserStats(updatedStats);
+          afkStartTimeRef.current = null;
+        }
+      }
     }
 
     function onMouseDown(e: MouseEvent) {
       const target = e.target as HTMLElement;
+      
+      // Immediate AFK detection on mouse down
+      if (hasConnected && afkStartTimeRef.current) {
+        const myCursor = cursors[socketRef.current?.id || ''];
+        if (myCursor) {
+          // Stop AFK timer immediately when user presses mouse down (regardless of server stillTime)
+          const afkDuration = Math.floor((Date.now() - afkStartTimeRef.current) / 1000);
+          console.log('⏰ STOPPED AFK - duration was:', afkDuration, 'seconds');
+          updateAFKTime(afkDuration);
+          const updatedStats = getUserStats();
+          setUserStats(updatedStats);
+          afkStartTimeRef.current = null;
+        }
+      }
       
       // Check if clicking on furniture
       const furnitureElement = target.closest('[data-furniture-id]');
@@ -643,6 +687,20 @@ function App() {
 
       socketRef.current.emit('resetStillTime');
 
+      // Immediate AFK detection on click
+      if (afkStartTimeRef.current) {
+        const myCursor = cursors[socketRef.current?.id || ''];
+        if (myCursor) {
+          // Stop AFK timer immediately when user clicks (regardless of server stillTime)
+          const afkDuration = Math.floor((Date.now() - afkStartTimeRef.current) / 1000);
+          console.log('⏰ STOPPED AFK - duration was:', afkDuration, 'seconds');
+          updateAFKTime(afkDuration);
+          const updatedStats = getUserStats();
+          setUserStats(updatedStats);
+          afkStartTimeRef.current = null;
+        }
+      }
+
       // Convert screen coordinates to canvas coordinates
       const canvasCoords = screenToCanvas(e.clientX, e.clientY);
       const clampedCoords = clampToCanvas(canvasCoords.x, canvasCoords.y);
@@ -697,12 +755,93 @@ function App() {
     };
   }, []);
 
+  // Track AFK time and update localStorage
+  useEffect(() => {
+    if (!hasConnected || !userStats) {
+      return;
+    }
+
+    // Immediate check when connecting
+    const myCursor = cursors[socketRef.current?.id || ''];
+    if (myCursor) {
+      const currentStillTime = myCursor.stillTime;
+      const isFrozen = myCursor.isFrozen || false;
+      
+      // Start tracking if user is already inactive
+      if (currentStillTime > 0 && !isFrozen && !afkStartTimeRef.current) {
+        const inactiveStartTime = Date.now() - (currentStillTime * 1000);
+        afkStartTimeRef.current = inactiveStartTime;
+      }
+    }
+
+    const interval = setInterval(() => {
+      const myCursor = cursors[socketRef.current?.id || ''];
+      
+      if (myCursor) {
+        const currentStillTime = myCursor.stillTime;
+        const isFrozen = myCursor.isFrozen || false;
+        const lastStillTime = lastStillTimeRef.current;
+        
+        // Check if user just became AFK (stillTime >= 30 OR is frozen)
+        if ((currentStillTime >= 30 || isFrozen) && lastStillTime < 30) {
+          // If we don't have an AFK start time yet, start it now
+          if (!afkStartTimeRef.current) {
+            // Calculate when the user actually became inactive
+            // The server's stillTime is in seconds, so we subtract that from now
+            const inactiveStartTime = Date.now() - (currentStillTime * 1000);
+            afkStartTimeRef.current = inactiveStartTime;
+            console.log('🎯 BECAME AFK - starting timer from', currentStillTime, 'seconds ago');
+          }
+        }
+        
+        // Also start tracking if user becomes inactive but hasn't reached 30 seconds yet
+        if (currentStillTime > 0 && !isFrozen && !afkStartTimeRef.current) {
+          // Calculate when the user actually became inactive
+          const inactiveStartTime = Date.now() - (currentStillTime * 1000);
+          afkStartTimeRef.current = inactiveStartTime;
+        }
+        
+        // Check if user is no longer AFK (stillTime < 30 AND not frozen)
+        if (currentStillTime < 30 && !isFrozen && lastStillTime >= 30) {
+          if (afkStartTimeRef.current) {
+            const afkDuration = Math.floor((Date.now() - afkStartTimeRef.current) / 1000);
+            console.log('⏰ STOPPED AFK - duration was:', afkDuration, 'seconds');
+            updateAFKTime(afkDuration);
+            const updatedStats = getUserStats();
+            setUserStats(updatedStats);
+            afkStartTimeRef.current = null;
+          }
+        }
+        
+        // Update display every 5 seconds when AFK
+        if (currentStillTime >= 30 || isFrozen) {
+          const updatedStats = getUserStats();
+          if (updatedStats) {
+            setUserStats(updatedStats);
+          }
+        }
+        
+        lastStillTimeRef.current = currentStillTime;
+      }
+    }, 1000); // Check every 1 second (more responsive)
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [hasConnected, userStats]);
+
   const handleConnect = () => {
     if (username.trim() === '') return;
     if (socketRef.current?.connected) {
       socketRef.current.emit('setName', { name: username.trim() });
       setHasConnected(true);
       clickEnabledTimeRef.current = Date.now() + 300;
+      
+      // Initialize user data and save preferences
+      const userData = initializeUserData(username.trim());
+      setUserStats(userData.stats);
+      saveUsername(username.trim());
+      saveCursorType(cursorType);
     }
   };
 
@@ -716,6 +855,8 @@ function App() {
     if (socketRef.current) {
       setCursorType(cursor.type);
       socketRef.current.emit('changeCursor', cursor);
+      updateCursorPreference(cursor.type);
+      saveCursorType(cursor.type);
     }
   };
 
@@ -856,6 +997,92 @@ function App() {
       window.removeEventListener('dblclick', onDblClick);
     };
   }, [furniture, isCursorFrozen, hasConnected, viewportOffset]);
+
+  useEffect(() => {
+    usernameRef.current = username;
+  }, [username]);
+
+  // Initialize user data when username changes
+  useEffect(() => {
+    if (username.trim()) {
+      console.log('Initializing user data for username:', username.trim());
+      const userData = initializeUserData(username.trim());
+      console.log('Initialized user data:', userData);
+      setUserStats(userData.stats);
+      saveUsername(username.trim());
+    }
+  }, [username]);
+
+  // Refresh userStats periodically to update the display
+  useEffect(() => {
+    if (!hasConnected) return;
+
+    const interval = setInterval(() => {
+      const currentStats = getUserStats();
+      if (currentStats) {
+        setUserStats(currentStats);
+      }
+    }, 5000); // Update every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [hasConnected]);
+
+  // Track furniture placement
+  useEffect(() => {
+    if (!hasConnected || !userStats) return;
+
+    const handleFurnitureSpawned = (furnitureData: any) => {
+      if (furnitureData.ownerId === socketRef.current?.id) {
+        recordFurniturePlacement(furnitureData.type);
+        setUserStats(getUserStats());
+      }
+    };
+
+    if (socketRef.current) {
+      socketRef.current.on('furnitureSpawned', handleFurnitureSpawned);
+    }
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.off('furnitureSpawned', handleFurnitureSpawned);
+      }
+    };
+  }, [hasConnected, userStats]);
+
+  // Handle furniture spawning and track in localStorage
+  const handleFurnitureSpawn = (furnitureType: string, x: number, y: number) => {
+    if (socketRef.current) {
+      socketRef.current.emit('spawnFurniture', {
+        type: furnitureType,
+        x,
+        y
+      });
+      
+      // Record furniture placement immediately for local tracking
+      recordFurniturePlacement(furnitureType);
+      setUserStats(getUserStats());
+    }
+  };
+
+  // Send periodic cursor updates to track AFK time
+  useEffect(() => {
+    if (!hasConnected || !socketRef.current) return;
+
+    const interval = setInterval(() => {
+      const socket = socketRef.current;
+      const myCursor = cursors[socket?.id || ''];
+      if (socket && myCursor) {
+        // Send current position to server for stillTime calculation
+        socket.emit('cursorMove', {
+          x: myCursor.x,
+          y: myCursor.y,
+          name: username
+        });
+      }
+    }, 1000); // Send update every second
+
+    return () => clearInterval(interval);
+  }, [hasConnected, cursors, username]);
 
   return (
     <div 
@@ -1242,10 +1469,62 @@ function App() {
       <Panel 
         socket={socketRef.current} 
         onCursorChange={handleCursorChange} 
+        onFurnitureSpawn={handleFurnitureSpawn}
         cursorPosition={cursors[socketRef.current?.id || '']}
         viewportOffset={viewportOffset}
         style={{ zIndex: Z_INDEX_LAYERS.PANEL }}
       />
+      
+      {/* Sticky Total AFK Container */}
+      <div style={{
+        position: 'fixed',
+        bottom: '20px',
+        left: '20px',
+        zIndex: Z_INDEX_LAYERS.PANEL,
+        pointerEvents: 'none'
+      }}>
+        <img 
+          src="./UI/totalafk.png" 
+          alt="Total AFK" 
+          style={{
+            width: 'auto',
+            height: 'auto',
+            display: 'block'
+          }}
+        />
+        {hasConnected && userStats && (
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            fontFamily: '"Press Start 2P", monospace',
+            fontSize: '0.6rem',
+            color: 'white',
+            textShadow: '2px 2px 0 #000',
+            textAlign: 'left',
+            whiteSpace: 'nowrap',
+            marginLeft: '20px'
+          }}>
+            {(() => {
+              const totalSeconds = userStats.totalAFKTime;
+              const days = Math.floor(totalSeconds / 86400);
+              const hours = Math.floor((totalSeconds % 86400) / 3600);
+              const minutes = Math.floor((totalSeconds % 3600) / 60);
+              const seconds = totalSeconds % 60;
+              
+              let timeString = '';
+              if (days > 0) timeString += `${days}d `;
+              if (hours > 0) timeString += `${hours}h `;
+              if (minutes > 0) timeString += `${minutes}m `;
+              if (seconds > 0 || timeString === '') timeString += `${seconds}s`;
+              
+              return timeString.trim();
+            })()}
+          </div>
+        )}
+      </div>
+
       <div id="logo-container" style={{ zIndex: Z_INDEX_LAYERS.LOGO }}>
         <div className="logo-row">
         <img src={UI_IMAGES.LOGO} alt="Logo" id="logo" />
@@ -1293,6 +1572,11 @@ function App() {
               className="input-global"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && username.trim() !== '') {
+                  handleConnect();
+                }
+              }}
               placeholder="Type a name.."
             />
             <button onClick={handleConnect} disabled={username.trim() === ''}>
