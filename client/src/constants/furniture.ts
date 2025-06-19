@@ -1,4 +1,4 @@
-// Furniture image paths
+// furniture images
 export const FURNITURE_IMAGES: { [key: string]: string  = {
 chair: './UI/chair.png',
 lamp: './UI/lamp.png',
@@ -11,21 +11,21 @@ whitecat: './UI/whitecat.png',
 table: './UI/table.png',
  as const;
 
-// Furniture dimensions for positioning and collision detection
+// furniture wxh for bounding box button positioning
 export const FURNITURE_DIMENSIONS: { [key: string]: { width: number; height: number   = {
-'bed': { width: 120, height: 80 ,
-'chair': { width: 60, height: 60 ,
-'lamp': { width: 40, height: 80 ,
-'plant1': { width: 50, height: 70 ,
-'plant2': { width: 50, height: 70 ,
-'blackcat': { width: 60, height: 40 ,
-'whitecat': { width: 60, height: 40 ,
-'walls1': { width: 120, height: 120 ,
-'walls2': { width: 120, height: 120 ,
-'table': { width: 100, height: 60 ,
+'bed': { width: 100, height: 76 ,
+'chair': { width: 44, height: 60 ,
+'lamp': { width: 44, height: 92 ,
+'plant1': { width: 32, height: 40 ,
+'plant2': { width: 24, height: 42 ,
+'blackcat': { width: 46, height: 28 ,
+'whitecat': { width: 46, height: 28 ,
+'walls1': { width: 64, height: 48 ,
+'walls2': { width: 64, height: 48 ,
+'table': { width: 68, height: 58 ,
  as const;
 
-// Furniture types for type safety
+// furniture types for type safety
 export const FURNITURE_TYPES = {
 CHAIR: 'chair',
 LAMP: 'lamp',
@@ -34,7 +34,8 @@ WALLS: 'walls',
 PLANT1: 'plant1',
 PLANT2: 'plant2',
 BLACKCAT: 'blackcat',
-WHITECAT: 'whitecat'
+WHITECAT: 'whitecat',
+TABLE: 'table',
  as const;
 
 export type FurnitureType = typeof FURNITURE_TYPES[keyof typeof FURNITURE_TYPES]; 

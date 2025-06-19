@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect  from 'react';
-import { getUserStats, deductAFKBalance  from '../utils/localStorage';
+import { getUserStats, deductAFKBalance  from '../../utils/localStorage';
 import { Socket  from 'socket.io-client';
 
 interface GachaponMachineProps {
@@ -158,7 +158,7 @@ setIsPlaying(false);
 
 const determinePayout = () => {
 const random = Math.random();
-const isWin = random < 0.5; // 50% chance for testing
+const isWin = random < 0.01; // 1% chance
 
 if (isWin) {
 setMessageType('win');
@@ -169,6 +169,8 @@ setCurrentImageSrc('./UI/gachastill.png');
 
 // Emit win event to server (this will trigger confetti for ALL users via socket)
 console.log('Emitting gachaponWin event to server');
+console.log('Socket connected:', socket?.connected);
+console.log('Socket id:', socket?.id);
 socket?.emit('gachaponWin', { winnerId: socket?.id, winnerName: username );
 
 // Hide message after 3 seconds
@@ -224,12 +226,11 @@ const shouldBeClickable = !(isPlaying || showMessage);
 return shouldBeClickable ? 'pointer' : 'default';
 )(),
 userSelect: 'none',
-transform: 'scaleX(-1)', // Flip horizontally
+transform: 'scaleX(-1)',
 
 className={className
 onClick={handleClick
 onLoad={() => {
-// Image loaded successfully
 
 onError={() => {
 console.error('Gachapon image failed to load:', gifUrl);
@@ -260,14 +261,14 @@ animation: 'notificationRiseAndFade 2s ease-out forwards'
 </div>
 )
 
-{/* Message overlay */
+{/* gacha output msg */
 {showMessage && (
 <div
 style={{
-position: 'fixed', // Fixed to viewport instead of relative to gacha machine
+position: 'fixed',
 top: '50%',
 left: '50%',
-transform: 'translate(-50%, -50%)', // Center in viewport
+transform: 'translate(-50%, -50%)',
 zIndex: 100000,
 opacity: 0,
 animation: messageType === 'win' 
@@ -281,14 +282,13 @@ alt={messageType === 'win' ? 'Win' : 'Try Again'
 style={{
 width: 'auto',
 height: 'auto',
-maxWidth: '300px', // Slightly larger since it's center screen
-filter: 'drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3))' // Add shadow for better visibility
+maxWidth: '300px',
 
 />
 </div>
 )
 
-{/* Add CSS keyframes for smooth animation */
+{/* animation for gacha output msg */
 <style dangerouslySetInnerHTML={{
 __html: `
 @keyframes messageRiseAndFall {

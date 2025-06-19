@@ -308,7 +308,7 @@ pointer-events: all;
 color: rgb(104, 104, 104);
 
 
-/* Gachapon message animations */
+/* gacha output msg animations */
 @keyframes fadeInUp {
 from {
 opacity: 0;

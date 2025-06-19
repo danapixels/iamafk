@@ -1,6 +1,6 @@
 import React from 'react';
-import { FURNITURE_DIMENSIONS, BUTTON_DIMENSIONS, UI_IMAGES  from '../constants';
-import type { Furniture  from '../types';
+import { FURNITURE_DIMENSIONS, BUTTON_DIMENSIONS, UI_IMAGES  from '../../constants';
+import type { Furniture  from '../../types';
 
 interface FurnitureControlButtonsProps {
 item: Furniture;

@@ -27,7 +27,7 @@ SMILE_GIF: './UI/smile.gif',
 SLEEPING_GIF: './UI/sleeping.gif',
 CURSOR: './UI/cursor.png',
 
-// Emojis
+// emotes
 THUMBSUP: './UI/thumbsup.png',
 THUMBSDOWN: './UI/thumbsdown.png',
 SAD: './UI/sad.png',
@@ -40,7 +40,7 @@ POINT_LEFT: './UI/pointleft.png',
 POINT_RIGHT: './UI/pointright.png',
  as const;
 
-// GitHub repository URL
+// repo link
 export const GITHUB_URL = 'https://github.com/danapixels/iamafk';
 
 // Server and connection constants
@@ -55,4 +55,17 @@ export const UI_STATE = {
 INITIAL_VIEWPORT_OFFSET: { x: 0, y: 0 ,
 INITIAL_MOUSE_POSITION: { x: 0, y: 0 ,
 INITIAL_COUNTERS: 0
-; 
+;
+
+// Gachapon machine constants
+export const GACHAPON_CONFIG = {
+POSITION: {
+LEFT: 160,
+TOP: 280,
+Z_INDEX: 9995
+,
+STYLE: {
+transform: 'scaleX(-1)',
+position: 'absolute' as const
+
+ as const; 

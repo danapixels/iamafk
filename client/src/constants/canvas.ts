@@ -18,20 +18,20 @@ export const THUMBSUP_DURATION = 1000;
 
 // Animation and effect constants
 export const ANIMATION_CONSTANTS = {
-// Emoji positioning
-EMOJI_OFFSET_X: 30, // 30px to the left of cursor
+// Emote positioning
+Emote_OFFSET_X: 30, // 30px to the left of cursor
 
 // Effect animations
 CIRCLE_BASE_SIZE: 40,
 CIRCLE_SCALE_MIN: 0.5,
 CIRCLE_SCALE_MAX: 1.0,
 HEART_RISE_DISTANCE: 20,
-EMOJI_MOVE_DISTANCE: 30,
+Emote_MOVE_DISTANCE: 30,
 
 // Visibility buffers
 CIRCLE_VISIBILITY_BUFFER: 50,
 HEART_VISIBILITY_BUFFER: 50,
-EMOJI_VISIBILITY_BUFFER: 50,
+Emote_VISIBILITY_BUFFER: 50,
 FURNITURE_VISIBILITY_BUFFER: 200,
 CURSOR_VISIBILITY_BUFFER: 100,
 DEFAULT_VISIBILITY_BUFFER: 100
