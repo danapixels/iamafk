@@ -31,7 +31,7 @@ export interface Circle {
   timestamp: number;
 }
 
-export interface Emoji {
+export interface Emote {
   id: string;
   x: number;
   y: number;

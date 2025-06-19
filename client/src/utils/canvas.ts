@@ -23,28 +23,26 @@ export const isElementVisible = (
   viewportOffset: { x: number; y: number },
   buffer: number = 100
 ) => {
-  const visibleBounds = {
-    left: viewportOffset.x - buffer,
-    right: viewportOffset.x + window.innerWidth + buffer,
-    top: viewportOffset.y - buffer,
-    bottom: viewportOffset.y + window.innerHeight + buffer
-  };
-
-  return x >= visibleBounds.left && 
-         x <= visibleBounds.right && 
-         y >= visibleBounds.top && 
-         y <= visibleBounds.bottom;
+  const screenX = x - viewportOffset.x;
+  const screenY = y - viewportOffset.y;
+  return (
+    screenX >= -buffer &&
+    screenX <= window.innerWidth + buffer &&
+    screenY >= -buffer &&
+    screenY <= window.innerHeight + buffer
+  );
 };
 
-// Helper function to format time for display
+// Helper function to format time for display (hh:mm:ss, mm:ss, or ss)
 export const formatTime = (seconds: number) => {
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
   const secs = seconds % 60;
-
   if (hours > 0) {
     return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  } else {
+  } else if (minutes > 0) {
     return `${minutes}:${secs.toString().padStart(2, '0')}`;
+  } else {
+    return `${secs}s`;
   }
 }; 

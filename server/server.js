@@ -26,7 +26,7 @@ const io = new Server(server, {
 let cursors = {};
 let hearts = [];
 let circles = [];
-let emojis = [];
+let Emotes = [];
 let furniture = {};
 let lastMoveTimestamps = {};
 let userActivity = {};
@@ -320,11 +320,12 @@ io.on('connection', (socket) => {
     io.emit('thumbsUpSpawned', thumbsUpData);
   });
 
-  socket.on('spawnEmoji', (emojiData) => {
-    io.emit('emojiSpawned', emojiData);
+  socket.on('spawnEmote', (EmoteData) => {
+    io.emit('EmoteSpawned', EmoteData);
   });
 
   socket.on('spawnFurniture', (data) => {
+    console.log('Server received spawnFurniture:', data);
     const furnitureId = `${socket.id}-${Date.now()}`;
     const now = Date.now();
     
@@ -345,10 +346,12 @@ io.on('connection', (socket) => {
     addToBatch('furniture', furniture[furnitureId]);
     
     // Broadcast to all clients including sender
+    console.log('Server broadcasting furnitureSpawned:', furniture[furnitureId]);
     io.emit('furnitureSpawned', furniture[furnitureId]);
   });
 
   socket.on('updateFurniturePosition', (data) => {
+    console.log('Server received updateFurniturePosition:', data);
     const { furnitureId, x, y, isFlipped } = data;
     if (furniture[furnitureId]) {
       furniture[furnitureId].x = x;
@@ -364,12 +367,14 @@ io.on('connection', (socket) => {
       addToBatch('furniture', furniture[furnitureId]);
       
       // Broadcast to ALL clients including sender
-      io.emit('furnitureMoved', { 
+      const broadcastData = { 
         id: furnitureId, 
         x, 
         y,
         isFlipped: furniture[furnitureId].isFlipped 
-      });
+      };
+      console.log('Server broadcasting furnitureMoved:', broadcastData);
+      io.emit('furnitureMoved', broadcastData);
     }
   });
 
@@ -537,9 +542,11 @@ io.on('connection', (socket) => {
   });
 
   socket.on('gachaponWin', ({ winnerId, winnerName }) => {
+    console.log('Server received gachaponWin:', { winnerId, winnerName });
     // Broadcast to ALL currently online clients
     io.emit('gachaponWin', { winnerId, winnerName });
     io.emit('showDialogBanner');
+    console.log('Server broadcasted gachaponWin to all clients');
   });
 
   socket.on('gachaponAnimation', ({ userId, hasEnoughTime }) => {
