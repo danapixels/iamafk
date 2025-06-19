@@ -8,7 +8,6 @@ alt: string;
 style?: React.CSSProperties;
 className?: string;
 username: string;
-onWin: (winnerId: string, winnerName: string) => void;
 socket: Socket | null;
 onUse: () => void;
 isCursorFrozen?: boolean;
@@ -21,7 +20,6 @@ alt,
 style,
 className,
 username,
-onWin,
 socket,
 onUse,
 isCursorFrozen,
@@ -31,7 +29,7 @@ const [isPlaying, setIsPlaying] = useState(false);
 const [showMessage, setShowMessage] = useState(false);
 const [messageType, setMessageType] = useState<'win' | 'tryAgain' | null>(null);
 const [gifTimestamp, setGifTimestamp] = useState(0);
-const [currentImageSrc, setCurrentImageSrc] = useState(src);
+const [currentImageSrc, setCurrentImageSrc] = useState('./UI/gachastill.png');
 const [showNotification, setShowNotification] = useState(false);
 const [notificationText, setNotificationText] = useState('');
 const messageRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -118,11 +116,11 @@ setNotificationText('');
 
 setIsPlaying(true);
 
-// Reset to animated GIF and force restart
+// Switch to animated GIF and force restart
 setCurrentImageSrc(src);
 setGifTimestamp(Date.now());
 
-// Emit animation event to other users with enoughTime flag (only when actually processing the click)
+// Emit animation event to other users with enoughTime flag
 if (socket) {
 socket.emit('gachaponAnimation', { 
 userId: socket.id,
@@ -134,19 +132,23 @@ if (enoughTime) {
 // Deduct 30 minutes (1800 seconds) from AFK balance
 const success = deductAFKBalance(1800);
 if (!success) {
+// If deduction failed, reset the playing state and show error
+console.log('Failed to deduct AFK balance - insufficient funds');
+setIsPlaying(false);
+setCurrentImageSrc('./UI/gachastill.png');
+setNotificationText('insufficient funds');
 return;
 
 
 // Call onUse callback immediately to refresh stats
 onUse();
 
-// Let the full GIF play before showing result (approximately 3-4 seconds for gacha.gif)
+// Let the full GIF play before showing result (approximately 2.5 seconds for gacha.gif)
 setTimeout(() => {
 determinePayout();
-setIsPlaying(false);
-, 3000);
+, 2500); // Full GIF animation time (2.5 seconds)
  else {
-// Switch to static image after 0.5 seconds to stop the animation
+// For users without enough currency, play GIF for only 0.5 seconds then back to still
 setTimeout(() => {
 setCurrentImageSrc('./UI/gachastill.png');
 setIsPlaying(false);
@@ -165,22 +167,17 @@ setShowMessage(true);
 // Pause the GIF by switching to static image while message shows
 setCurrentImageSrc('./UI/gachastill.png');
 
-// Notify parent component
-onWin?.(socket?.id || '', username);
-
-// Emit win event to server
+// Emit win event to server (this will trigger confetti for ALL users via socket)
+console.log('Emitting gachaponWin event to server');
 socket?.emit('gachaponWin', { winnerId: socket?.id, winnerName: username );
 
-// Hide message after 3 seconds (reduced from 7 seconds)
+// Hide message after 3 seconds
 messageRef.current = setTimeout(() => {
-console.log('Win message timeout triggered - hiding message');
 setShowMessage(false);
 setMessageType(null);
 setIsPlaying(false); // Re-enable clicking after message disappears
-// Reset back to animated GIF
-setCurrentImageSrc(src);
-setGifTimestamp(Date.now());
-console.log('Message state should now be: showMessage=false, isPlaying=false');
+// Stay on still image (default state)
+setCurrentImageSrc('./UI/gachastill.png');
 , 3000);
  else {
 setMessageType('tryAgain');
@@ -191,14 +188,11 @@ setCurrentImageSrc('./UI/gachastill.png');
 
 // Hide message after 2 seconds
 messageRef.current = setTimeout(() => {
-console.log('Try again message timeout triggered - hiding message');
 setShowMessage(false);
 setMessageType(null);
 setIsPlaying(false); // Re-enable clicking after message disappears
-// Reset back to animated GIF
-setCurrentImageSrc(src);
-setGifTimestamp(Date.now());
-console.log('Message state should now be: showMessage=false, isPlaying=false');
+// Stay on still image (default state)
+setCurrentImageSrc('./UI/gachastill.png');
 , 2000);
 
 ;
@@ -227,7 +221,6 @@ style={{
 ...style,
 cursor: (() => {
 const shouldBeClickable = !(isPlaying || showMessage);
-console.log('Gachapon cursor state:', { isPlaying, showMessage, shouldBeClickable );
 return shouldBeClickable ? 'pointer' : 'default';
 )(),
 userSelect: 'none',
@@ -239,7 +232,7 @@ onLoad={() => {
 // Image loaded successfully
 
 onError={() => {
-// Image failed to load
+console.error('Gachapon image failed to load:', gifUrl);
 
 />
 
@@ -278,8 +271,8 @@ transform: 'translate(-50%, -50%)', // Center in viewport
 zIndex: 100000,
 opacity: 0,
 animation: messageType === 'win' 
-? 'messageRiseAndFallWin 3s ease-in-out forwards'
-: 'messageRiseAndFall 2s ease-in-out forwards'
+? 'messageRiseAndFallWin 3s ease-out forwards'
+: 'messageRiseAndFall 2s ease-out forwards'
 
 >
 <img
@@ -303,11 +296,11 @@ __html: `
 opacity: 0;
 transform: translate(-50%, -15vh);
 
-50% {
+20% {
 opacity: 1;
 transform: translate(-50%, -20%);
 
-70% {
+80% {
 opacity: 1;
 transform: translate(-50%, -20%);
 
@@ -322,11 +315,11 @@ transform: translate(-50%, -15vh);
 opacity: 0;
 transform: translate(-50%, -15vh);
 
-20% {
+15% {
 opacity: 1;
 transform: translate(-50%, -20%);
 
-80% {
+85% {
 opacity: 1;
 transform: translate(-50%, -20%);
 

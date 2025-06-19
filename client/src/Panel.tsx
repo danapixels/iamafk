@@ -192,7 +192,7 @@ zIndex: 99999,
 >
 {gachaponWin && localGachaponWinner ? 
 (username && username === localGachaponWinner ? 
-'You did it!' : 
+'you did it!' : 
 `${localGachaponWinner won the 1%!`
 ) : 
 '30m = 1 gacha play'
@@ -316,6 +316,18 @@ e.currentTarget.src = './UI/whitecatbuttonhover.png';
 
 onMouseLeave={(e) => {
 e.currentTarget.src = './UI/whitecatbutton.png';
+
+/>
+<img
+src="./UI/tablebutton.png"
+alt="Table"
+className="button"
+onClick={() => handleFurnitureClick('table')
+onMouseEnter={(e) => {
+e.currentTarget.src = './UI/tablebuttonhover.png';
+
+onMouseLeave={(e) => {
+e.currentTarget.src = './UI/tablebutton.png';
 
 />
 </div>
