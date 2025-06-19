@@ -11,6 +11,7 @@ export interface UserStats {
   firstSeen: number; // First connection timestamp
   sessions: number; // Number of sessions
   currentSessionStart?: number; // Current session start time
+  dailyFurniturePlacements?: { [date: string]: number }; // Daily furniture placement counts
 }
 
 export interface LocalUserData {
@@ -26,6 +27,14 @@ const STORAGE_KEYS = {
   USERNAME: 'iamafk_username',
   DEVICE_ID: 'iamafk_device_id'
 } as const;
+
+// Daily furniture placement limit
+const DAILY_FURNITURE_LIMIT = 1000;
+
+// Get today's date string (YYYY-MM-DD format)
+const getTodayString = (): string => {
+  return new Date().toISOString().split('T')[0];
+};
 
 // Generate or get unique device ID
 const getDeviceId = (): string => {
@@ -144,16 +153,62 @@ export const deductAFKBalance = (deductSeconds: number): boolean => {
   }
 };
 
-// Record furniture placement
-export const recordFurniturePlacement = (furnitureType: string): void => {
+// Check if user can place furniture (daily limit)
+export const canPlaceFurniture = (): boolean => {
   const userData = getUserData();
-  if (userData) {
-    userData.stats.furniturePlaced += 1;
-    userData.stats.furnitureByType[furnitureType] = 
-      (userData.stats.furnitureByType[furnitureType] || 0) + 1;
-    userData.stats.lastSeen = Date.now();
-    saveUserData(userData);
+  if (!userData) {
+    return false;
   }
+  
+  const today = getTodayString();
+  const dailyPlacements = userData.stats.dailyFurniturePlacements?.[today] || 0;
+  
+  return dailyPlacements < DAILY_FURNITURE_LIMIT;
+};
+
+// Get remaining daily furniture placements
+export const getRemainingDailyPlacements = (): number => {
+  const userData = getUserData();
+  if (!userData) {
+    return 0;
+  }
+  
+  const today = getTodayString();
+  const dailyPlacements = userData.stats.dailyFurniturePlacements?.[today] || 0;
+  
+  return Math.max(0, DAILY_FURNITURE_LIMIT - dailyPlacements);
+};
+
+// Record furniture placement
+export const recordFurniturePlacement = (furnitureType: string): boolean => {
+  const userData = getUserData();
+  if (!userData) {
+    return false;
+  }
+  
+  const today = getTodayString();
+  const dailyPlacements = userData.stats.dailyFurniturePlacements?.[today] || 0;
+  
+  // Check daily limit
+  if (dailyPlacements >= DAILY_FURNITURE_LIMIT) {
+    console.log(`Daily furniture placement limit reached (${DAILY_FURNITURE_LIMIT})`);
+    return false;
+  }
+  
+  // Update daily placement count
+  if (!userData.stats.dailyFurniturePlacements) {
+    userData.stats.dailyFurniturePlacements = {};
+  }
+  userData.stats.dailyFurniturePlacements[today] = dailyPlacements + 1;
+  
+  // Update total stats
+  userData.stats.furniturePlaced += 1;
+  userData.stats.furnitureByType[furnitureType] = 
+    (userData.stats.furnitureByType[furnitureType] || 0) + 1;
+  userData.stats.lastSeen = Date.now();
+  
+  saveUserData(userData);
+  return true;
 };
 
 // Update cursor preference

@@ -31,6 +31,11 @@ let furniture = {};
 let lastMoveTimestamps = {};
 let userActivity = {};
 
+// Batch save system
+let pendingChanges = [];
+const BATCH_INTERVAL = 5 * 60 * 1000; // 5 minutes
+let batchTimer = null;
+
 // Persistent furniture storage with expiration
 const FURNITURE_FILE = path.join(__dirname, 'furniture.json');
 const FURNITURE_EXPIRY_HOURS = 48;
@@ -99,7 +104,7 @@ function updateUserActivity(socketId, username) {
     username: username || 'Anonymous',
     socketId: socketId
   };
-  savePersistentData();
+  addToBatch('userActivity', { socketId, username });
 }
 
 function cleanupExpiredFurniture() {
@@ -124,7 +129,7 @@ function cleanupExpiredFurniture() {
 
   if (cleanedCount > 0) {
     console.log(`Cleaned up ${cleanedCount} expired furniture items`);
-    savePersistentData();
+    addToBatch('cleanup', { cleanedCount });
     // Notify all clients about the cleanup
     io.emit('furnitureCleanup', { cleanedCount });
   }
@@ -150,11 +155,14 @@ function cleanupOldUserActivity() {
       delete userActivity[socketId];
     }
   }
-  savePersistentData();
+  addToBatch('userActivity', null);
 }
 
 // Load data on startup
 loadPersistentData();
+
+// Start batch timer
+startBatchTimer();
 
 // Clean up expired furniture every hour
 setInterval(cleanupExpiredFurniture, 60 * 60 * 1000);
@@ -164,6 +172,67 @@ cleanupExpiredFurniture();
 
 // Run cleanup every 5 minutes
 setInterval(cleanupOldUserActivity, 5 * 60 * 1000);
+
+// Add change to batch instead of immediate save
+function addToBatch(changeType, data) {
+  pendingChanges.push({ 
+    type: changeType, 
+    data, 
+    timestamp: Date.now() 
+  });
+}
+
+// Save batch immediately
+function saveBatch() {
+  if (pendingChanges.length > 0) {
+    console.log(`Saving batch of ${pendingChanges.length} changes`);
+    
+    // Apply all pending changes to memory
+    pendingChanges.forEach(change => {
+      switch (change.type) {
+        case 'userActivity':
+          if (change.data) {
+            const { socketId, username } = change.data;
+            userActivity[socketId] = {
+              lastSeen: change.timestamp,
+              username: username || 'Anonymous',
+              socketId: socketId
+            };
+          }
+          break;
+        case 'furniture':
+          // Furniture changes are already applied to memory
+          break;
+        case 'cleanup':
+          // Cleanup changes are already applied to memory
+          break;
+      }
+    });
+    
+    // Save to files
+    savePersistentData();
+    
+    // Clear batch
+    pendingChanges = [];
+  }
+}
+
+// Start batch timer
+function startBatchTimer() {
+  if (batchTimer) {
+    clearInterval(batchTimer);
+  }
+  batchTimer = setInterval(saveBatch, BATCH_INTERVAL);
+}
+
+// Stop batch timer and save immediately
+function stopBatchTimer() {
+  if (batchTimer) {
+    clearInterval(batchTimer);
+    batchTimer = null;
+  }
+  saveBatch(); // Save any pending changes
+}
 
 io.on('connection', (socket) => {
   // Initialize cursor for new user
@@ -221,7 +290,7 @@ io.on('connection', (socket) => {
       if (name && name.trim() !== '') {
         cursors[socket.id].name = name.trim();
         // Update user activity on movement
-        updateUserActivity(socket.id, name.trim());
+        addToBatch('userActivity', { socketId: socket.id, username: name.trim() });
       }
     }
 
@@ -234,7 +303,7 @@ io.on('connection', (socket) => {
       cursors[socket.id].stillTime = 0;
       lastMoveTimestamps[socket.id] = Date.now();
       // Update user activity on interaction
-      updateUserActivity(socket.id, cursors[socket.id].name);
+      addToBatch('userActivity', { socketId: socket.id, username: cursors[socket.id].name });
       io.emit('cursors', getValidCursors());
     }
   });
@@ -273,7 +342,7 @@ io.on('connection', (socket) => {
     };
     
     // Save to persistent storage
-    savePersistentData();
+    addToBatch('furniture', furniture[furnitureId]);
     
     // Broadcast to all clients including sender
     io.emit('furnitureSpawned', furniture[furnitureId]);
@@ -292,7 +361,7 @@ io.on('connection', (socket) => {
       furniture[furnitureId].timestamp = Date.now();
       
       // Save to persistent storage
-      savePersistentData();
+      addToBatch('furniture', furniture[furnitureId]);
       
       // Broadcast to ALL clients including sender
       io.emit('furnitureMoved', { 
@@ -314,7 +383,7 @@ io.on('connection', (socket) => {
       furniture[furnitureId].timestamp = Date.now();
       
       // Save to persistent storage
-      savePersistentData();
+      addToBatch('furniture', furniture[furnitureId]);
       
       // Broadcast to ALL clients including sender
       io.emit('furnitureFlipped', { 
@@ -333,7 +402,7 @@ io.on('connection', (socket) => {
       furniture[furnitureId].timestamp = Date.now();
       
       // Save to persistent storage
-      savePersistentData();
+      addToBatch('furniture', furniture[furnitureId]);
       
       // Broadcast to ALL clients including sender
       io.emit('furnitureZIndexChanged', { 
@@ -369,7 +438,8 @@ io.on('connection', (socket) => {
         targetFurniture.timestamp = Date.now();
         
         // Save to persistent storage
-        savePersistentData();
+        addToBatch('furniture', furniture[furnitureId]);
+        addToBatch('furniture', targetFurniture);
         
         // Broadcast to ALL clients
         io.emit('furnitureZIndexChanged', [
@@ -406,7 +476,8 @@ io.on('connection', (socket) => {
         targetFurniture.timestamp = Date.now();
         
         // Save to persistent storage
-        savePersistentData();
+        addToBatch('furniture', furniture[furnitureId]);
+        addToBatch('furniture', targetFurniture);
         
         // Broadcast to ALL clients
         io.emit('furnitureZIndexChanged', [
@@ -421,7 +492,7 @@ io.on('connection', (socket) => {
     if (furniture[furnitureId]) {
       delete furniture[furnitureId];
       // Save to persistent storage
-      savePersistentData();
+      addToBatch('furniture', null);
       io.emit('furnitureDeleted', { id: furnitureId });
     }
   });
@@ -468,6 +539,7 @@ io.on('connection', (socket) => {
   socket.on('gachaponWin', ({ winnerId, winnerName }) => {
     // Broadcast to ALL currently online clients
     io.emit('gachaponWin', { winnerId, winnerName });
+    io.emit('showDialogBanner');
   });
 
   socket.on('gachaponAnimation', ({ userId, hasEnoughTime }) => {
@@ -476,11 +548,14 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    // Update user activity on disconnect (don't delete furniture immediately)
-    updateUserActivity(socket.id, cursors[socket.id]?.name || 'Anonymous');
+    // Save any pending changes immediately when user disconnects
+    saveBatch();
     
+    // Remove cursor
     delete cursors[socket.id];
     delete lastMoveTimestamps[socket.id];
+    
+    // Notify other clients
     io.emit('clientDisconnected', socket.id);
   });
 });
@@ -506,6 +581,20 @@ setInterval(() => {
   }
 }, 1000);
 
-server.listen(3001, () => {
-  console.log('Socket server running on http://localhost:3001');
+// Graceful shutdown handlers
+process.on('SIGINT', () => {
+  console.log('Shutting down server...');
+  stopBatchTimer();
+  process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+  console.log('Shutting down server...');
+  stopBatchTimer();
+  process.exit(0);
+});
+
+const PORT = process.env.PORT || 3001;
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });

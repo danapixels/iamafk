@@ -27,7 +27,8 @@ import {
   saveUsername,
   getUserStats,
   exportUserData,
-  setAFKTimeForTesting
+  setAFKTimeForTesting,
+  canPlaceFurniture
 } from './utils/localStorage';
 import { screenToCanvas, clampToCanvas, isElementVisible } from './utils/canvas';
 
@@ -99,6 +100,9 @@ function App() {
   const [isCursorFrozen, setIsCursorFrozen] = useState(false);
   const [frozenCursorPosition, setFrozenCursorPosition] = useState<{ x: number; y: number } | null>(null);
   const [gachaponWinner, setGachaponWinner] = useState<string | null>(null);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [confettiTimestamp, setConfettiTimestamp] = useState<number | null>(null);
+  const [showDialogBanner, setShowDialogBanner] = useState(false);
 
   // Canvas viewport state
   const [viewportOffset, setViewportOffset] = useState({ x: 0, y: 0 });
@@ -119,6 +123,12 @@ function App() {
 
   const clickEnabledTimeRef = useRef<number | null>(null);
   const usernameRef = useRef(username);
+  const confettiTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Debug confetti state changes
+  useEffect(() => {
+    // Removed debug log
+  }, [showConfetti]);
 
   // Helper function to convert screen coordinates to canvas coordinates
   const convertScreenToCanvas = (screenX: number, screenY: number) => {
@@ -306,22 +316,44 @@ function App() {
     });
 
     socket.on('furnitureCleanup', (data: { cleanedCount: number }) => {
-      console.log(`Server cleaned up ${data.cleanedCount} expired furniture items`);
       // Optionally show a notification to users about cleanup
       if (data.cleanedCount > 0) {
         // You could add a toast notification here if desired
-        console.log(`Cleaned up ${data.cleanedCount} furniture items that were inactive for 48+ hours`);
       }
     });
 
     socket.on('gachaponWin', (data: { winnerId: string, winnerName: string }) => {
       setGachaponWinner(data.winnerId);
       
+      // Clear any existing confetti timeout
+      if (confettiTimeoutRef.current) {
+        clearTimeout(confettiTimeoutRef.current);
+      }
+      
+      // Reset confetti state first, then show it again
+      setShowConfetti(false);
+      
+      // Use setTimeout to ensure state reset before showing confetti again
+      setTimeout(() => {
+        setShowConfetti(true);
+        
+        // Remove confetti after animation finishes (confetti.gif duration)
+        confettiTimeoutRef.current = setTimeout(() => {
+          setShowConfetti(false);
+          confettiTimeoutRef.current = null;
+        }, 3000); // Assuming confetti.gif is 3 seconds
+      }, 10); // Small delay to ensure state reset
+      
       // Set localStorage for ALL users online at the time of win (not just the winner)
       localStorage.setItem('gachaponWin', 'true');
       localStorage.setItem('gachaponWinner', data.winnerId);
       localStorage.setItem('gachaponWinnerName', data.winnerName);
       localStorage.setItem('gachaponButtonChanged', 'true');
+    });
+
+    socket.on('showDialogBanner', () => {
+      setShowDialogBanner(true);
+      setTimeout(() => setShowDialogBanner(false), 60000); // 1 minute
     });
 
     return () => {
@@ -331,6 +363,7 @@ function App() {
       socket.off('furnitureSpawned');
       socket.off('furnitureMoved');
       socket.off('furnitureDeleted');
+      socket.off('showDialogBanner');
     };
   }, []);
 
@@ -953,6 +986,13 @@ function App() {
 
   // Handle furniture spawning and track in localStorage
   const handleFurnitureSpawn = (furnitureType: string, x: number, y: number) => {
+    // Check daily furniture placement limit
+    if (!canPlaceFurniture()) {
+      console.log('Daily furniture placement limit reached (1000 items)');
+      // You could show a notification to the user here
+      return;
+    }
+    
     if (socketRef.current) {
       socketRef.current.emit('spawnFurniture', {
         type: furnitureType,
@@ -961,8 +1001,10 @@ function App() {
       });
       
       // Record furniture placement immediately for local tracking
-      recordFurniturePlacement(furnitureType);
-      setUserStats(getUserStats());
+      const success = recordFurniturePlacement(furnitureType);
+      if (success) {
+        setUserStats(getUserStats());
+      }
     }
   };
 
@@ -992,6 +1034,13 @@ function App() {
     (window as any).exportUserData = exportUserData;
   }, []);
 
+  // Update confettiTimestamp whenever showConfetti is set to true
+  useEffect(() => {
+    if (showConfetti) {
+      setConfettiTimestamp(Date.now());
+    }
+  }, [showConfetti]);
+
   return (
     <div 
       id="app-root" 
@@ -1014,6 +1063,7 @@ function App() {
           height: CANVAS_SIZE,
           pointerEvents: 'none',
           border: '1px solid white',
+          boxSizing: 'border-box',
         }}
       >
         {/* Tutorial Image */}
@@ -1389,14 +1439,6 @@ function App() {
         alt="Gacha"
         username={username}
         socket={socketRef.current}
-        onWin={(winnerId, winnerName) => {
-          setGachaponWinner(winnerId);
-          // Update locked button to easter egg button and set winner info immediately for the winner
-          localStorage.setItem('gachaponButtonChanged', 'true');
-          localStorage.setItem('gachaponWin', 'true');
-          localStorage.setItem('gachaponWinner', winnerId);
-          localStorage.setItem('gachaponWinnerName', winnerName);
-        }}
         onUse={() => {
           // Refresh userStats immediately after gachapon use
           const updatedStats = getUserStats();
@@ -1459,7 +1501,7 @@ function App() {
               pointerEvents: 'none',
               opacity: '0.2',
             }}>
-              You've been away for {(() => {
+              you've been away for {(() => {
                 const totalSeconds = userStats.totalAFKTime;
                 const days = Math.floor(totalSeconds / 86400);
                 const hours = Math.floor((totalSeconds % 86400) / 3600);
@@ -1582,6 +1624,144 @@ function App() {
               Connect
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Confetti Overlay - shows for all users when someone wins */}
+      {showConfetti && (() => {
+        return (
+          <>
+            {/* Left confetti */}
+            <div
+              style={{
+                position: 'fixed',
+                left: 0,
+                bottom: '20vh',
+                width: '200px',
+                height: '60vh',
+                zIndex: 999999,
+                pointerEvents: 'none',
+                display: 'flex',
+                alignItems: 'flex-end',
+                justifyContent: 'flex-start'
+              }}
+            >
+              <img
+                src={`/UI/confetti.gif${confettiTimestamp ? `?t=${confettiTimestamp}` : ''}`}
+                alt="Confetti"
+                style={{
+                  width: '200px',
+                  height: 'auto',
+                  maxHeight: '60vh'
+                }}
+                onLoad={() => {
+                  // Image loaded successfully
+                }}
+                onError={(e) => {
+                  console.error('Left confetti GIF failed to load:', e);
+                  console.error('Trying alternative path...');
+                }}
+              />
+            </div>
+            
+            {/* Right confetti */}
+            <div
+              style={{
+                position: 'fixed',
+                right: 0,
+                bottom: '20vh',
+                width: '200px',
+                height: '60vh',
+                zIndex: 999999,
+                pointerEvents: 'none',
+                display: 'flex',
+                alignItems: 'flex-end',
+                justifyContent: 'flex-end'
+              }}
+            >
+              <img
+                src={`/UI/confetti.gif${confettiTimestamp ? `?t=${confettiTimestamp}` : ''}`}
+                alt="Confetti"
+                style={{
+                  width: '200px',
+                  height: 'auto',
+                  maxHeight: '60vh',
+                  transform: 'scaleX(-1)' // Flip horizontally for variety
+                }}
+                onLoad={() => {
+                  // Image loaded successfully
+                }}
+                onError={(e) => {
+                  console.error('Right confetti GIF failed to load:', e);
+                  console.error('Trying alternative path...');
+                }}
+              />
+            </div>
+          </>
+        );
+      })()}
+
+      {/* Dialog Banner Overlay - sticky at top for 1 minute on win */}
+      {showDialogBanner && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            zIndex: 999999,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            pointerEvents: 'none'
+          }}
+        >
+          <img
+            src="./UI/dialog.png"
+            alt="Dialog"
+            style={{
+              width: 'auto',
+              height: 'auto',
+              pointerEvents: 'none'
+            }}
+          />
+          {localStorage.getItem('gachaponWinnerName') && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '8px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                width: '200px',
+                height: '1.5em',
+                overflow: 'hidden',
+                pointerEvents: 'none',
+                zIndex: 1000000,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <div
+                style={{
+                  display: 'inline-block',
+                  fontFamily: '"Press Start 2P", monospace',
+                  fontSize: '0.5em',
+                  color: 'white',
+                  whiteSpace: 'nowrap',
+                  animation: 'marquee-slide 8s linear infinite',
+                }}
+              >
+                {`wooooooo, party for the gacha winner, ${localStorage.getItem('gachaponWinnerName')}.`}
+              </div>
+              <style>{`
+                @keyframes marquee-slide {
+                  0% { transform: translateX(100%); }
+                  100% { transform: translateX(-100%); }
+                }
+              `}</style>
+            </div>
+          )}
         </div>
       )}
     </div>

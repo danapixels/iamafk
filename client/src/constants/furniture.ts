@@ -7,7 +7,8 @@ export const FURNITURE_IMAGES: { [key: string]: string } = {
   plant1: './UI/plant1.png',
   plant2: './UI/plant2.png',
   blackcat: './UI/blackcat.png',
-  whitecat: './UI/whitecat.png'
+  whitecat: './UI/whitecat.png',
+  table: './UI/table.png',
 } as const;
 
 // Furniture dimensions for positioning and collision detection
@@ -20,7 +21,8 @@ export const FURNITURE_DIMENSIONS: { [key: string]: { width: number; height: num
   'blackcat': { width: 60, height: 40 },
   'whitecat': { width: 60, height: 40 },
   'walls1': { width: 120, height: 120 },
-  'walls2': { width: 120, height: 120 }
+  'walls2': { width: 120, height: 120 },
+  'table': { width: 100, height: 60 },
 } as const;
 
 // Furniture types for type safety
