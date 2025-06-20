@@ -10,6 +10,7 @@ interface FurnitureButtonProps {
 
 const FurnitureButton: React.FC<FurnitureButtonProps> = ({ src, hoverSrc, alt, type, onClick }) => {
   const [imgSrc, setImgSrc] = useState(src);
+  
   return (
     <img
       src={imgSrc}
