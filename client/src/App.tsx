@@ -16,6 +16,7 @@ import { useFurniture  from './hooks/game/useFurniture';
 import { useStats  from './hooks/game/useStats';
 import { useConfetti  from './hooks/ui/useConfetti';
 import { useMouseInteractions  from './hooks/ui/useMouseInteractions';
+import { useKeyboardInteractions  from './hooks/ui/keyboardInteractions';
 import { useAnimationCleanup  from './hooks/ui/useAnimationCleanup';
 import { useGachapon  from './hooks/game/useGachapon';
 import { useViewportFiltering  from './hooks/ui/useViewportFiltering';
@@ -34,7 +35,11 @@ getSavedCursorType,
 saveUsername,
 getUserStats,
 exportUserData,
-setAFKTimeForTesting
+setAFKTimeForTesting,
+clearDailyFurnitureLimit,
+testGachaponWinRate,
+clearUserData,
+getRemainingDailyPlacements
  from './utils/localStorage';
 import { getGachaponStyle  from './utils/gachapon';
 
@@ -86,7 +91,7 @@ useFurniture(socketRef, setFurniture, setSelectedFurnitureId, hasConnected);
 useConfetti(socketRef, setGachaponWinner, setShowConfetti);
 
 // User interactions
-const { clickEnabledTimeRef  = useMouseInteractions({
+const { clickEnabledTimeRef, mouseStateRef  = useMouseInteractions({
 socketRef,
 hasConnected,
 cursors,
@@ -103,6 +108,19 @@ setViewportOffset,
 username,
 setUserStats,
 afkStartTimeRef
+);
+
+// Keyboard interactions
+useKeyboardInteractions({
+socketRef,
+hasConnected,
+cursors,
+selectedFurnitureId,
+setSelectedFurnitureId,
+isCursorFrozen,
+frozenCursorPosition,
+viewportOffset,
+mouseStateRef
 );
 
 // Animation and cleanup
@@ -178,6 +196,10 @@ saveUsername(username.trim());
 useEffect(() => {
 (window as any).setAFKTimeForTesting = setAFKTimeForTesting;
 (window as any).exportUserData = exportUserData;
+(window as any).clearDailyFurnitureLimit = clearDailyFurnitureLimit;
+(window as any).testGachaponWinRate = testGachaponWinRate;
+(window as any).clearUserData = clearUserData;
+(window as any).getRemainingDailyPlacements = getRemainingDailyPlacements;
 , []);
 
 useEffect(() => {

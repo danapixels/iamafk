@@ -282,13 +282,69 @@ console.log('No user data found');
 
 ;
 
-// Set AFK time for testing purposes
+// Set AFK time for testing
 export const setAFKTimeForTesting = (afkTimeSeconds: number): void => {
 const userData = getUserData();
 if (userData) {
-userData.stats.totalAFKTime = afkTimeSeconds;
 userData.stats.afkBalance = afkTimeSeconds;
+userData.stats.totalAFKTime = afkTimeSeconds;
 userData.stats.lastSeen = Date.now();
 saveUserData(userData);
 
+;
+
+// Clear daily furniture placement limit for testing
+export const clearDailyFurnitureLimit = (): void => {
+const userData = getUserData();
+if (userData) {
+if (userData.stats.dailyFurniturePlacements) {
+delete userData.stats.dailyFurniturePlacements;
+
+saveUserData(userData);
+console.log('Daily furniture placement limit cleared for testing');
+
+;
+
+// Test gachapon 1% win rate
+export const testGachaponWinRate = (numPulls: number = 1000): void => {
+console.log(`Testing gachapon win rate with ${numPulls pulls...`);
+
+let wins = 0;
+const results = [];
+
+for (let i = 0; i < numPulls; i++) {
+const random = Math.random();
+const isWin = random < 0.01; // 1% chance
+
+if (isWin) {
+wins++;
+results.push({ pull: i + 1, result: 'WIN', random );
+
+
+
+const winRate = (wins / numPulls) * 100;
+const expectedWins = numPulls * 0.01;
+
+console.log(`Results for ${numPulls pulls:`);
+console.log(`- Wins: ${wins`);
+console.log(`- Win Rate: ${winRate.toFixed(3)%`);
+console.log(`- Expected Wins: ${expectedWins`);
+console.log(`- Difference from expected: ${(wins - expectedWins).toFixed(2)`);
+
+if (results.length > 0) {
+console.log('Win details:', results);
+
+
+// Test with different sample sizes
+const sampleSizes = [100, 500, 1000, 5000, 10000];
+console.log('\nTesting different sample sizes:');
+
+sampleSizes.forEach(size => {
+let sampleWins = 0;
+for (let i = 0; i < size; i++) {
+if (Math.random() < 0.01) sampleWins++;
+
+const sampleRate = (sampleWins / size) * 100;
+console.log(`${size pulls: ${sampleWins wins (${sampleRate.toFixed(3)%)`);
+);
 ; 
