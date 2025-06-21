@@ -92,7 +92,7 @@ const moveLeft = progress * ANIMATION_CONSTANTS.Emote_MOVE_DISTANCE;
 return (
 <img
 key={emote.id
-src={`./UI/${emote.type.png`
+src={`/UI/${emote.type.png`
 alt={emote.type
 style={{
 position: 'absolute',

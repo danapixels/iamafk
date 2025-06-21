@@ -14,7 +14,6 @@ setSelectedFurnitureId: (id: string | null) => void;
 selectedFurnitureId: string | null;
 isCursorFrozen: boolean;
 setIsCursorFrozen: (frozen: boolean) => void;
-frozenCursorPosition: { x: number; y: number  | null;
 setFrozenCursorPosition: (pos: { x: number; y: number  | null) => void;
 viewportOffset: { x: number; y: number ;
 setViewportOffset: React.Dispatch<React.SetStateAction<{ x: number; y: number >>;
@@ -33,7 +32,6 @@ setSelectedFurnitureId,
 selectedFurnitureId,
 isCursorFrozen,
 setIsCursorFrozen,
-frozenCursorPosition,
 setFrozenCursorPosition,
 viewportOffset,
 setViewportOffset,

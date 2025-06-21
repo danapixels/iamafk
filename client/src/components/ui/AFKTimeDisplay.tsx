@@ -42,7 +42,7 @@ you've been away for {formatTime(userStats.totalAFKTime)
 position: 'relative'
 >
 <img 
-src="./UI/totalafk.png" 
+src="/UI/totalafk.png" 
 alt="AFK Balance" 
 style={{
 width: 'auto',

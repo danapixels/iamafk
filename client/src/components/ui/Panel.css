@@ -82,123 +82,123 @@ transform: scale(1.05);
 
 /* hat button hover states */
 .button[src*="bunnybutton.png"]:hover {
-content: url('./UI/bunnybuttonhover.png');
+content: url('/UI/bunnybuttonhover.png');
 
 
 .button[src*="capbutton.png"]:hover {
-content: url('./UI/capbuttonhover.png');
+content: url('/UI/capbuttonhover.png');
 
 
 .button[src*="slimebutton.png"]:hover {
-content: url('./UI/slimebuttonhover.png');
+content: url('/UI/slimebuttonhover.png');
 
 
 .button[src*="astronautbutton.png"]:hover {
-content: url('./UI/astronautbuttonhover.png');
+content: url('/UI/astronautbuttonhover.png');
 
 
 .button[src*="beaniebutton.png"]:hover {
-content: url('./UI/beaniebuttonhover.png');
+content: url('/UI/beaniebuttonhover.png');
 
 
 .button[src*="headphonesbutton.png"]:hover {
-content: url('./UI/headphonesbuttonhover.png');
+content: url('/UI/headphonesbuttonhover.png');
 
 
 .button[src*="sproutbutton.png"]:hover {
-content: url('./UI/sproutbuttonhover.png');
+content: url('/UI/sproutbuttonhover.png');
 
 
 .button[src*="catbutton.png"]:hover {
-content: url('./UI/cathathover.png');
+content: url('/UI/cathathover.png');
 
 
 .button[src*="deletehatbutton.png"]:hover {
-content: url('./UI/deletehatbuttonhover.png');
+content: url('/UI/deletehatbuttonhover.png');
 
 
 .button[src*="lockedbutton.png"]:hover {
-content: url('./UI/lockedbuttonhover.png');
+content: url('/UI/lockedbuttonhover.png');
 
 
 .button[src*="easteregg1button.png"]:hover {
-content: url('./UI/easteregg1buttonhover.png');
+content: url('/UI/easteregg1buttonhover.png');
 
 
 /* furniture button hover states */
 .button[src*="chairbutton.png"]:hover {
-content: url('./UI/chairbuttonhover.png');
+content: url('/UI/chairbuttonhover.png');
 
 
 .button[src*="lampbutton.png"]:hover {
-content: url('./UI/lampbuttonhover.png');
+content: url('/UI/lampbuttonhover.png');
 
 
 .button[src*="bedbutton.png"]:hover {
-content: url('./UI/bedbuttonhover.png');
+content: url('/UI/bedbuttonhover.png');
 
 
 .button[src*="wallsbutton.png"]:hover {
-content: url('./UI/wallsbuttonhover.png');
+content: url('/UI/wallsbuttonhover.png');
 
 
 .button[src*="plant1button.png"]:hover {
-content: url('./UI/plant1buttonhover.png');
+content: url('/UI/plant1buttonhover.png');
 
 
 .button[src*="plant2button.png"]:hover {
-content: url('./UI/plant2buttonhover.png');
+content: url('/UI/plant2buttonhover.png');
 
 
 .button[src*="blackcatbutton.png"]:hover {
-content: url('./UI/blackcatbuttonhover.png');
+content: url('/UI/blackcatbuttonhover.png');
 
 
 .button[src*="whitecatbutton.png"]:hover {
-content: url('./UI/whitecatbuttonhover.png');
+content: url('/UI/whitecatbuttonhover.png');
 
 
 /* hats to replace cursor */
 .cursor-bunny {
-background-image: url('./UI/bunny.png') !important;
+background-image: url('/UI/bunny.png') !important;
 
 
 .cursor-cap {
-background-image: url('./UI/cap.png') !important;
+background-image: url('/UI/cap.png') !important;
 
 
 .cursor-slime {
-background-image: url('./UI/slime.png') !important;
+background-image: url('/UI/slime.png') !important;
 
 
 .cursor-astronaut {
-background-image: url('./UI/astronaut.png') !important;
+background-image: url('/UI/astronaut.png') !important;
 
 
 .cursor-beanie {
-background-image: url('./UI/beanie.png') !important;
+background-image: url('/UI/beanie.png') !important;
 
 
 .cursor-headphones {
-background-image: url('./UI/headphones.png') !important;
+background-image: url('/UI/headphones.png') !important;
 
 
 .cursor-sprout {
-background-image: url('./UI/sprout.png') !important;
+background-image: url('/UI/sprout.png') !important;
 
 
 .cursor-cathat {
-background-image: url('./UI/cathat.png') !important;
+background-image: url('/UI/cathat.png') !important;
 
 
 .cursor-easteregg1 {
 width: 32px;
 height: 34px;
-background-image: url('./UI/easteregg1.gif') !important;
+background-image: url('/UI/easteregg1.gif') !important;
 
 
 .cursor-default {
-background-image: url('./UI/cursor.png') !important;
+background-image: url('/UI/cursor.png') !important;
 
 
 /* tooltip for locked button */

@@ -1,6 +1,5 @@
 import React from 'react';
 import { Z_INDEX_LAYERS  from '../../constants';
-import type { CursorsMap  from '../../types';
 
 interface CursorData {
 x: number;
@@ -53,7 +52,7 @@ style={{
 left: cursorX,
 top: cursorY,
 fontWeight: isMe ? 'bold' : 'normal',
-zIndex: Z_INDEX_LAYERS.CURSORS
+zIndex: isMe ? Z_INDEX_LAYERS.CURSORS + 10 : Z_INDEX_LAYERS.CURSORS - 4
 
 >
 <div className={`cursor-circle ${cursorClass` />
@@ -65,7 +64,7 @@ zIndex: Z_INDEX_LAYERS.CURSORS
 {cursor.name
 {cursor.isFrozen && cursor.sleepingOnBed && (
 <img
-src="./UI/sleeping.gif"
+src="/UI/sleeping.gif"
 alt="Sleeping"
 style={{
 position: 'absolute',
@@ -74,7 +73,7 @@ top: '50%',
 transform: 'translateY(-50%)',
 marginLeft: '6px', // Spacing between label and gif
 paddingBottom: '4px', // Increased bottom padding
-zIndex: Z_INDEX_LAYERS.CURSORS,
+zIndex: isMe ? Z_INDEX_LAYERS.CURSORS + 10 : Z_INDEX_LAYERS.CURSORS - 10,
 pointerEvents: 'none'
 
 />

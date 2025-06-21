@@ -29,7 +29,7 @@ const [isPlaying, setIsPlaying] = useState(false);
 const [showMessage, setShowMessage] = useState(false);
 const [messageType, setMessageType] = useState<'win' | 'tryAgain' | null>(null);
 const [gifTimestamp, setGifTimestamp] = useState(0);
-const [currentImageSrc, setCurrentImageSrc] = useState('./UI/gachastill.png');
+const [currentImageSrc, setCurrentImageSrc] = useState('/UI/gachastill.png');
 const [showNotification, setShowNotification] = useState(false);
 const [notificationText, setNotificationText] = useState('');
 const messageRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -66,12 +66,12 @@ if (data.hasEnoughTime) {
 // Let the full GIF play for 3 seconds
 setTimeout(() => {
 setIsPlaying(false);
-setCurrentImageSrc('./UI/gachastill.png');
+setCurrentImageSrc('/UI/gachastill.png');
 , 3000);
  else {
 // Switch to static image after 0.5 seconds
 setTimeout(() => {
-setCurrentImageSrc('./UI/gachastill.png');
+setCurrentImageSrc('/UI/gachastill.png');
 setIsPlaying(false);
 , 500);
 
@@ -135,7 +135,7 @@ if (!success) {
 // If deduction failed, reset the playing state and show error
 console.log('Failed to deduct AFK balance - insufficient funds');
 setIsPlaying(false);
-setCurrentImageSrc('./UI/gachastill.png');
+setCurrentImageSrc('/UI/gachastill.png');
 setNotificationText('insufficient funds');
 return;
 
@@ -150,7 +150,7 @@ determinePayout();
  else {
 // For users without enough currency, play GIF for only 0.5 seconds then back to still
 setTimeout(() => {
-setCurrentImageSrc('./UI/gachastill.png');
+setCurrentImageSrc('/UI/gachastill.png');
 setIsPlaying(false);
 , 500);
 
@@ -165,7 +165,7 @@ setMessageType('win');
 setShowMessage(true);
 
 // Pause the GIF by switching to static image while message shows
-setCurrentImageSrc('./UI/gachastill.png');
+setCurrentImageSrc('/UI/gachastill.png');
 
 // Emit win event to server (this will trigger confetti for ALL users via socket)
 console.log('Emitting gachaponWin event to server');
@@ -179,14 +179,14 @@ setShowMessage(false);
 setMessageType(null);
 setIsPlaying(false); // Re-enable clicking after message disappears
 // Stay on still image (default state)
-setCurrentImageSrc('./UI/gachastill.png');
+setCurrentImageSrc('/UI/gachastill.png');
 , 3000);
  else {
 setMessageType('tryAgain');
 setShowMessage(true);
 
 // Pause the GIF by switching to static image while message shows
-setCurrentImageSrc('./UI/gachastill.png');
+setCurrentImageSrc('/UI/gachastill.png');
 
 // Hide message after 2 seconds
 messageRef.current = setTimeout(() => {
@@ -194,7 +194,7 @@ setShowMessage(false);
 setMessageType(null);
 setIsPlaying(false); // Re-enable clicking after message disappears
 // Stay on still image (default state)
-setCurrentImageSrc('./UI/gachastill.png');
+setCurrentImageSrc('/UI/gachastill.png');
 , 2000);
 
 ;
@@ -277,7 +277,7 @@ animation: messageType === 'win'
 
 >
 <img
-src={messageType === 'win' ? './UI/gachawon.png' : './UI/gachaopen.png'
+src={messageType === 'win' ? '/UI/gachawon.png' : '/UI/gachaopen.png'
 alt={messageType === 'win' ? 'Win' : 'Try Again'
 style={{
 width: 'auto',

@@ -101,7 +101,6 @@ setSelectedFurnitureId,
 selectedFurnitureId,
 isCursorFrozen,
 setIsCursorFrozen,
-frozenCursorPosition,
 setFrozenCursorPosition,
 viewportOffset,
 setViewportOffset,
@@ -255,7 +254,7 @@ style={{ zIndex: Z_INDEX_LAYERS.PANEL
 
 {/* Gachapon Machine */
 <GachaponMachine
-src={'./UI/gacha.gif'
+src={'/UI/gacha.gif'
 alt="Gacha"
 username={username
 socket={socketRef.current

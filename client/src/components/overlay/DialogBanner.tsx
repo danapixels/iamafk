@@ -22,7 +22,7 @@ pointerEvents: 'none'
 
 >
 <img
-src="./UI/dialog.png"
+src="/UI/dialog.png"
 alt="Dialog"
 style={{
 width: 'auto',

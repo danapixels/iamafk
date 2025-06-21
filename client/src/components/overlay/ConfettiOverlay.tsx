@@ -26,7 +26,7 @@ justifyContent: 'flex-start'
 
 >
 <img
-src={`./UI/confetti.gif${confettiTimestamp ? `?t=${confettiTimestamp` : ''`
+src={`/UI/confetti.gif${confettiTimestamp ? `?t=${confettiTimestamp` : ''`
 alt="Confetti"
 style={{
 width: '200px',
@@ -58,7 +58,7 @@ justifyContent: 'flex-end'
 
 >
 <img
-src={`./UI/confetti.gif${confettiTimestamp ? `?t=${confettiTimestamp` : ''`
+src={`/UI/confetti.gif${confettiTimestamp ? `?t=${confettiTimestamp` : ''`
 alt="Confetti"
 style={{
 width: '200px',
