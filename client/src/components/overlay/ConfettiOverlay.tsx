@@ -26,7 +26,7 @@ export const ConfettiOverlay: React.FC<ConfettiOverlayProps> = ({ showConfetti, 
         }}
       >
         <img
-          src={`./UI/confetti.gif${confettiTimestamp ? `?t=${confettiTimestamp}` : ''}`}
+          src={`/UI/confetti.gif${confettiTimestamp ? `?t=${confettiTimestamp}` : ''}`}
           alt="Confetti"
           style={{
             width: '200px',
@@ -58,7 +58,7 @@ export const ConfettiOverlay: React.FC<ConfettiOverlayProps> = ({ showConfetti, 
         }}
       >
         <img
-          src={`./UI/confetti.gif${confettiTimestamp ? `?t=${confettiTimestamp}` : ''}`}
+          src={`/UI/confetti.gif${confettiTimestamp ? `?t=${confettiTimestamp}` : ''}`}
           alt="Confetti"
           style={{
             width: '200px',

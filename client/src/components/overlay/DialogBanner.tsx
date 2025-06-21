@@ -22,7 +22,7 @@ export const DialogBanner: React.FC<DialogBannerProps> = ({ showDialogBanner }) 
       }}
     >
       <img
-        src="./UI/dialog.png"
+        src="/UI/dialog.png"
         alt="Dialog"
         style={{
           width: 'auto',

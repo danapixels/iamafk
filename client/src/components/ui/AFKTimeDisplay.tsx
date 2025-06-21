@@ -42,7 +42,7 @@ export const AFKTimeDisplay: React.FC<AFKTimeDisplayProps> = ({ hasConnected, us
         position: 'relative'
       }}>
         <img 
-          src="./UI/totalafk.png" 
+          src="/UI/totalafk.png" 
           alt="AFK Balance" 
           style={{
             width: 'auto',

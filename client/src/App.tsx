@@ -101,7 +101,6 @@ function App() {
     selectedFurnitureId,
     isCursorFrozen,
     setIsCursorFrozen,
-    frozenCursorPosition,
     setFrozenCursorPosition,
     viewportOffset,
     setViewportOffset,
@@ -255,7 +254,7 @@ function App() {
 
       {/* Gachapon Machine */}
       <GachaponMachine
-        src={'./UI/gacha.gif'}
+        src={'/UI/gacha.gif'}
         alt="Gacha"
         username={username}
         socket={socketRef.current}

@@ -92,7 +92,7 @@ const AnimationRenderer: React.FC<AnimationRendererProps> = ({
         return (
           <img
             key={emote.id}
-            src={`./UI/${emote.type}.png`}
+            src={`/UI/${emote.type}.png`}
             alt={emote.type}
             style={{
               position: 'absolute',

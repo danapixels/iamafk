@@ -70,62 +70,62 @@ html, body {
 .cursor-default {
   width: 24px;
   height: 24px;
-  background-image: url('./UI/cursor.png') !important;
+  background-image: url('/UI/cursor.png') !important;
 }
 
 /* Custom cursor classes with their original sizes */
 .cursor-bunny {
   width: 36px;
   height: 44px;
-  background-image: url('./UI/bunny.png') !important;
+  background-image: url('/UI/bunny.png') !important;
 }
 
 .cursor-cap {
   width: 42px;
   height: 34px;
-  background-image: url('./UI/cap.png') !important;
+  background-image: url('/UI/cap.png') !important;
 }
 
 .cursor-slime {
   width: 50px;
   height: 36px;
-  background-image: url('./UI/slime.png') !important;
+  background-image: url('/UI/slime.png') !important;
 }
 
 .cursor-astronaut {
   width: 44px;
   height: 40px;
-  background-image: url('./UI/astronaut.png') !important;
+  background-image: url('/UI/astronaut.png') !important;
 }
 
 .cursor-beanie {
   width: 36px;
   height: 30px;
-  background-image: url('./UI/beanie.png') !important;
+  background-image: url('/UI/beanie.png') !important;
 }
 
 .cursor-headphones {
   width: 38px;
   height: 38px;
-  background-image: url('./UI/headphones.png') !important;
+  background-image: url('/UI/headphones.png') !important;
 }
 
 .cursor-sprout {
   width: 34px;
   height: 38px;
-  background-image: url('./UI/sprout.png') !important;
+  background-image: url('/UI/sprout.png') !important;
 }
 
 .cursor-cathat {
   width: 48px;
   height: 38px;
-  background-image: url('./UI/cathat.png') !important;
+  background-image: url('/UI/cathat.png') !important;
 }
 
 .cursor-easteregg1 {
   width: 32px;
   height: 34px;
-  background-image: url('./UI/easteregg1.gif') !important;
+  background-image: url('/UI/easteregg1.gif') !important;
 }
 
 .cursor-labels {

@@ -6,20 +6,34 @@ const fs = require('fs');
 const path = require('path');
 
 const app = express();
-app.use(cors());
+
+// More explicit CORS configuration
+app.use(cors({
+  origin: true, // Allow all origins
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  credentials: false
+}));
+
+// Add CORS headers manually for Socket.IO
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+  } else {
+    next();
+  }
+});
 
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: (origin, callback) => {
-      // Allow any localhost origin for development
-      if (!origin || origin.startsWith('http://localhost:')) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
-    methods: ["GET", "POST"],
+    origin: true,
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    credentials: false
   },
 });
 
@@ -37,9 +51,9 @@ const BATCH_INTERVAL = 5 * 60 * 1000; // 5 minutes
 let batchTimer = null;
 
 // Persistent furniture storage with expiration
-const FURNITURE_FILE = path.join(__dirname, 'furniture.json');
+const FURNITURE_FILE = path.join(__dirname, 'data', 'furniture.json');
 const FURNITURE_EXPIRY_HOURS = 48;
-const USER_ACTIVITY_FILE = path.join(__dirname, 'user_activity.json');
+const USER_ACTIVITY_FILE = path.join(__dirname, 'data', 'user_activity.json');
 
 // Z-index management
 let nextZIndex = 5000; // Base z-index for furniture

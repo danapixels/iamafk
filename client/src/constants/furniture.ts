@@ -1,14 +1,14 @@
 // furniture images
 export const FURNITURE_IMAGES: { [key: string]: string } = {
-  chair: './UI/chair.png',
-  lamp: './UI/lamp.png',
-  bed: './UI/bed.png',
-  walls: './UI/walls1.png',
-  plant1: './UI/plant1.png',
-  plant2: './UI/plant2.png',
-  blackcat: './UI/blackcat.png',
-  whitecat: './UI/whitecat.png',
-  table: './UI/table.png',
+  chair: '/UI/chair.png',
+  lamp: '/UI/lamp.png',
+  bed: '/UI/bed.png',
+  walls: '/UI/walls1.png',
+  plant1: '/UI/plant1.png',
+  plant2: '/UI/plant2.png',
+  blackcat: '/UI/blackcat.png',
+  whitecat: '/UI/whitecat.png',
+  table: '/UI/table.png',
 } as const;
 
 // furniture wxh for bounding box button positioning

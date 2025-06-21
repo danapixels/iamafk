@@ -5,7 +5,7 @@ export const CANVAS_SIZE = 4000;
 export const Z_INDEX_LAYERS = {
   FURNITURE: 1000,
   PANEL: 9996,
-  CURSORS: 9997,
+  CURSORS: 10000,
   LOGO: 9998,
   MIN_FURNITURE: 100, // Minimum z-index for furniture
   MAX_FURNITURE: 9994  // Maximum z-index for furniture (below cursors and panel)

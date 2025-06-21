@@ -5,11 +5,6 @@ import {
   getSavedCursorType, 
   saveUsername 
 } from '../../utils/localStorage';
-import { 
-  updateAFKTime, 
-  getUserStats, 
-  recordFurniturePlacement 
-} from '../../utils/localStorage';
 
 interface UseConnectionHandlersProps {
   socket: Socket | null;

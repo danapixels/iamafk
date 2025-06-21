@@ -12,16 +12,22 @@ const LockedHatButton: React.FC<LockedHatButtonProps> = ({ gachaponWin, localGac
   return (
     <div className="locked-button-container" style={{ position: 'relative', display: 'flex' }}>
       <img
-        src={gachaponWin ? './UI/easteregg1button.png' : './UI/lockedbutton.png'}
-        alt="Locked"
+        src={gachaponWin ? '/UI/easteregg1button.png' : '/UI/lockedbutton.png'}
+        alt={gachaponWin ? "Easter Egg Hat" : "Locked Hat"}
+        onMouseOver={(e) => {
+          e.currentTarget.src = gachaponWin ? '/UI/easteregg1buttonhover.png' : '/UI/lockedbuttonhover.png';
+        }}
+        onMouseOut={(e) => {
+          e.currentTarget.src = gachaponWin ? '/UI/easteregg1button.png' : '/UI/lockedbutton.png';
+        }}
         className="button"
         style={{ cursor: 'pointer' }}
         onMouseEnter={({ currentTarget }) => {
-          currentTarget.src = gachaponWin ? './UI/easteregg1buttonhover.png' : './UI/lockedbuttonhover.png';
+          currentTarget.src = gachaponWin ? '/UI/easteregg1buttonhover.png' : '/UI/lockedbuttonhover.png';
           setShowTooltip(true);
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.src = gachaponWin ? './UI/easteregg1button.png' : './UI/lockedbutton.png';
+          e.currentTarget.src = gachaponWin ? '/UI/easteregg1button.png' : '/UI/lockedbutton.png';
           setShowTooltip(false);
         }}
         onClick={() => {
