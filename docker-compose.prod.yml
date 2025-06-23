@@ -10,7 +10,7 @@ services:
     depends_on:
       - server
     environment:
-      - VITE_SERVER_URL=https://iamafk.dev:3001
+      - VITE_SERVER_URL=http://iamafk.dev:3001
     networks:
       - iamafk-network
     restart: unless-stopped
@@ -30,7 +30,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3001
-      - CORS_ORIGIN=https://iamafk.dev
+      - CORS_ORIGIN=http://iamafk.dev
     networks:
       - iamafk-network
     restart: unless-stopped
