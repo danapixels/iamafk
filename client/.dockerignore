@@ -1,44 +1,45 @@
-node_modules
-npm-debug.log
-.git
-.gitignore
-.env
-.nyc_output
-coverage
-.DS_Store
-*.log
+# Temporarily disabled to debug UI image issue
+# node_modules
+# npm-debug.log
+# .git
+# .gitignore
+# .env
+# .nyc_output
+# coverage
+# .DS_Store
+# *.log
 
 # Development files
-.vscode/
-.idea/
+# .vscode/
+# .idea/
 
 # Test files
-test/
-__tests__/
-*.test.*
-*.spec.*
+# test/
+# __tests__/
+# *.test.*
+# *.spec.*
 
 # Temporary files
-.tmp/
-.temp/
-tmp/
-temp/
+# .tmp/
+# .temp/
+# tmp/
+# temp/
 
 # Build artifacts
-build/
-.cache/
-.parcel-cache/
+# build/
+# .cache/
+# .parcel-cache/
 
 # Environment files
-.env.local
-.env.development
-.env.staging
-.env.production
+# .env.local
+# .env.development
+# .env.staging
+# .env.production
 
 # Logs
-logs/
-*.log.*
+# logs/
+# *.log.*
 
 # Explicitly allow public directory (needed for UI images)
-!public/
-!public/UI/ 
+# !public/
+# !public/UI/ 
