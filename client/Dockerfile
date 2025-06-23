@@ -29,8 +29,9 @@ FROM nginx:alpine
 # Copy built application from build stage
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Copy UI assets from build stage to nginx html directory
-COPY --from=build /app/public/UI /usr/share/nginx/html/UI
+# Copy UI assets directly from host to nginx html directory
+# This ensures the UI assets are available even if they weren't in the build stage
+COPY public/UI /usr/share/nginx/html/UI
 
 # Copy nginx configuration
 COPY nginx.conf /etc/nginx/nginx.conf
