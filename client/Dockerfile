@@ -15,14 +15,8 @@ COPY . .
 # Build the application
 RUN npm run build
 
-# Create UI directory in dist and copy assets (with fallback)
-RUN mkdir -p dist/UI && \
-    if [ -d "public/UI" ]; then \
-        cp -r public/UI/* dist/UI/; \
-    else \
-        echo "public/UI not found, creating empty UI directory"; \
-        touch dist/UI/.placeholder; \
-    fi
+# Copy UI assets from public/UI to dist/UI (root level)
+RUN cp -r public/UI dist/
 
 # Production stage
 FROM nginx:alpine
