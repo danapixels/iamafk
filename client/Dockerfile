@@ -12,11 +12,13 @@ RUN npm ci
 # Copy the entire source code
 COPY . .
 
-# Debug: Check what's in the public directory
-RUN echo "=== Checking public directory ===" && \
-ls -la public/ && \
-echo "=== Checking if public/UI exists ===" && \
-ls -la public/UI/ | head -5
+# Debug: Check what's in the current directory
+RUN echo "=== Checking current directory ===" && \
+ls -la && \
+echo "=== Checking if public directory exists ===" && \
+ls -la public/ 2>/dev/null || echo "public directory not found" && \
+echo "=== Checking if public/UI directory exists ===" && \
+ls -la public/UI/ 2>/dev/null || echo "public/UI directory not found"
 
 # Build the application
 RUN npm run build
