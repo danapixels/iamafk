@@ -9,10 +9,7 @@ COPY package*.json ./
 # Install all dependencies (including dev dependencies for build)
 RUN npm ci
 
-# Copy public directory first to ensure UI assets are available
-COPY public/ ./public/
-
-# Copy the rest of the source code
+# Copy the entire source code (including public/UI)
 COPY . .
 
 # Debug: Check what's in the public directory
@@ -24,14 +21,27 @@ RUN echo "=== Checking public directory ===" && \
 # Build the application
 RUN npm run build
 
+# Debug: Check what's in dist after build
+RUN echo "=== Checking dist directory after build ===" && \
+    ls -la dist/
+
 # Copy UI assets from public/UI to dist/UI (root level)
-RUN cp -r public/UI dist/
+RUN echo "=== Copying UI assets ===" && \
+    cp -rv public/UI dist/ && \
+    echo "=== UI assets copied ===" && \
+    ls -la dist/UI/ | head -10
 
 # Production stage
 FROM nginx:alpine
 
 # Copy built application from build stage
 COPY --from=build /app/dist /usr/share/nginx/html
+
+# Debug: Check final nginx directory
+RUN echo "=== Final nginx directory ===" && \
+    ls -la /usr/share/nginx/html/ && \
+    echo "=== UI directory in nginx ===" && \
+    ls -la /usr/share/nginx/html/UI/ | head -10
 
 # Copy nginx configuration
 COPY nginx.conf /etc/nginx/nginx.conf
