@@ -45,7 +45,7 @@ export const GITHUB_URL = 'https://github.com/danapixels/iamafk';
 
 // Server and connection constants
 export const SERVER_CONFIG = {
-SOCKET_URL: import.meta.env.VITE_SERVER_URL || 'http://localhost:3001',
+SOCKET_URL: import.meta.env.VITE_SERVER_URL || 'ws://localhost:3001',
 DEFAULT_CURSOR_TYPE: 'default',
 ANONYMOUS_NAME: 'Anonymous'
  as const;
