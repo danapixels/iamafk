@@ -79,6 +79,7 @@ web_modules/
 .env.local
 .env.production
 .env.development
+.env.staging
 
 # OS files
 .DS_Store
@@ -156,3 +157,30 @@ temp/
 # Project-specific files
 furniture.json
 user_activity.json
+
+# SSL certificates and keys
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# Backup files
+*.backup
+*.bak
+backup/
+
+# SSL certificates
+ssl/
+certificates/
+
+# Docker volumes
+docker-volumes/
+
+# Log files
+logs/
+*.log.*
+
+# Temporary deployment files
+.tmp/
+.temp/

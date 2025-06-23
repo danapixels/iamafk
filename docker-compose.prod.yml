@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - server
+    environment:
+      - VITE_SERVER_URL=https://iamafk.dev:3001
+    networks:
+      - iamafk-network
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.client.rule=Host(`iamafk.dev`)"
+      - "traefik.http.routers.client.entrypoints=web"
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile.prod
+    ports:
+      - "3001:3001"
+    volumes:
+      - server-data:/app/data
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - CORS_ORIGIN=https://iamafk.dev
+    networks:
+      - iamafk-network
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.server.rule=Host(`iamafk.dev`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.server.entrypoints=web"
+
+volumes:
+  server-data:
+    driver: local
+
+networks:
+  iamafk-network:
+    driver: bridge 
