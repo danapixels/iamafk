@@ -8,3 +8,51 @@ README.md
 coverage
 .DS_Store
 *.log
+
+# Development files
+.vscode/
+.idea/
+*.sublime-*
+.eslintcache
+.stylelintcache
+
+# Test files
+test/
+__tests__/
+*.test.*
+*.spec.*
+
+# Documentation
+docs/
+*.md
+
+# Temporary files
+.tmp/
+.temp/
+tmp/
+temp/
+
+# Environment files
+.env.local
+.env.development
+.env.staging
+.env.production
+
+# Logs
+logs/
+*.log.*
+
+# Backup files
+*.backup
+*.bak
+
+# Data files (will be mounted as volumes)
+data/
+*.json
+
+# SSL certificates
+ssl/
+certificates/
+*.pem
+*.key
+*.crt
