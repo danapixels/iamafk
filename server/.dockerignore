@@ -48,7 +48,8 @@ logs/
 
 # Data files (will be mounted as volumes)
 data/
-*.json
+furniture.json
+user_activity.json
 
 # SSL certificates
 ssl/
