@@ -38,4 +38,8 @@ build/
 
 # Logs
 logs/
-*.log.* 
+*.log.*
+
+# Explicitly allow public directory (needed for UI images)
+!public/
+!public/UI/ 
