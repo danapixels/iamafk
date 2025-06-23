@@ -2,7 +2,6 @@ node_modules
 npm-debug.log
 .git
 .gitignore
-README.md
 .env
 .nyc_output
 coverage
@@ -13,19 +12,12 @@ dist
 # Development files
 .vscode/
 .idea/
-*.sublime-*
-.eslintcache
-.stylelintcache
 
 # Test files
 test/
 __tests__/
 *.test.*
 *.spec.*
-
-# Documentation
-docs/
-*.md
 
 # Temporary files
 .tmp/
@@ -46,8 +38,4 @@ build/
 
 # Logs
 logs/
-*.log.*
-
-# Backup files
-*.backup
-*.bak 
+*.log.* 

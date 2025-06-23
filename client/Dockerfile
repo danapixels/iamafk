@@ -9,17 +9,20 @@ COPY package*.json ./
 # Install all dependencies (including dev dependencies for build)
 RUN npm ci
 
-# Copy public directory first to ensure UI assets are available
-COPY public/ ./public/
-
-# Copy source code
+# Copy the entire source code
 COPY . .
 
 # Build the application
 RUN npm run build
 
-# Copy UI assets from public to the build output
-RUN cp -r public/UI dist/
+# Create UI directory in dist and copy assets (with fallback)
+RUN mkdir -p dist/UI && \
+    if [ -d "public/UI" ]; then \
+        cp -r public/UI/* dist/UI/; \
+    else \
+        echo "public/UI not found, creating empty UI directory"; \
+        touch dist/UI/.placeholder; \
+    fi
 
 # Production stage
 FROM nginx:alpine
