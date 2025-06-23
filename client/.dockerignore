@@ -41,5 +41,5 @@
 # *.log.*
 
 # Explicitly allow public directory (needed for UI images)
-# !public/
-# !public/UI/ 
+!public/
+!public/UI/ 
