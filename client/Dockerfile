@@ -9,6 +9,9 @@ COPY package*.json ./
 # Install all dependencies (including dev dependencies for build)
 RUN npm ci
 
+# Copy public directory first to ensure UI assets are available
+COPY public/ ./public/
+
 # Copy source code
 COPY . .
 
