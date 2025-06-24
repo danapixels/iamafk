@@ -56,6 +56,9 @@ export const useMouseInteractions = ({
     lastEvent: null as MouseEvent | null,
   });
 
+  // Throttle emits for furniture dragging
+  let lastEmitTime = 0;
+
   // Helper function to convert screen coordinates to canvas coordinates
   const convertScreenToCanvas = (screenX: number, screenY: number) => {
     return screenToCanvas(screenX, screenY, viewportOffset);
@@ -102,11 +105,15 @@ export const useMouseInteractions = ({
           }));
           
           if (socketRef.current) {
-            socketRef.current.emit('updateFurniturePosition', {
-              furnitureId: draggedFurnitureId.current,
-              x: clampedCoords.x,
-              y: clampedCoords.y
-            });
+            const now = Date.now();
+            if (now - lastEmitTime > 33) { // ~30 times per second
+              socketRef.current.emit('updateFurniturePosition', {
+                furnitureId: draggedFurnitureId.current,
+                x: clampedCoords.x,
+                y: clampedCoords.y
+              });
+              lastEmitTime = now;
+            }
           }
         }
         dragStart.current = { x: mouseStateRef.current.lastX, y: mouseStateRef.current.lastY };
