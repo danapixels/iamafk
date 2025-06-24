@@ -18,7 +18,7 @@ services:
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.client.rule=Host(`iamafk.dev`) || Host(`143.198.27.234`)"
+      - "traefik.http.routers.client.rule=Host(`iamafk.dev`) || Host(`www.iamafk.dev`) || Host(`143.198.27.234`)"
       - "traefik.http.routers.client.entrypoints=web"
 
   server:
@@ -32,13 +32,13 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3001
-      - CORS_ORIGIN=http://iamafk.dev,http://143.198.27.234
+      - CORS_ORIGIN=http://iamafk.dev,http://www.iamafk.dev,http://143.198.27.234
     networks:
       - iamafk-network
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.server.rule=(Host(`iamafk.dev`) || Host(`143.198.27.234`)) && PathPrefix(`/api`)"
+      - "traefik.http.routers.server.rule=(Host(`iamafk.dev`) || Host(`www.iamafk.dev`) || Host(`143.198.27.234`)) && PathPrefix(`/api`)"
       - "traefik.http.routers.server.entrypoints=web"
 
 volumes:
