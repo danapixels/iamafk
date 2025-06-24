@@ -59,14 +59,27 @@ export const useSocket = () => {
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
-    const socket = io(SERVER_CONFIG.SOCKET_URL);
+    console.log('Attempting to connect to:', SERVER_CONFIG.SOCKET_URL);
+    
+    const socket = io(SERVER_CONFIG.SOCKET_URL, {
+      timeout: 20000, // 20 second timeout
+      transports: ['websocket', 'polling'], // Try WebSocket first, then polling
+      path: '/socket.io/', // Explicit path for nginx proxy
+      forceNew: true
+    });
     socketRef.current = socket;
 
     socket.on('connect', () => {
-      // Connected successfully
+      console.log('✅ Connected to server successfully');
+      setHasConnected(true);
     });
 
-    socket.on('disconnect', () => {
+    socket.on('connect_error', (error) => {
+      console.error('❌ Connection error:', error);
+    });
+
+    socket.on('disconnect', (reason) => {
+      console.log('🔌 Disconnected:', reason);
       setHasConnected(false);
       setCursors({});
       setHearts([]);

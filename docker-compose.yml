@@ -10,7 +10,7 @@ services:
     depends_on:
       - server
     environment:
-      - VITE_SERVER_URL=http://server:3001
+      - VITE_SERVER_URL=ws://143.198.27.234
     networks:
       - iamafk-network
     restart: unless-stopped
@@ -26,6 +26,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3001
+      - CORS_ORIGIN=http://143.198.27.234
     networks:
       - iamafk-network
     restart: unless-stopped

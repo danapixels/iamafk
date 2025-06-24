@@ -10,7 +10,7 @@ services:
     depends_on:
       - server
     environment:
-      - VITE_SERVER_URL=http://iamafk.dev:3001
+      - VITE_SERVER_URL=ws://iamafk.dev:3001
     networks:
       - iamafk-network
     restart: unless-stopped
