@@ -339,6 +339,7 @@ window.removeEventListener('dblclick', onDblClick);
 return {
 clickEnabledTimeRef,
 confettiTimeoutRef,
-mouseStateRef
+mouseStateRef,
+draggedFurnitureId,
 ;
 ; 

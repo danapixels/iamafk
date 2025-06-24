@@ -87,11 +87,7 @@ showDialogBanner
 // Game state management
 const { afkStartTimeRef  = useStats(socketRef, hasConnected, cursors, userStats, setUserStats);
 useCursor(socketRef, hasConnected, cursors, username, isCursorFrozen, setIsCursorFrozen, setFrozenCursorPosition);
-useFurniture(socketRef, setFurniture, setSelectedFurnitureId, hasConnected);
-useConfetti(socketRef, setGachaponWinner, setShowConfetti);
-
-// User interactions
-const { clickEnabledTimeRef, mouseStateRef  = useMouseInteractions({
+const { clickEnabledTimeRef, mouseStateRef, draggedFurnitureId  = useMouseInteractions({
 socketRef,
 hasConnected,
 cursors,
@@ -108,8 +104,6 @@ username,
 setUserStats,
 afkStartTimeRef
 );
-
-// Keyboard interactions
 useKeyboardInteractions({
 socketRef,
 hasConnected,
@@ -121,6 +115,8 @@ frozenCursorPosition,
 viewportOffset,
 mouseStateRef
 );
+useFurniture(socketRef, setFurniture, setSelectedFurnitureId, hasConnected, draggedFurnitureId, mouseStateRef);
+useConfetti(socketRef, setGachaponWinner, setShowConfetti);
 
 // Animation and cleanup
 useAnimationCleanup({

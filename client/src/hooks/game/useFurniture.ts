@@ -14,7 +14,9 @@ export const useFurniture = (
 socketRef: React.RefObject<Socket | null>,
 setFurniture: React.Dispatch<React.SetStateAction<{ [key: string]: Furniture >>,
 setSelectedFurnitureId: React.Dispatch<React.SetStateAction<string | null>>,
-hasConnected: boolean
+hasConnected: boolean,
+draggedFurnitureId?: React.MutableRefObject<string | null>,
+mouseStateRef?: React.MutableRefObject<any>
 ) => {
 // Socket listeners for furniture events
 useEffect(() => {
@@ -31,6 +33,15 @@ setFurniture(prev => ({ ...prev, [data.id]: data ));
 );
 
 socket.on('furnitureMoved', (data: any) => {
+// Ignore server updates for furniture currently being dragged by this client
+if (
+draggedFurnitureId &&
+mouseStateRef &&
+mouseStateRef.current.isDraggingFurniture &&
+draggedFurnitureId.current === data.id
+) {
+return;
+
 if (data && data.id) {
 setFurniture(prev => ({
 ...prev,
@@ -108,5 +119,5 @@ socket.off('furnitureZIndexChanged');
 socket.off('furnitureFlipped');
 socket.off('furnitureCleanup');
 ;
-, [socketRef, setFurniture, setSelectedFurnitureId, hasConnected]);
+, [socketRef, setFurniture, setSelectedFurnitureId, hasConnected, draggedFurnitureId, mouseStateRef]);
 ; 
