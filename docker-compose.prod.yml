@@ -7,9 +7,9 @@ services:
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
-      - "--certificatesresolvers.letsencrypt.acme.email=webmaster@iamafk.dev"
-      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
-      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+      - "--entrypoints.websecure.http.tls=true"
+      - "--entrypoints.websecure.http.tls.certificates.certFile=/certs/fullchain.pem"
+      - "--entrypoints.websecure.http.tls.certificates.keyFile=/certs/privkey.pem"
       - "--log.level=DEBUG"
     ports:
       - "80:80"
@@ -18,9 +18,24 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./letsencrypt:/letsencrypt
+      - /etc/letsencrypt/live/iamafk.dev/fullchain.pem:/certs/fullchain.pem:ro
+      - /etc/letsencrypt/live/iamafk.dev/privkey.pem:/certs/privkey.pem:ro
     networks:
       - iamafk-network
     restart: unless-stopped
+
+  # ACME Challenge handler for Let's Encrypt (higher priority)
+  acme-challenge:
+    image: nginx:alpine
+    command: "sh -c 'echo \"server { listen 80; location /.well-known/acme-challenge/ { return 404; } }\" > /etc/nginx/conf.d/default.conf && nginx -g \"daemon off;\"'"
+    networks:
+      - iamafk-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.acme.rule=PathPrefix(`/.well-known/acme-challenge`)"
+      - "traefik.http.routers.acme.entrypoints=web"
+      - "traefik.http.routers.acme.priority=100"
+      - "traefik.http.services.acme.loadbalancer.server.port=80"
 
   client:
     build:
@@ -37,11 +52,10 @@ services:
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.client.rule=(Host(`iamafk.dev`) || Host(`www.iamafk.dev`)) && !PathPrefix(`/.well-known/acme-challenge`)"
+      - "traefik.http.routers.client.rule=(Host(`iamafk.dev`) || Host(`www.iamafk.dev`))"
       - "traefik.http.routers.client.entrypoints=web"
-      - "traefik.http.routers.client-secure.rule=(Host(`iamafk.dev`) || Host(`www.iamafk.dev`)) && !PathPrefix(`/.well-known/acme-challenge`)"
+      - "traefik.http.routers.client-secure.rule=(Host(`iamafk.dev`) || Host(`www.iamafk.dev`))"
       - "traefik.http.routers.client-secure.entrypoints=websecure"
-      - "traefik.http.routers.client-secure.tls.certresolver=letsencrypt"
       - "traefik.http.services.client.loadbalancer.server.port=80"
 
   server:
@@ -63,7 +77,6 @@ services:
       - "traefik.http.routers.server.entrypoints=web"
       - "traefik.http.routers.server-secure.rule=(Host(`iamafk.dev`) || Host(`www.iamafk.dev`)) && PathPrefix(`/socket.io`)"
       - "traefik.http.routers.server-secure.entrypoints=websecure"
-      - "traefik.http.routers.server-secure.tls.certresolver=letsencrypt"
       - "traefik.http.services.server.loadbalancer.server.port=3001"
 
 volumes:

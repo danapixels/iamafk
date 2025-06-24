@@ -9,7 +9,7 @@ const app = express();
 
 // Environment-based CORS configuration
 const allowedOrigins = process.env.CORS_ORIGIN 
-  ? [process.env.CORS_ORIGIN]
+  ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
   : ['http://localhost:3000', 'http://localhost:5173'];
 
 app.use(cors({
