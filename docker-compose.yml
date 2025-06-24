@@ -5,6 +5,8 @@ services:
     build:
       context: ./client
       dockerfile: Dockerfile
+      args:
+        - VITE_SERVER_URL=ws://143.198.27.234
     ports:
       - "80:80"
     depends_on:
