@@ -374,14 +374,11 @@ furniture[furnitureId].y = y;
 if (typeof isFlipped === 'boolean') {
 furniture[furnitureId].isFlipped = isFlipped;
 
-
 // Update timestamp when furniture is moved
 furniture[furnitureId].timestamp = Date.now();
-
 // Save to persistent storage
 addToBatch('furniture', furniture[furnitureId]);
-
-// Broadcast to ALL clients including sender
+// Broadcast to ALL clients EXCEPT sender
 const broadcastData = { 
 id: furnitureId, 
 x, 
@@ -389,7 +386,7 @@ y,
 isFlipped: furniture[furnitureId].isFlipped 
 ;
 console.log('Server broadcasting furnitureMoved:', broadcastData);
-io.emit('furnitureMoved', broadcastData);
+socket.broadcast.emit('furnitureMoved', broadcastData);
 
 );
 
