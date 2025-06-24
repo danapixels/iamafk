@@ -24,19 +24,6 @@ services:
       - iamafk-network
     restart: unless-stopped
 
-  # ACME Challenge handler for Let's Encrypt (higher priority)
-  acme-challenge:
-    image: nginx:alpine
-    command: "sh -c 'echo \"server { listen 80; location /.well-known/acme-challenge/ { return 404; } }\" > /etc/nginx/conf.d/default.conf && nginx -g \"daemon off;\"'"
-    networks:
-      - iamafk-network
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.acme.rule=PathPrefix(`/.well-known/acme-challenge`)"
-      - "traefik.http.routers.acme.entrypoints=web"
-      - "traefik.http.routers.acme.priority=100"
-      - "traefik.http.services.acme.loadbalancer.server.port=80"
-
   client:
     build:
       context: ./client
