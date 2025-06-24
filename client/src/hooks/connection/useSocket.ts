@@ -62,7 +62,7 @@ export const useSocket = () => {
     console.log('Attempting to connect to:', SERVER_CONFIG.SOCKET_URL);
     
     const socket = io(SERVER_CONFIG.SOCKET_URL, {
-      timeout: 20000, // 20 second timeout
+      timeout: 60000, // 60 second timeout
       transports: ['websocket', 'polling'], // Try WebSocket first, then polling
       path: '/socket.io/', // Explicit path for nginx proxy
       forceNew: true
