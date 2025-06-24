@@ -35,6 +35,10 @@ methods: ['GET', 'POST', 'OPTIONS'],
 allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 credentials: false
 ,
+pingTimeout: 60000, // 60 seconds
+pingInterval: 25000, // 25 seconds
+transports: ['websocket', 'polling'],
+allowEIO3: true
 );
 
 let cursors = {;
