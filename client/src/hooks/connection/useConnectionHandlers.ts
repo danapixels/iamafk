@@ -3,7 +3,8 @@ import { Socket } from 'socket.io-client';
 import { 
   initializeUserData, 
   getSavedCursorType, 
-  saveUsername 
+  saveUsername,
+  getUserData
 } from '../../utils/localStorage';
 
 interface UseConnectionHandlersProps {
@@ -25,7 +26,11 @@ export const useConnectionHandlers = ({
   const handleConnect = useCallback(() => {
     if (username.trim() === '') return;
     if (socket?.connected) {
-      socket.emit('setName', { name: username.trim() });
+      // Get the unique username from user data for server connection
+      const userData = getUserData();
+      const uniqueUsername = userData?.stats?.username || username.trim();
+      
+      socket.emit('setName', { name: uniqueUsername });
       
       const savedCursorType = getSavedCursorType();
       if (savedCursorType) {
@@ -35,8 +40,8 @@ export const useConnectionHandlers = ({
       setHasConnected(true);
       clickEnabledTimeRef.current = Date.now() + 300;
       
-      const userData = initializeUserData(username.trim());
-      setUserStats(userData.stats);
+      const newUserData = initializeUserData(username.trim());
+      setUserStats(newUserData.stats);
       saveUsername(username.trim());
     }
   }, [socket, username, setHasConnected, setUserStats, clickEnabledTimeRef]);

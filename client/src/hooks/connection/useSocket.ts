@@ -71,7 +71,7 @@ export const useSocket = () => {
 
     socket.on('connect', () => {
       console.log('✅ Connected to server successfully');
-      setHasConnected(true);
+      // Don't set hasConnected to true here - wait for user to enter name
     });
 
     socket.on('connect_error', (error) => {

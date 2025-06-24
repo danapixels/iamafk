@@ -40,10 +40,19 @@ const getTodayString = (): string => {
 const getDeviceId = (): string => {
   let deviceId = localStorage.getItem(STORAGE_KEYS.DEVICE_ID);
   if (!deviceId) {
-    deviceId = `device_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    // Generate a more unique device ID with timestamp and random string
+    deviceId = `device_${Date.now()}_${Math.random().toString(36).substr(2, 9)}_${Math.random().toString(36).substr(2, 9)}`;
     localStorage.setItem(STORAGE_KEYS.DEVICE_ID, deviceId);
   }
   return deviceId;
+};
+
+// Generate a unique username for different browser instances
+const generateUniqueUsername = (baseUsername: string): string => {
+  const deviceId = getDeviceId();
+  // Use the last part of the device ID as a unique suffix
+  const uniqueSuffix = deviceId.split('_').pop()?.substr(0, 4) || '0000';
+  return `${baseUsername}_${uniqueSuffix}`;
 };
 
 // Initialize default user stats
@@ -98,7 +107,7 @@ export const initializeUserData = (username: string): LocalUserData => {
     // Update existing user data from the same device, regardless of username change
     const updatedStats = {
       ...existingData.stats,
-      username, // Update to new username
+      username: generateUniqueUsername(username), // Use unique username
       lastSeen: Date.now(),
       sessions: existingData.stats.sessions + 1,
       currentSessionStart: Date.now()
@@ -108,7 +117,7 @@ export const initializeUserData = (username: string): LocalUserData => {
       stats: updatedStats,
       preferences: {
         ...existingData.preferences,
-        lastUsername: username
+        lastUsername: username // Keep the base username for display
       }
     };
     
@@ -117,10 +126,10 @@ export const initializeUserData = (username: string): LocalUserData => {
   } else {
     // Create new user data if no existing data found or different device
     const newData: LocalUserData = {
-      stats: createDefaultStats(username),
+      stats: createDefaultStats(generateUniqueUsername(username)), // Use unique username
       preferences: {
         cursorType: 'default',
-        lastUsername: username
+        lastUsername: username // Keep the base username for display
       }
     };
     
