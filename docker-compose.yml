@@ -6,13 +6,13 @@ services:
       context: ./client
       dockerfile: Dockerfile
       args:
-        - VITE_SERVER_URL=ws://143.198.27.234
+        - VITE_SERVER_URL=ws://localhost:3001
     ports:
       - "80:80"
     depends_on:
       - server
     environment:
-      - VITE_SERVER_URL=ws://143.198.27.234
+      - VITE_SERVER_URL=ws://localhost:3001
     networks:
       - iamafk-network
     restart: unless-stopped
@@ -26,9 +26,9 @@ services:
     volumes:
       - server-data:/app/data
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
       - PORT=3001
-      - CORS_ORIGIN=http://143.198.27.234
+      - CORS_ORIGIN=http://localhost
     networks:
       - iamafk-network
     restart: unless-stopped

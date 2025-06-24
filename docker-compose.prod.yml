@@ -5,12 +5,14 @@ services:
     build:
       context: ./client
       dockerfile: Dockerfile
+      args:
+        - VITE_SERVER_URL=ws://iamafk.dev
     ports:
       - "80:80"
     depends_on:
       - server
     environment:
-      - VITE_SERVER_URL=ws://iamafk.dev:3001
+      - VITE_SERVER_URL=ws://iamafk.dev
     networks:
       - iamafk-network
     restart: unless-stopped
