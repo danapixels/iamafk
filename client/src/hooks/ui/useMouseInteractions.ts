@@ -339,6 +339,7 @@ export const useMouseInteractions = ({
   return {
     clickEnabledTimeRef,
     confettiTimeoutRef,
-    mouseStateRef
+    mouseStateRef,
+    draggedFurnitureId,
   };
 }; 
