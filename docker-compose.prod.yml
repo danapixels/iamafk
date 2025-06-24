@@ -1,45 +1,70 @@
-version: '3.8'
-
 services:
+  traefik:
+    image: traefik:v2.10
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.email=admin@iamafk.dev"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+      - "--log.level=DEBUG"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./letsencrypt:/letsencrypt
+    networks:
+      - iamafk-network
+    restart: unless-stopped
+
   client:
     build:
       context: ./client
       dockerfile: Dockerfile
       args:
-        - VITE_SERVER_URL=ws://143.198.27.234
-    ports:
-      - "80:80"
+        - VITE_SERVER_URL=wss://iamafk.dev
     depends_on:
       - server
     environment:
-      - VITE_SERVER_URL=ws://143.198.27.234
+      - VITE_SERVER_URL=wss://iamafk.dev
     networks:
       - iamafk-network
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.client.rule=Host(`iamafk.dev`) || Host(`www.iamafk.dev`) || Host(`143.198.27.234`)"
+      - "traefik.http.routers.client.rule=(Host(`iamafk.dev`) || Host(`www.iamafk.dev`)) && !PathPrefix(`/.well-known/acme-challenge`)"
       - "traefik.http.routers.client.entrypoints=web"
+      - "traefik.http.routers.client-secure.rule=(Host(`iamafk.dev`) || Host(`www.iamafk.dev`)) && !PathPrefix(`/.well-known/acme-challenge`)"
+      - "traefik.http.routers.client-secure.entrypoints=websecure"
+      - "traefik.http.routers.client-secure.tls.certresolver=letsencrypt"
+      - "traefik.http.services.client.loadbalancer.server.port=80"
 
   server:
     build:
       context: ./server
       dockerfile: Dockerfile.prod
-    ports:
-      - "3001:3001"
     volumes:
       - server-data:/app/data
     environment:
       - NODE_ENV=production
       - PORT=3001
-      - CORS_ORIGIN=http://iamafk.dev,http://www.iamafk.dev,http://143.198.27.234
+      - CORS_ORIGIN=https://iamafk.dev,https://www.iamafk.dev,http://iamafk.dev,http://www.iamafk.dev
     networks:
       - iamafk-network
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.server.rule=(Host(`iamafk.dev`) || Host(`www.iamafk.dev`) || Host(`143.198.27.234`)) && PathPrefix(`/api`)"
+      - "traefik.http.routers.server.rule=(Host(`iamafk.dev`) || Host(`www.iamafk.dev`)) && PathPrefix(`/socket.io`)"
       - "traefik.http.routers.server.entrypoints=web"
+      - "traefik.http.routers.server-secure.rule=(Host(`iamafk.dev`) || Host(`www.iamafk.dev`)) && PathPrefix(`/socket.io`)"
+      - "traefik.http.routers.server-secure.entrypoints=websecure"
+      - "traefik.http.routers.server-secure.tls.certresolver=letsencrypt"
+      - "traefik.http.services.server.loadbalancer.server.port=3001"
 
 volumes:
   server-data:
