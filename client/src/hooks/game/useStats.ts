@@ -26,6 +26,7 @@ export const useStats = (
 ) => {
   const afkStartTimeRef = useRef<number | null>(null);
   const lastStillTimeRef = useRef(0);
+  const lastAFKUpdateRef = useRef(0);
 
   // Track AFK time and update localStorage
   useEffect(() => {
@@ -53,6 +54,7 @@ export const useStats = (
         const currentStillTime = myCursor.stillTime;
         const isFrozen = myCursor.isFrozen || false;
         const lastStillTime = lastStillTimeRef.current;
+        const now = Date.now();
         
         // Check if user just became AFK (stillTime >= 30 OR is frozen)
         if ((currentStillTime >= 30 || isFrozen) && lastStillTime < 30) {
@@ -62,6 +64,7 @@ export const useStats = (
             // The server's stillTime is in seconds, so we subtract that from now
             const inactiveStartTime = Date.now() - (currentStillTime * 1000);
             afkStartTimeRef.current = inactiveStartTime;
+            lastAFKUpdateRef.current = now;
           }
         }
         
@@ -73,14 +76,19 @@ export const useStats = (
             const updatedStats = getUserStats();
             setUserStats(updatedStats);
             afkStartTimeRef.current = null;
+            lastAFKUpdateRef.current = 0;
           }
         }
         
-        // Update display every 5 seconds when AFK
-        if (currentStillTime >= 30 || isFrozen) {
-          const updatedStats = getUserStats();
-          if (updatedStats) {
+        // Update AFK time every 30 seconds while AFK (including when frozen/sitting)
+        if ((currentStillTime >= 30 || isFrozen) && afkStartTimeRef.current) {
+          const timeSinceLastUpdate = now - lastAFKUpdateRef.current;
+          if (timeSinceLastUpdate >= 30000) { // 30 seconds
+            const afkDuration = Math.floor((Date.now() - afkStartTimeRef.current) / 1000);
+            updateAFKTime(afkDuration);
+            const updatedStats = getUserStats();
             setUserStats(updatedStats);
+            lastAFKUpdateRef.current = now;
           }
         }
         
