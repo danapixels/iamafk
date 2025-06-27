@@ -1,5 +1,4 @@
-import { useEffect } from 'react';
-import { HEART_DURATION, CIRCLE_DURATION, THUMBSUP_DURATION } from '../../constants';
+import { useEffect, useRef } from 'react';
 
 interface AnimationCleanupProps {
   hearts: any[];
@@ -14,21 +13,35 @@ export const useAnimationCleanup = ({
   setHearts,
   setCircles,
   setEmotes
-}: AnimationCleanupProps) => {
+}: Omit<AnimationCleanupProps, 'hearts' | 'circles' | 'emotes'>) => {
+  const cleanupIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   useEffect(() => {
-    const interval = setInterval(() => {
+    // Clean up animations every 30 seconds
+    cleanupIntervalRef.current = setInterval(() => {
       const now = Date.now();
-      setHearts((prev) => prev.filter((heart) => now - heart.timestamp < HEART_DURATION));
-      setCircles((prev) => prev.filter((circle) => now - circle.timestamp < CIRCLE_DURATION));
-      setEmotes((prev) => prev.filter((emoji) => now - emoji.timestamp < THUMBSUP_DURATION));
-    }, 16);
+      
+      // Clean up hearts older than 10 seconds
+      setHearts(prev => prev.filter(heart => now - heart.timestamp < 10000));
+      
+      // Clean up circles older than 8 seconds
+      setCircles(prev => prev.filter(circle => now - circle.timestamp < 8000));
+      
+      // Clean up emotes older than 6 seconds
+      setEmotes(prev => prev.filter(emote => now - emote.timestamp < 6000));
+      
+      // Limit animation history to prevent memory buildup
+      setHearts(prev => prev.slice(-20)); // Keep only last 20 hearts
+      setCircles(prev => prev.slice(-15)); // Keep only last 15 circles
+      setEmotes(prev => prev.slice(-10)); // Keep only last 10 emotes
+    }, 30000); // Run every 30 seconds
 
     const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        const now = Date.now();
-        setHearts((prev) => prev.filter((heart) => now - heart.timestamp < HEART_DURATION));
-        setCircles((prev) => prev.filter((circle) => now - circle.timestamp < CIRCLE_DURATION));
-        setEmotes((prev) => prev.filter((emoji) => now - emoji.timestamp < THUMBSUP_DURATION));
+      if (document.hidden) {
+        // Clear all animations when tab is hidden
+        setHearts([]);
+        setCircles([]);
+        setEmotes([]);
       }
     };
 
@@ -36,7 +49,9 @@ export const useAnimationCleanup = ({
     window.addEventListener('focus', handleVisibilityChange);
 
     return () => {
-      clearInterval(interval);
+      if (cleanupIntervalRef.current) {
+        clearInterval(cleanupIntervalRef.current);
+      }
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleVisibilityChange);
     };

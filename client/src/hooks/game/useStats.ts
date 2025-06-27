@@ -86,7 +86,7 @@ export const useStats = (
           if (timeSinceLastUpdate >= 30000) { // 30 seconds
             const afkDuration = Math.floor((Date.now() - afkStartTimeRef.current) / 1000);
             updateAFKTime(afkDuration);
-            const updatedStats = getUserStats();
+          const updatedStats = getUserStats();
             setUserStats(updatedStats);
             lastAFKUpdateRef.current = now;
           }
