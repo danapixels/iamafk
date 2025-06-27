@@ -101,6 +101,35 @@ export const useStats = (
     };
   }, [hasConnected, userStats, cursors, socketRef, setUserStats]);
 
+  // Separate interval for updating AFK time while frozen (sitting in chairs/beds)
+  useEffect(() => {
+    if (!hasConnected || !userStats) {
+      return;
+    }
+
+    const frozenInterval = setInterval(() => {
+      const myCursor = cursors[socketRef.current?.id || ''];
+      
+      if (myCursor && myCursor.isFrozen && afkStartTimeRef.current) {
+        // User is frozen (sitting in chair/bed), update AFK time every 30 seconds
+        const now = Date.now();
+        const timeSinceLastUpdate = now - lastAFKUpdateRef.current;
+        
+        if (timeSinceLastUpdate >= 30000) { // 30 seconds
+          const afkDuration = Math.floor((Date.now() - afkStartTimeRef.current) / 1000);
+          updateAFKTime(afkDuration);
+          const updatedStats = getUserStats();
+          setUserStats(updatedStats);
+          lastAFKUpdateRef.current = now;
+        }
+      }
+    }, 30000); // Check every 30 seconds
+
+    return () => {
+      clearInterval(frozenInterval);
+    };
+  }, [hasConnected, userStats, cursors, socketRef, setUserStats]);
+
   // Track furniture placement
   useEffect(() => {
     if (!hasConnected || !userStats) return;
