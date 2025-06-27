@@ -164,7 +164,7 @@ export const useViewportFiltering = ({
         filtered.push([id, cursor]);
       }
     });
-    
+
     return filtered;
   }, [cursors, socketRef, hasConnected, qualitySettings]);
 
