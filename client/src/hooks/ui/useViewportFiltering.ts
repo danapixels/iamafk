@@ -1,16 +1,12 @@
 import { useMemo } from 'react';
-import { Socket } from 'socket.io-client';
 import type { Circle, Heart, Emote, Furniture, CursorsMap } from '../../types';
 
 interface ViewportFilteringProps {
-  viewportOffset: { x: number; y: number };
   circles: Circle[];
   hearts: Heart[];
   emotes: Emote[];
   furniture: { [key: string]: Furniture };
   cursors: CursorsMap;
-  socketRef: React.RefObject<Socket | null>;
-  hasConnected: boolean;
 }
 
 export const useViewportFiltering = ({
@@ -18,7 +14,7 @@ export const useViewportFiltering = ({
   hearts,
   emotes,
   furniture,
-  cursors,
+  cursors
 }: ViewportFilteringProps) => {
   
   // Progressive quality system based on user count
