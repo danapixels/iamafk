@@ -62,7 +62,7 @@ export const GACHAPON_CONFIG = {
 POSITION: {
 LEFT: 160,
 TOP: 280,
-Z_INDEX: 9995
+Z_INDEX: 99
 ,
 STYLE: {
 transform: 'scaleX(-1)',
