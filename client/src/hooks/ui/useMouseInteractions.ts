@@ -58,6 +58,7 @@ lastEvent: null as MouseEvent | null,
 
 // Throttle emits for furniture dragging
 let lastEmitTime = 0;
+const DRAG_THROTTLE_MS = 50; // 50ms throttle for furniture dragging
 
 // Helper function to convert screen coordinates to canvas coordinates
 const convertScreenToCanvas = (screenX: number, screenY: number) => {
@@ -104,9 +105,10 @@ y: clampedCoords.y
 
 ));
 
+// Throttled emit for furniture position updates
 if (socketRef.current) {
 const now = Date.now();
-if (now - lastEmitTime > 33) { // ~30 times per second
+if (now - lastEmitTime > DRAG_THROTTLE_MS) {
 socketRef.current.emit('updateFurniturePosition', {
 furnitureId: draggedFurnitureId.current,
 x: clampedCoords.x,
