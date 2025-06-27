@@ -8,7 +8,7 @@ cursors: { [key: string]: any ;
 export const LogoAndLeaderboard: React.FC<LogoAndLeaderboardProps> = ({ cursors ) => {
 const [highestAFKRecords, setHighestAFKRecords] = useState<{ [key: string]: { name: string; time: number  >({);
 
-// the highest stillTime for each user
+// the highest stillTime for each user by username (not cursor ID)
 useEffect(() => {
 const newRecords = { ...highestAFKRecords ;
 let updated = false;
@@ -17,11 +17,12 @@ Object.entries(cursors).forEach(([id, cursor]) => {
 if (!cursor || !cursor.name || cursor.name === SERVER_CONFIG.ANONYMOUS_NAME) return;
 
 const currentStillTime = cursor.stillTime || 0;
-const existingRecord = newRecords[id];
+const username = cursor.name;
+const existingRecord = newRecords[username];
 
-// Update record if current stillTime is higher than previous record
+// Update record if current stillTime is higher than previous record for this username
 if (!existingRecord || currentStillTime > existingRecord.time) {
-newRecords[id] = { name: cursor.name, time: currentStillTime ;
+newRecords[username] = { name: username, time: currentStillTime ;
 updated = true;
 
 );
