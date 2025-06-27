@@ -51,8 +51,6 @@ export const useViewportFiltering = ({
   }, [cursors]);
 
   const visibleCircles = useMemo(() => {
-    if (!hasConnected) return [];
-    
     const { animationLimit } = qualitySettings;
     const now = Date.now();
     
@@ -63,11 +61,9 @@ export const useViewportFiltering = ({
       .slice(-animationLimit);
     
     return filtered;
-  }, [circles, hasConnected, qualitySettings]);
+  }, [circles, qualitySettings]);
 
   const visibleHearts = useMemo(() => {
-    if (!hasConnected) return [];
-    
     const { animationLimit } = qualitySettings;
     const now = Date.now();
     
@@ -78,11 +74,9 @@ export const useViewportFiltering = ({
       .slice(-animationLimit);
     
     return filtered;
-  }, [hearts, hasConnected, qualitySettings]);
+  }, [hearts, qualitySettings]);
 
   const visibleEmotes = useMemo(() => {
-    if (!hasConnected) return [];
-    
     const { animationLimit } = qualitySettings;
     const now = Date.now();
     
@@ -93,19 +87,15 @@ export const useViewportFiltering = ({
       .slice(-animationLimit);
     
     return filtered;
-  }, [emotes, hasConnected, qualitySettings]);
+  }, [emotes, qualitySettings]);
 
   const visibleFurniture = useMemo(() => {
-    if (!hasConnected) return [];
-    
-    // Show all furniture - no filtering
+    // Show all furniture - no filtering, even before connecting
     return Object.values(furniture);
-  }, [furniture, hasConnected]);
+  }, [furniture]);
 
   const visibleCursors = useMemo(() => {
-    if (!hasConnected) return [];
-    
-    // Show all cursors - no filtering
+    // Show all cursors - no filtering, even before connecting
     const filtered: [string, any][] = [];
     
     Object.entries(cursors).forEach(([id, cursor]) => {
@@ -115,7 +105,7 @@ export const useViewportFiltering = ({
     });
 
     return filtered;
-  }, [cursors, hasConnected]);
+  }, [cursors]);
 
   return {
     visibleCircles,
