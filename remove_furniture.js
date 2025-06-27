@@ -11,7 +11,10 @@ process.exit(1);
 
 // Read the furniture.json file
 const furniturePath = '/app/data/furniture.json';
-const furnitureData = JSON.parse(fs.readFileSync(furniturePath, 'utf8'));
+const data = JSON.parse(fs.readFileSync(furniturePath, 'utf8'));
+
+// The furniture data is nested under a "furniture" key
+const furnitureData = data.furniture || data;
 
 console.log(`Attempting to remove furniture: ${furnitureIdToRemove`);
 
@@ -24,7 +27,7 @@ console.log(`Found item: ${item.type at position (${item.x, ${item.y)`);
 delete furnitureData[furnitureIdToRemove];
 
 // Write the updated data back to the file
-fs.writeFileSync(furniturePath, JSON.stringify(furnitureData, null, 2));
+fs.writeFileSync(furniturePath, JSON.stringify(data, null, 2));
 
 console.log('Furniture removed successfully!');
 console.log('You may need to restart the server for changes to take effect.');
