@@ -5,6 +5,7 @@ getUserStats,
 recordFurniturePlacement, 
 canPlaceFurniture 
  from '../../utils/localStorage';
+import { isGachaCollision  from '../../utils/gachapon';
 
 interface UseFurnitureHandlersProps {
 socket: Socket | null;
@@ -31,6 +32,12 @@ socket.emit('moveFurnitureDown', { furnitureId );
 const handleFurnitureSpawn = useCallback((furnitureType: string, x: number, y: number) => {
 if (!canPlaceFurniture()) {
 console.log('Daily furniture placement limit reached (1000 items)');
+return;
+
+
+// Check for collision with gacha machine
+if (isGachaCollision(furnitureType, x, y)) {
+console.log('Cannot place furniture on gacha machine');
 return;
 
 
