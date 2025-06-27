@@ -7,6 +7,7 @@ interface KeyboardInteractionsProps {
 socketRef: React.RefObject<Socket | null>;
 hasConnected: boolean;
 cursors: { [key: string]: any ;
+furniture: { [key: string]: any ;
 selectedFurnitureId: string | null;
 setSelectedFurnitureId: (id: string | null) => void;
 isCursorFrozen: boolean;
@@ -25,6 +26,7 @@ export const useKeyboardInteractions = ({
 socketRef,
 hasConnected,
 cursors,
+furniture,
 selectedFurnitureId,
 setSelectedFurnitureId,
 isCursorFrozen,
@@ -39,10 +41,35 @@ const convertScreenToCanvas = (screenX: number, screenY: number) => {
 return screenToCanvas(screenX, screenY, viewportOffset);
 ;
 
-// Handle keyboard interactions (emotes and backspace)
+// Handle keyboard interactions (emotes, backspace, and tab)
 useEffect(() => {
 const handleKeyPress = (e: KeyboardEvent) => {
 if (socketRef.current?.connected && hasConnected && socketRef.current.id) {
+// Handle tab for cycling through furniture
+if (e.key === 'Tab') {
+e.preventDefault();
+e.stopPropagation();
+
+const furnitureIds = Object.keys(furniture);
+if (furnitureIds.length === 0) {
+setSelectedFurnitureId(null);
+return;
+
+
+if (!selectedFurnitureId) {
+// If nothing is selected, select the first furniture
+setSelectedFurnitureId(furnitureIds[0]);
+ else {
+// Find current index and move to next
+const currentIndex = furnitureIds.indexOf(selectedFurnitureId);
+const nextIndex = e.shiftKey 
+? (currentIndex - 1 + furnitureIds.length) % furnitureIds.length// Shift+Tab goes backwards
+: (currentIndex + 1) % furnitureIds.length;// Tab goes forwards
+setSelectedFurnitureId(furnitureIds[nextIndex]);
+
+return;
+
+
 // Handle backspace for deleting selected furniture
 if (e.key === 'Backspace' && selectedFurnitureId) {
 e.preventDefault();
@@ -103,5 +130,5 @@ type: emoteType
 
 window.addEventListener('keydown', handleKeyPress);
 return () => window.removeEventListener('keydown', handleKeyPress);
-, [hasConnected, isCursorFrozen, frozenCursorPosition, cursors, socketRef, viewportOffset, selectedFurnitureId, setSelectedFurnitureId, mouseStateRef]);
+, [hasConnected, isCursorFrozen, frozenCursorPosition, cursors, furniture, socketRef, viewportOffset, selectedFurnitureId, setSelectedFurnitureId, mouseStateRef]);
 ; 
