@@ -8,6 +8,9 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    volumes:
+      - /etc/letsencrypt/live/iamafk.dev/fullchain.pem:/etc/letsencrypt/live/iamafk.dev/fullchain.pem:ro
+      - /etc/letsencrypt/live/iamafk.dev/privkey.pem:/etc/letsencrypt/live/iamafk.dev/privkey.pem:ro
     depends_on:
       - server
     environment:
