@@ -65,6 +65,7 @@ const [viewportOffset, setViewportOffset] = useState({ x: 0, y: 0 );
 // ===== REFS =====
 const furnitureRefs = useRef<{ [key: string]: HTMLImageElement | null >({);
 const usernameRef = useRef(username);
+const appRootRef = useRef<HTMLDivElement>(null);
 
 // ===== CUSTOM HOOKS =====
 // Socket and connection management
@@ -199,9 +200,25 @@ setConfettiTimestamp(Date.now());
 
 , [showConfetti]);
 
+// Auto-focus the app root on mount
+useEffect(() => {
+if (appRootRef.current) {
+appRootRef.current.focus();
+
+, []);
+
+// Focus app root when clicking the background
+const handleBackgroundClick = (e: React.MouseEvent<HTMLDivElement>) => {
+if (e.target === appRootRef.current) {
+appRootRef.current.focus();
+
+;
+
 return (
 <div 
 id="app-root" 
+ref={appRootRef
+tabIndex={0
 className={hasConnected ? (isCursorFrozen ? '' : 'cursor-hidden') : '' 
 style={{ 
 userSelect: 'none',
@@ -209,6 +226,7 @@ cursor: hasConnected ? (isCursorFrozen ? 'default' : 'none') : 'default',
 position: 'relative',
 overflow: 'hidden'
 
+onClick={handleBackgroundClick
 >
 {/* Canvas container with viewport offset */
 <CanvasContainer
