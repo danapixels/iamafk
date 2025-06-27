@@ -19,7 +19,6 @@ hearts,
 emotes,
 furniture,
 cursors,
-hasConnected
 : ViewportFilteringProps) => {
 
 // Progressive quality system based on user count
