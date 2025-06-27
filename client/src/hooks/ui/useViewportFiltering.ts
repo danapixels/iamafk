@@ -14,36 +14,23 @@ interface ViewportFilteringProps {
 }
 
 export const useViewportFiltering = ({
-  viewportOffset,
   circles,
   hearts,
   emotes,
   furniture,
   cursors,
-  socketRef,
   hasConnected
 }: ViewportFilteringProps) => {
   
-  // Get viewport dimensions
-  const viewportWidth = window.innerWidth;
-  const viewportHeight = window.innerHeight;
-  const viewportDiagonal = Math.sqrt(viewportWidth * viewportWidth + viewportHeight * viewportHeight);
-  
-  // Progressive quality system based on user count and viewport size
+  // Progressive quality system based on user count
   const qualitySettings = useMemo(() => {
     const userCount = Object.keys(cursors).length;
-    
-    // Base distances on viewport size
-    const baseFurnitureDistance = viewportDiagonal * 0.8; // 80% of viewport diagonal
-    const baseCursorDistance = viewportDiagonal * 1.2; // 120% of viewport diagonal
     
     if (userCount > 50) {
       // Very crowded - reduce quality significantly
       return {
         cursorUpdateInterval: 2000, // 2 seconds
         animationLimit: 5, // Only 5 animations visible
-        furnitureRenderDistance: baseFurnitureDistance * 0.3, // 30% of base distance
-        cursorRenderDistance: baseCursorDistance * 0.4, // 40% of base distance
         quality: 'low'
       };
     } else if (userCount > 20) {
@@ -51,8 +38,6 @@ export const useViewportFiltering = ({
       return {
         cursorUpdateInterval: 1500, // 1.5 seconds
         animationLimit: 10, // 10 animations visible
-        furnitureRenderDistance: baseFurnitureDistance * 0.5, // 50% of base distance
-        cursorRenderDistance: baseCursorDistance * 0.6, // 60% of base distance
         quality: 'medium'
       };
     } else {
@@ -60,131 +45,77 @@ export const useViewportFiltering = ({
       return {
         cursorUpdateInterval: 1000, // 1 second
         animationLimit: 20, // All animations visible
-        furnitureRenderDistance: baseFurnitureDistance, // Full base distance
-        cursorRenderDistance: baseCursorDistance, // Full base distance
         quality: 'high'
       };
     }
-  }, [cursors, viewportDiagonal]);
+  }, [cursors]);
 
   const visibleCircles = useMemo(() => {
     if (!hasConnected) return [];
     
     const { animationLimit } = qualitySettings;
     const now = Date.now();
-    const buffer = 100; // Small buffer around viewport edges
     
     const filtered = circles
       .filter(circle => {
-        const circleX = circle.x - viewportOffset.x;
-        const circleY = circle.y - viewportOffset.y;
-        return circleX >= -buffer && circleX <= viewportWidth + buffer &&
-               circleY >= -buffer && circleY <= viewportHeight + buffer &&
-               now - circle.timestamp < 8000;
+        return now - circle.timestamp < 8000;
       })
-      .slice(-animationLimit); // Limit based on quality settings
+      .slice(-animationLimit);
     
     return filtered;
-  }, [circles, viewportOffset, viewportWidth, viewportHeight, hasConnected, qualitySettings]);
+  }, [circles, hasConnected, qualitySettings]);
 
   const visibleHearts = useMemo(() => {
     if (!hasConnected) return [];
     
     const { animationLimit } = qualitySettings;
     const now = Date.now();
-    const buffer = 100; // Small buffer around viewport edges
     
     const filtered = hearts
       .filter(heart => {
-        const heartX = heart.x - viewportOffset.x;
-        const heartY = heart.y - viewportOffset.y;
-        return heartX >= -buffer && heartX <= viewportWidth + buffer &&
-               heartY >= -buffer && heartY <= viewportHeight + buffer &&
-               now - heart.timestamp < 10000;
+        return now - heart.timestamp < 10000;
       })
-      .slice(-animationLimit); // Limit based on quality settings
+      .slice(-animationLimit);
     
     return filtered;
-  }, [hearts, viewportOffset, viewportWidth, viewportHeight, hasConnected, qualitySettings]);
+  }, [hearts, hasConnected, qualitySettings]);
 
   const visibleEmotes = useMemo(() => {
     if (!hasConnected) return [];
     
     const { animationLimit } = qualitySettings;
     const now = Date.now();
-    const buffer = 100; // Small buffer around viewport edges
     
     const filtered = emotes
       .filter(emote => {
-        const emoteX = emote.x - viewportOffset.x;
-        const emoteY = emote.y - viewportOffset.y;
-        return emoteX >= -buffer && emoteX <= viewportWidth + buffer &&
-               emoteY >= -buffer && emoteY <= viewportHeight + buffer &&
-               now - emote.timestamp < 6000;
+        return now - emote.timestamp < 6000;
       })
-      .slice(-animationLimit); // Limit based on quality settings
+      .slice(-animationLimit);
     
     return filtered;
-  }, [emotes, viewportOffset, viewportWidth, viewportHeight, hasConnected, qualitySettings]);
+  }, [emotes, hasConnected, qualitySettings]);
 
   const visibleFurniture = useMemo(() => {
     if (!hasConnected) return [];
     
-    // Show all furniture within the viewport plus a generous buffer
-    // This ensures everything on screen is visible
-    const buffer = Math.max(200, viewportDiagonal * 0.3); // 200px minimum or 30% of viewport diagonal
-    
-    const filtered: Furniture[] = [];
-    
-    Object.entries(furniture).forEach(([, item]) => {
-      const furnitureX = item.x - viewportOffset.x;
-      const furnitureY = item.y - viewportOffset.y;
-      
-      // Show furniture if it's within the viewport plus buffer
-      if (furnitureX >= -buffer && furnitureX <= viewportWidth + buffer &&
-          furnitureY >= -buffer && furnitureY <= viewportHeight + buffer) {
-        filtered.push(item);
-      }
-    });
-    
-    return filtered;
-  }, [furniture, viewportOffset, viewportWidth, viewportHeight, viewportDiagonal, hasConnected]);
+    // Show all furniture - no filtering
+    return Object.values(furniture);
+  }, [furniture, hasConnected]);
 
   const visibleCursors = useMemo(() => {
     if (!hasConnected) return [];
     
-    const { cursorRenderDistance } = qualitySettings;
-    const myCursor = cursors[socketRef.current?.id || ''];
+    // Show all cursors - no filtering
     const filtered: [string, any][] = [];
     
     Object.entries(cursors).forEach(([id, cursor]) => {
-      if (!cursor || !cursor.name) return;
-      
-      // Always show my own cursor
-      if (id === socketRef.current?.id) {
-        filtered.push([id, cursor]);
-        return;
-      }
-      
-      // Calculate distance from my cursor
-      if (myCursor) {
-        const distance = Math.sqrt(
-          Math.pow(cursor.x - myCursor.x, 2) + 
-          Math.pow(cursor.y - myCursor.y, 2)
-        );
-        
-        // Only show cursors within viewport-based distance
-        if (distance <= cursorRenderDistance) {
-          filtered.push([id, cursor]);
-        }
-      } else {
-        // If no my cursor, show all cursors (fallback)
+      if (cursor && cursor.name) {
         filtered.push([id, cursor]);
       }
     });
 
     return filtered;
-  }, [cursors, socketRef, hasConnected, qualitySettings]);
+  }, [cursors, hasConnected]);
 
   return {
     visibleCircles,
@@ -192,6 +123,6 @@ export const useViewportFiltering = ({
     visibleEmotes,
     visibleFurniture,
     visibleCursors,
-    qualitySettings // Export for debugging/monitoring
+    qualitySettings
   };
 }; 
