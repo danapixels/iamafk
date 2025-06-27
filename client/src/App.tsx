@@ -141,14 +141,11 @@ visibleEmotes,
 visibleFurniture,
 visibleCursors
  = useViewportFiltering({
-viewportOffset,
 circles,
 hearts,
 emotes,
 furniture,
-cursors,
-socketRef,
-hasConnected
+cursors
 );
 
 // Event handlers
