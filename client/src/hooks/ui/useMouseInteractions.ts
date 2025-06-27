@@ -3,7 +3,6 @@ import { Socket  from 'socket.io-client';
 import { CANVAS_SIZE  from '../../constants';
 import { screenToCanvas, clampToCanvas  from '../../utils/canvas';
 import { updateAFKTime, getUserStats  from '../../utils/localStorage';
-import { isGachaCollision  from '../../utils/gachapon';
 
 interface MouseInteractionsProps {
 socketRef: React.RefObject<Socket | null>;
@@ -96,14 +95,6 @@ if (item) {
 const newCanvasX = item.x + dx;
 const newCanvasY = item.y + dy;
 const clampedCoords = clampToCanvas(newCanvasX, newCanvasY);
-
-// Check for collision with gacha machine
-if (isGachaCollision(item.type, clampedCoords.x, clampedCoords.y)) {
-// Don't update position if it would collide with gacha machine
-dragStart.current = { x: mouseStateRef.current.lastX, y: mouseStateRef.current.lastY ;
-lastFrame = requestAnimationFrame(animationLoop);
-return;
-
 
 setFurniture(prev => ({
 ...prev,
