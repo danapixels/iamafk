@@ -7,7 +7,6 @@ interface KeyboardInteractionsProps {
   socketRef: React.RefObject<Socket | null>;
   hasConnected: boolean;
   cursors: { [key: string]: any };
-  furniture: { [key: string]: any };
   selectedFurnitureId: string | null;
   setSelectedFurnitureId: (id: string | null) => void;
   isCursorFrozen: boolean;
@@ -26,7 +25,6 @@ export const useKeyboardInteractions = ({
   socketRef,
   hasConnected,
   cursors,
-  furniture,
   selectedFurnitureId,
   setSelectedFurnitureId,
   isCursorFrozen,
@@ -35,62 +33,24 @@ export const useKeyboardInteractions = ({
   mouseStateRef
 }: KeyboardInteractionsProps) => {
   const emojiCounterRef = useRef(0);
-  const furnitureRef = useRef(furniture);
-  const selectedFurnitureIdRef = useRef(selectedFurnitureId);
-
-  // Update the refs whenever they change
-  useEffect(() => {
-    furnitureRef.current = furniture;
-  }, [furniture]);
-
-  useEffect(() => {
-    selectedFurnitureIdRef.current = selectedFurnitureId;
-  }, [selectedFurnitureId]);
 
   // Helper function to convert screen coordinates to canvas coordinates
   const convertScreenToCanvas = (screenX: number, screenY: number) => {
     return screenToCanvas(screenX, screenY, viewportOffset);
   };
 
-  // Handle keyboard interactions (emotes, backspace, and tab)
+  // Handle keyboard interactions (emotes and backspace)
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (socketRef.current?.connected && hasConnected && socketRef.current.id) {
-        // Handle tab for cycling through furniture
-        if (e.key === 'Tab') {
-          e.preventDefault();
-          e.stopPropagation();
-          
-          const furnitureIds = Object.keys(furnitureRef.current);
-          const currentSelectedId = selectedFurnitureIdRef.current;
-          
-          if (furnitureIds.length === 0) {
-            setSelectedFurnitureId(null);
-            return;
-          }
-          
-          if (!currentSelectedId) {
-            // If nothing is selected, select the first furniture
-            setSelectedFurnitureId(furnitureIds[0]);
-          } else {
-            // Find current index and move to next
-            const currentIndex = furnitureIds.indexOf(currentSelectedId);
-            const nextIndex = e.shiftKey 
-              ? (currentIndex - 1 + furnitureIds.length) % furnitureIds.length  // Shift+Tab goes backwards
-              : (currentIndex + 1) % furnitureIds.length;  // Tab goes forwards
-            setSelectedFurnitureId(furnitureIds[nextIndex]);
-          }
-          return;
-        }
-        
         // Handle backspace for deleting selected furniture
-        if (e.key === 'Backspace' && selectedFurnitureIdRef.current) {
+        if (e.key === 'Backspace' && selectedFurnitureId) {
           e.preventDefault();
           e.stopPropagation();
           
           // Delete the selected furniture
           if (socketRef.current) {
-            socketRef.current.emit('deleteFurniture', selectedFurnitureIdRef.current);
+            socketRef.current.emit('deleteFurniture', selectedFurnitureId);
             setSelectedFurnitureId(null);
           }
           return;
@@ -141,8 +101,7 @@ export const useKeyboardInteractions = ({
       }
     };
 
-    // Use document instead of window to ensure events are captured
-    document.addEventListener('keydown', handleKeyPress);
-    return () => document.removeEventListener('keydown', handleKeyPress);
-  }, [hasConnected, isCursorFrozen, frozenCursorPosition, cursors, socketRef, viewportOffset, setSelectedFurnitureId, mouseStateRef]);
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [hasConnected, isCursorFrozen, frozenCursorPosition, cursors, socketRef, viewportOffset, selectedFurnitureId, setSelectedFurnitureId, mouseStateRef]);
 }; 

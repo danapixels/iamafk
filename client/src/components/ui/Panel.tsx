@@ -61,6 +61,12 @@ const Panel: React.FC<PanelProps> = ({
     
     if (onFurnitureSpawn) {
       onFurnitureSpawn(type, canvasX, canvasY);
+    } else if (socket) {
+      socket.emit('spawnFurniture', { 
+        type,
+        x: canvasX,
+        y: canvasY
+      });
     }
   };
 

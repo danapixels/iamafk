@@ -65,7 +65,6 @@ function App() {
   // ===== REFS =====
   const furnitureRefs = useRef<{ [key: string]: HTMLImageElement | null }>({});
   const usernameRef = useRef(username);
-  const appRootRef = useRef<HTMLDivElement>(null);
 
   // ===== CUSTOM HOOKS =====
   // Socket and connection management
@@ -109,7 +108,6 @@ function App() {
     socketRef,
     hasConnected,
     cursors,
-    furniture,
     selectedFurnitureId,
     setSelectedFurnitureId,
     isCursorFrozen,
@@ -200,25 +198,9 @@ function App() {
     }
   }, [showConfetti]);
 
-  // Auto-focus the app root on mount
-  useEffect(() => {
-    if (appRootRef.current) {
-      appRootRef.current.focus();
-    }
-  }, []);
-
-  // Focus app root when clicking the background
-  const handleBackgroundClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === appRootRef.current) {
-      appRootRef.current.focus();
-    }
-  };
-
   return (
     <div 
       id="app-root" 
-      ref={appRootRef}
-      tabIndex={0}
       className={hasConnected ? (isCursorFrozen ? '' : 'cursor-hidden') : ''} 
       style={{ 
         userSelect: 'none',
@@ -226,26 +208,25 @@ function App() {
         position: 'relative',
         overflow: 'hidden'
       }}
-      onClick={handleBackgroundClick}
     >
       {/* Canvas container with viewport offset */}
       <CanvasContainer
         viewportOffset={viewportOffset}
-        visibleCircles={visibleCircles}
-        visibleHearts={visibleHearts}
-        visibleEmotes={visibleEmotes}
-        visibleFurniture={visibleFurniture}
+          visibleCircles={visibleCircles}
+          visibleHearts={visibleHearts}
+          visibleEmotes={visibleEmotes}
+          visibleFurniture={visibleFurniture}
         visibleCursors={visibleCursors}
-        selectedFurnitureId={selectedFurnitureId}
-        furnitureRefs={furnitureRefs}
-        socketRef={socketRef}
+          selectedFurnitureId={selectedFurnitureId}
+          furnitureRefs={furnitureRefs}
+          socketRef={socketRef}
         cursorType={cursorType}
         isCursorFrozen={isCursorFrozen}
         frozenCursorPosition={frozenCursorPosition}
-        onMoveUp={handleMoveUp}
-        onMoveDown={handleMoveDown}
-        onDelete={(furnitureId) => setSelectedFurnitureId(prev => prev === furnitureId ? null : prev)}
-      />
+          onMoveUp={handleMoveUp}
+          onMoveDown={handleMoveDown}
+          onDelete={(furnitureId) => setSelectedFurnitureId(prev => prev === furnitureId ? null : prev)}
+        />
 
       {/* UI Elements */}
       <Panel 
