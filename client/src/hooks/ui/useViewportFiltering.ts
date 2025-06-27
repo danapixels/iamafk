@@ -24,17 +24,26 @@ socketRef,
 hasConnected
 : ViewportFilteringProps) => {
 
-// Progressive quality system based on user count
+// Get viewport dimensions
+const viewportWidth = window.innerWidth;
+const viewportHeight = window.innerHeight;
+const viewportDiagonal = Math.sqrt(viewportWidth * viewportWidth + viewportHeight * viewportHeight);
+
+// Progressive quality system based on user count and viewport size
 const qualitySettings = useMemo(() => {
 const userCount = Object.keys(cursors).length;
+
+// Base distances on viewport size
+const baseFurnitureDistance = viewportDiagonal * 0.8; // 80% of viewport diagonal
+const baseCursorDistance = viewportDiagonal * 1.2; // 120% of viewport diagonal
 
 if (userCount > 50) {
 // Very crowded - reduce quality significantly
 return {
 cursorUpdateInterval: 2000, // 2 seconds
 animationLimit: 5, // Only 5 animations visible
-furnitureRenderDistance: 300, // Only nearby furniture
-cursorRenderDistance: 400, // Only nearby cursors
+furnitureRenderDistance: baseFurnitureDistance * 0.3, // 30% of base distance
+cursorRenderDistance: baseCursorDistance * 0.4, // 40% of base distance
 quality: 'low'
 ;
  else if (userCount > 20) {
@@ -42,8 +51,8 @@ quality: 'low'
 return {
 cursorUpdateInterval: 1500, // 1.5 seconds
 animationLimit: 10, // 10 animations visible
-furnitureRenderDistance: 500, // Medium distance furniture
-cursorRenderDistance: 600, // Medium distance cursors
+furnitureRenderDistance: baseFurnitureDistance * 0.5, // 50% of base distance
+cursorRenderDistance: baseCursorDistance * 0.6, // 60% of base distance
 quality: 'medium'
 ;
  else {
@@ -51,66 +60,72 @@ quality: 'medium'
 return {
 cursorUpdateInterval: 1000, // 1 second
 animationLimit: 20, // All animations visible
-furnitureRenderDistance: 1000, // All furniture visible
-cursorRenderDistance: 1200, // All cursors visible
+furnitureRenderDistance: baseFurnitureDistance, // Full base distance
+cursorRenderDistance: baseCursorDistance, // Full base distance
 quality: 'high'
 ;
 
-, [cursors]);
+, [cursors, viewportDiagonal]);
 
 const visibleCircles = useMemo(() => {
 if (!hasConnected) return [];
 
 const { animationLimit  = qualitySettings;
 const now = Date.now();
+const buffer = 100; // Small buffer around viewport edges
+
 const filtered = circles
 .filter(circle => {
 const circleX = circle.x - viewportOffset.x;
 const circleY = circle.y - viewportOffset.y;
-return circleX >= -100 && circleX <= window.innerWidth + 100 &&
- circleY >= -100 && circleY <= window.innerHeight + 100 &&
+return circleX >= -buffer && circleX <= viewportWidth + buffer &&
+ circleY >= -buffer && circleY <= viewportHeight + buffer &&
  now - circle.timestamp < 8000;
 )
 .slice(-animationLimit); // Limit based on quality settings
 
 return filtered;
-, [circles, viewportOffset, hasConnected, qualitySettings]);
+, [circles, viewportOffset, viewportWidth, viewportHeight, hasConnected, qualitySettings]);
 
 const visibleHearts = useMemo(() => {
 if (!hasConnected) return [];
 
 const { animationLimit  = qualitySettings;
 const now = Date.now();
+const buffer = 100; // Small buffer around viewport edges
+
 const filtered = hearts
 .filter(heart => {
 const heartX = heart.x - viewportOffset.x;
 const heartY = heart.y - viewportOffset.y;
-return heartX >= -100 && heartX <= window.innerWidth + 100 &&
- heartY >= -100 && heartY <= window.innerHeight + 100 &&
+return heartX >= -buffer && heartX <= viewportWidth + buffer &&
+ heartY >= -buffer && heartY <= viewportHeight + buffer &&
  now - heart.timestamp < 10000;
 )
 .slice(-animationLimit); // Limit based on quality settings
 
 return filtered;
-, [hearts, viewportOffset, hasConnected, qualitySettings]);
+, [hearts, viewportOffset, viewportWidth, viewportHeight, hasConnected, qualitySettings]);
 
 const visibleEmotes = useMemo(() => {
 if (!hasConnected) return [];
 
 const { animationLimit  = qualitySettings;
 const now = Date.now();
+const buffer = 100; // Small buffer around viewport edges
+
 const filtered = emotes
 .filter(emote => {
 const emoteX = emote.x - viewportOffset.x;
 const emoteY = emote.y - viewportOffset.y;
-return emoteX >= -100 && emoteX <= window.innerWidth + 100 &&
- emoteY >= -100 && emoteY <= window.innerHeight + 100 &&
+return emoteX >= -buffer && emoteX <= viewportWidth + buffer &&
+ emoteY >= -buffer && emoteY <= viewportHeight + buffer &&
  now - emote.timestamp < 6000;
 )
 .slice(-animationLimit); // Limit based on quality settings
 
 return filtered;
-, [emotes, viewportOffset, hasConnected, qualitySettings]);
+, [emotes, viewportOffset, viewportWidth, viewportHeight, hasConnected, qualitySettings]);
 
 const visibleFurniture = useMemo(() => {
 if (!hasConnected) return [];
@@ -123,7 +138,7 @@ const furnitureX = item.x - viewportOffset.x;
 const furnitureY = item.y - viewportOffset.y;
 const distance = Math.sqrt(furnitureX * furnitureX + furnitureY * furnitureY);
 
-// Only render furniture within the quality-based distance
+// Only render furniture within the viewport-based distance
 if (distance <= furnitureRenderDistance) {
 filtered.push(item);
 
@@ -155,7 +170,7 @@ Math.pow(cursor.x - myCursor.x, 2) +
 Math.pow(cursor.y - myCursor.y, 2)
 );
 
-// Only show cursors within quality-based distance
+// Only show cursors within viewport-based distance
 if (distance <= cursorRenderDistance) {
 filtered.push([id, cursor]);
 
