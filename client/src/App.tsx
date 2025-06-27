@@ -120,9 +120,6 @@ function App() {
 
   // Animation and cleanup
   useAnimationCleanup({
-    hearts,
-    circles,
-    emotes,
     setHearts,
     setCircles,
     setEmotes
@@ -151,9 +148,7 @@ function App() {
     furniture,
     cursors,
     socketRef,
-    hasConnected,
-    isCursorFrozen,
-    frozenCursorPosition
+    hasConnected
   });
 
   // Event handlers
