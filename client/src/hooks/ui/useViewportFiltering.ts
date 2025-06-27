@@ -113,19 +113,19 @@ return filtered;
 , [emotes, viewportOffset, hasConnected, qualitySettings]);
 
 const visibleFurniture = useMemo(() => {
-if (!hasConnected) return {;
+if (!hasConnected) return [];
 
 const { furnitureRenderDistance  = qualitySettings;
-const filtered: { [key: string]: Furniture  = {;
+const filtered: Furniture[] = [];
 
-Object.entries(furniture).forEach(([id, item]) => {
+Object.entries(furniture).forEach(([, item]) => {
 const furnitureX = item.x - viewportOffset.x;
 const furnitureY = item.y - viewportOffset.y;
 const distance = Math.sqrt(furnitureX * furnitureX + furnitureY * furnitureY);
 
 // Only render furniture within the quality-based distance
 if (distance <= furnitureRenderDistance) {
-filtered[id] = item;
+filtered.push(item);
 
 );
 

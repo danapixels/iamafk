@@ -120,9 +120,6 @@ useConfetti(socketRef, setGachaponWinner, setShowConfetti);
 
 // Animation and cleanup
 useAnimationCleanup({
-hearts,
-circles,
-emotes,
 setHearts,
 setCircles,
 setEmotes
@@ -151,9 +148,7 @@ emotes,
 furniture,
 cursors,
 socketRef,
-hasConnected,
-isCursorFrozen,
-frozenCursorPosition
+hasConnected
 );
 
 // Event handlers
