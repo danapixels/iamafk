@@ -13,7 +13,7 @@ useEffect(() => {
 const newRecords = { ...highestAFKRecords ;
 let updated = false;
 
-Object.entries(cursors).forEach(([id, cursor]) => {
+Object.entries(cursors).forEach(([, cursor]) => {
 if (!cursor || !cursor.name || cursor.name === SERVER_CONFIG.ANONYMOUS_NAME) return;
 
 const currentStillTime = cursor.stillTime || 0;
