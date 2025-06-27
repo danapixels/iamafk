@@ -130,22 +130,25 @@ export const useViewportFiltering = ({
   const visibleFurniture = useMemo(() => {
     if (!hasConnected) return [];
     
-    const { furnitureRenderDistance } = qualitySettings;
+    // Show all furniture within the viewport plus a generous buffer
+    // This ensures everything on screen is visible
+    const buffer = Math.max(200, viewportDiagonal * 0.3); // 200px minimum or 30% of viewport diagonal
+    
     const filtered: Furniture[] = [];
     
     Object.entries(furniture).forEach(([, item]) => {
       const furnitureX = item.x - viewportOffset.x;
       const furnitureY = item.y - viewportOffset.y;
-      const distance = Math.sqrt(furnitureX * furnitureX + furnitureY * furnitureY);
       
-      // Only render furniture within the viewport-based distance
-      if (distance <= furnitureRenderDistance) {
+      // Show furniture if it's within the viewport plus buffer
+      if (furnitureX >= -buffer && furnitureX <= viewportWidth + buffer &&
+          furnitureY >= -buffer && furnitureY <= viewportHeight + buffer) {
         filtered.push(item);
       }
     });
     
     return filtered;
-  }, [furniture, viewportOffset, hasConnected, qualitySettings]);
+  }, [furniture, viewportOffset, viewportWidth, viewportHeight, viewportDiagonal, hasConnected]);
 
   const visibleCursors = useMemo(() => {
     if (!hasConnected) return [];
