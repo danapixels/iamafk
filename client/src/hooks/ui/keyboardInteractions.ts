@@ -35,6 +35,12 @@ viewportOffset,
 mouseStateRef
 : KeyboardInteractionsProps) => {
 const emojiCounterRef = useRef(0);
+const furnitureRef = useRef(furniture);
+
+// Update the ref whenever furniture changes
+useEffect(() => {
+furnitureRef.current = furniture;
+, [furniture]);
 
 // Helper function to convert screen coordinates to canvas coordinates
 const convertScreenToCanvas = (screenX: number, screenY: number) => {
@@ -50,7 +56,8 @@ if (e.key === 'Tab') {
 e.preventDefault();
 e.stopPropagation();
 
-const furnitureIds = Object.keys(furniture);
+const furnitureIds = Object.keys(furnitureRef.current);
+
 if (furnitureIds.length === 0) {
 setSelectedFurnitureId(null);
 return;
@@ -130,5 +137,5 @@ type: emoteType
 
 window.addEventListener('keydown', handleKeyPress);
 return () => window.removeEventListener('keydown', handleKeyPress);
-, [hasConnected, isCursorFrozen, frozenCursorPosition, cursors, furniture, socketRef, viewportOffset, selectedFurnitureId, setSelectedFurnitureId, mouseStateRef]);
+, [hasConnected, isCursorFrozen, frozenCursorPosition, cursors, socketRef, viewportOffset, selectedFurnitureId, setSelectedFurnitureId, mouseStateRef]);
 ; 
