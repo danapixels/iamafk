@@ -36,11 +36,16 @@ mouseStateRef
 : KeyboardInteractionsProps) => {
 const emojiCounterRef = useRef(0);
 const furnitureRef = useRef(furniture);
+const selectedFurnitureIdRef = useRef(selectedFurnitureId);
 
-// Update the ref whenever furniture changes
+// Update the refs whenever they change
 useEffect(() => {
 furnitureRef.current = furniture;
 , [furniture]);
+
+useEffect(() => {
+selectedFurnitureIdRef.current = selectedFurnitureId;
+, [selectedFurnitureId]);
 
 // Helper function to convert screen coordinates to canvas coordinates
 const convertScreenToCanvas = (screenX: number, screenY: number) => {
@@ -57,18 +62,19 @@ e.preventDefault();
 e.stopPropagation();
 
 const furnitureIds = Object.keys(furnitureRef.current);
+const currentSelectedId = selectedFurnitureIdRef.current;
 
 if (furnitureIds.length === 0) {
 setSelectedFurnitureId(null);
 return;
 
 
-if (!selectedFurnitureId) {
+if (!currentSelectedId) {
 // If nothing is selected, select the first furniture
 setSelectedFurnitureId(furnitureIds[0]);
  else {
 // Find current index and move to next
-const currentIndex = furnitureIds.indexOf(selectedFurnitureId);
+const currentIndex = furnitureIds.indexOf(currentSelectedId);
 const nextIndex = e.shiftKey 
 ? (currentIndex - 1 + furnitureIds.length) % furnitureIds.length// Shift+Tab goes backwards
 : (currentIndex + 1) % furnitureIds.length;// Tab goes forwards
@@ -78,13 +84,13 @@ return;
 
 
 // Handle backspace for deleting selected furniture
-if (e.key === 'Backspace' && selectedFurnitureId) {
+if (e.key === 'Backspace' && selectedFurnitureIdRef.current) {
 e.preventDefault();
 e.stopPropagation();
 
 // Delete the selected furniture
 if (socketRef.current) {
-socketRef.current.emit('deleteFurniture', selectedFurnitureId);
+socketRef.current.emit('deleteFurniture', selectedFurnitureIdRef.current);
 setSelectedFurnitureId(null);
 
 return;
@@ -135,7 +141,8 @@ type: emoteType
 
 ;
 
-window.addEventListener('keydown', handleKeyPress);
-return () => window.removeEventListener('keydown', handleKeyPress);
-, [hasConnected, isCursorFrozen, frozenCursorPosition, cursors, socketRef, viewportOffset, selectedFurnitureId, setSelectedFurnitureId, mouseStateRef]);
+// Use document instead of window to ensure events are captured
+document.addEventListener('keydown', handleKeyPress);
+return () => document.removeEventListener('keydown', handleKeyPress);
+, [hasConnected, isCursorFrozen, frozenCursorPosition, cursors, socketRef, viewportOffset, setSelectedFurnitureId, mouseStateRef]);
 ; 
