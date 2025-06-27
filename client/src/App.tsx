@@ -108,6 +108,7 @@ function App() {
     socketRef,
     hasConnected,
     cursors,
+    furniture,
     selectedFurnitureId,
     setSelectedFurnitureId,
     isCursorFrozen,
