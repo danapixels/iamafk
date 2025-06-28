@@ -33,6 +33,9 @@ if (!hasConnected || !userStats) {
 return;
 
 
+let isPageVisible = !document.hidden;
+let interval: ReturnType<typeof setInterval> | null = null;
+
 // Immediate check when connecting
 const myCursor = cursors[socketRef.current?.id || ''];
 if (myCursor) {
@@ -47,7 +50,13 @@ lastAFKUpdateRef.current = Date.now();
 
 
 
-const interval = setInterval(async () => {
+const startInterval = () => {
+if (interval) clearInterval(interval);
+
+interval = setInterval(async () => {
+// Only process AFK tracking if page is visible
+if (!isPageVisible) return;
+
 const myCursor = cursors[socketRef.current?.id || ''];
 
 if (myCursor) {
@@ -78,10 +87,10 @@ lastAFKUpdateRef.current = 0;
 
 
 
-// Update AFK time every 30 seconds while AFK (including when frozen/sitting)
+// Update AFK time every 60 seconds while AFK (increased from 30 to reduce frequency)
 if ((currentStillTime >= 30 || isFrozen) && afkStartTimeRef.current) {
 const timeSinceLastUpdate = now - lastAFKUpdateRef.current;
-if (timeSinceLastUpdate >= 30000) { // 30 seconds
+if (timeSinceLastUpdate >= 60000) { // 60 seconds (increased from 30)
 // Calculate only the incremental time since last update
 const incrementalTime = Math.floor(timeSinceLastUpdate / 1000);
 await updateAFKTime(incrementalTime);
@@ -91,10 +100,32 @@ lastAFKUpdateRef.current = now;
 
 lastStillTimeRef.current = currentStillTime;
 
-, 1000); // Check every 1 second (more responsive)
+, 2000); // Increased from 1000ms to 2000ms to reduce client load
+;
+
+const handleVisibilityChange = () => {
+isPageVisible = !document.hidden;
+
+if (isPageVisible) {
+// Resume interval when page becomes visible
+startInterval();
+ else {
+// Clear interval when page becomes hidden
+if (interval) {
+clearInterval(interval);
+interval = null;
+
+
+;
+
+document.addEventListener('visibilitychange', handleVisibilityChange);
+
+// Start the interval initially
+startInterval();
 
 return () => {
-clearInterval(interval);
+if (interval) clearInterval(interval);
+document.removeEventListener('visibilitychange', handleVisibilityChange);
 ;
 , [hasConnected, userStats, cursors, socketRef, updateAFKTime]);
 

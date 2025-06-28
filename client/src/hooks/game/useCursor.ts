@@ -55,7 +55,16 @@ return () => window.removeEventListener('click', handleClick);
 useEffect(() => {
 if (!hasConnected || !socketRef.current) return;
 
-const interval = setInterval(() => {
+let isPageVisible = !document.hidden;
+let interval: ReturnType<typeof setInterval> | null = null;
+
+const startInterval = () => {
+if (interval) clearInterval(interval);
+
+interval = setInterval(() => {
+// Only send updates if page is visible
+if (!isPageVisible) return;
+
 const socket = socketRef.current;
 const myCursor = cursors[socket?.id || ''];
 if (socket && myCursor) {
@@ -66,8 +75,32 @@ y: myCursor.y,
 name: username
 );
 
-, 1000); // Send update every second
+, 2000); // Increased from 1000ms to 2000ms to reduce server load
+;
 
-return () => clearInterval(interval);
+const handleVisibilityChange = () => {
+isPageVisible = !document.hidden;
+
+if (isPageVisible) {
+// Resume interval when page becomes visible
+startInterval();
+ else {
+// Clear interval when page becomes hidden
+if (interval) {
+clearInterval(interval);
+interval = null;
+
+
+;
+
+document.addEventListener('visibilitychange', handleVisibilityChange);
+
+// Start the interval initially
+startInterval();
+
+return () => {
+if (interval) clearInterval(interval);
+document.removeEventListener('visibilitychange', handleVisibilityChange);
+;
 , [hasConnected, cursors, username, socketRef]);
 ; 

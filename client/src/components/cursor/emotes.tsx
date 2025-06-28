@@ -18,9 +18,25 @@ const [, setTick] = useState(0);
 
 useEffect(() => {
 let frame: number;
+let isPageVisible = !document.hidden;
+
 function loop() {
+// Only run animation loop if page is visible
+if (!isPageVisible) {
+frame = requestAnimationFrame(loop);
+return;
+
+
 setTick(tick => tick + 1);
 frame = requestAnimationFrame(loop);
+
+
+// Handle page visibility changes
+const handleVisibilityChange = () => {
+isPageVisible = !document.hidden;
+;
+
+document.addEventListener('visibilitychange', handleVisibilityChange);
 
 // Only run the loop if there are active animations
 if (
@@ -32,6 +48,7 @@ frame = requestAnimationFrame(loop);
 
 return () => {
 if (frame) cancelAnimationFrame(frame);
+document.removeEventListener('visibilitychange', handleVisibilityChange);
 ;
 , [visibleCircles.length, visibleHearts.length, visibleEmotes.length]);
 

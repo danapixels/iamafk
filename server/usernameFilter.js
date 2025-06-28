@@ -85,12 +85,9 @@ reason: 'Username cannot be empty'
 ;
 
 
-// Try API first, fallback to pattern matching
-
-return await checkUsernameWithAPI(trimmedUsername);
-
+// Use only local validation for faster connections
+// Skip the slow external API call
 return checkUsernameFallback(trimmedUsername);
-
 
 
 module.exports = {

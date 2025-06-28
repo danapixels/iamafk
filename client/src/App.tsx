@@ -224,7 +224,6 @@ onMoveDown={handleMoveDown
 onDelete={(furnitureId) => setSelectedFurnitureId(prev => prev === furnitureId ? null : prev)
 showGachaNotification={showGachaNotification
 gachaNotificationText={gachaNotificationText
-username={username
 />
 
 {/* UI Elements */

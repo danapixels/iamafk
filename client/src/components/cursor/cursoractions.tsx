@@ -10,6 +10,11 @@ cursorType?: string;
 isFrozen?: boolean;
 frozenPosition?: { x: number; y: number ;
 sleepingOnBed?: boolean;
+badges?: {
+dailyBadge: boolean;
+crownBadge: boolean;
+gachaBadge: boolean;
+;
 
 
 interface CursorRendererProps {
@@ -19,11 +24,6 @@ cursorType: string;
 isCursorFrozen: boolean;
 frozenCursorPosition: { x: number; y: number  | null;
 formatTime: (seconds: number) => string;
-userBadges?: {
-dailyBadge: boolean;
-crownBadge: boolean;
-gachaBadge: boolean;
-;
 
 
 const CursorRenderer: React.FC<CursorRendererProps> = memo(({
@@ -32,8 +32,7 @@ socketRef,
 cursorType,
 isCursorFrozen,
 frozenCursorPosition,
-formatTime,
-userBadges
+formatTime
 ) => {
 return (
 <>
@@ -67,8 +66,8 @@ zIndex: isMe ? Z_INDEX_LAYERS.CURSORS + 10 : Z_INDEX_LAYERS.CURSORS - 4
 <div className="cursor-timer">AFK {formatTime(cursor.stillTime)</div>
 )
 <div className="cursor-id-label" style={{ position: 'relative' >
-{/* Badges for current user */
-{isMe && userBadges && (
+{/* Badges for all users */
+{cursor.badges && (
 <div style={{ 
 position: 'absolute', 
 right: '100%', 
@@ -79,7 +78,7 @@ gap: '2px',
 marginRight: '4px',
 pointerEvents: 'none'
 >
-{userBadges.dailyBadge && (
+{cursor.badges.dailyBadge && (
 <img
 src={UI_IMAGES.DAILY_BADGE
 alt="Daily Badge"
@@ -88,7 +87,7 @@ imageRendering: 'pixelated'
 
 />
 )
-{userBadges.crownBadge && (
+{cursor.badges.crownBadge && (
 <img
 src={UI_IMAGES.CROWN_BADGE
 alt="Crown Badge"
@@ -97,7 +96,7 @@ imageRendering: 'pixelated'
 
 />
 )
-{userBadges.gachaBadge && (
+{cursor.badges.gachaBadge && (
 <img
 src={UI_IMAGES.GACHA_BADGE
 alt="Gacha Badge"
