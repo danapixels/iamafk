@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo, useMemo } from 'react';
 import { UI_IMAGES, GITHUB_URL, Z_INDEX_LAYERS, SERVER_CONFIG } from '../../constants';
 
 interface LogoAndLeaderboardProps {
   cursors: { [key: string]: any };
 }
 
-export const LogoAndLeaderboard: React.FC<LogoAndLeaderboardProps> = ({ cursors }) => {
+export const LogoAndLeaderboard: React.FC<LogoAndLeaderboardProps> = memo(({ cursors }) => {
   const [highestAFKRecords, setHighestAFKRecords] = useState<{ [key: string]: { name: string; time: number } }>({});
 
   // Track the highest stillTime for each user by username (not cursor ID)
@@ -32,7 +32,8 @@ export const LogoAndLeaderboard: React.FC<LogoAndLeaderboardProps> = ({ cursors 
     }
   }, [cursors, highestAFKRecords]);
 
-  const getHighestAFKPlayer = () => {
+  // Memoize the highest AFK player calculation
+  const highestAFKPlayer = useMemo(() => {
     let highestAFK = { name: '', time: 0 };
     
     // Find the user with the highest recorded stillTime
@@ -43,7 +44,7 @@ export const LogoAndLeaderboard: React.FC<LogoAndLeaderboardProps> = ({ cursors 
     });
     
     return highestAFK;
-  };
+  }, [highestAFKRecords]);
 
   return (
     <div id="logo-container" style={{ zIndex: Z_INDEX_LAYERS.LOGO }}>
@@ -77,11 +78,11 @@ export const LogoAndLeaderboard: React.FC<LogoAndLeaderboardProps> = ({ cursors 
           overflow: 'hidden',
           textOverflow: 'ellipsis'
         }}>
-          {getHighestAFKPlayer().name.length > 8 
-            ? `${getHighestAFKPlayer().name.slice(0, 8)}⋯`
-            : getHighestAFKPlayer().name}
+          {highestAFKPlayer.name.length > 8 
+            ? `${highestAFKPlayer.name.slice(0, 8)}⋯`
+            : highestAFKPlayer.name}
         </div>
       </div>
     </div>
   );
-}; 
+}); 

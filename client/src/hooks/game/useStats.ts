@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react';
 import { Socket } from 'socket.io-client';
-import { updateAFKTime, getUserStats, recordFurniturePlacement } from '../../utils/localStorage';
 
 interface CursorData {
   x: number;
@@ -22,13 +21,13 @@ export const useStats = (
   hasConnected: boolean,
   cursors: CursorsMap,
   userStats: any,
-  setUserStats: (stats: any) => void
+  updateAFKTime: (seconds: number) => Promise<boolean>
 ) => {
   const afkStartTimeRef = useRef<number | null>(null);
   const lastStillTimeRef = useRef(0);
   const lastAFKUpdateRef = useRef(0);
 
-  // Track AFK time and update localStorage
+  // Track AFK time and update server
   useEffect(() => {
     if (!hasConnected || !userStats) {
       return;
@@ -42,12 +41,13 @@ export const useStats = (
       
       // Start tracking if user is already inactive for 30+ seconds
       if (currentStillTime >= 30 && !isFrozen && !afkStartTimeRef.current) {
-        const inactiveStartTime = Date.now() - (currentStillTime * 1000);
-        afkStartTimeRef.current = inactiveStartTime;
+        // Don't count the existing stillTime as AFK time - start fresh
+        afkStartTimeRef.current = Date.now();
+        lastAFKUpdateRef.current = Date.now();
       }
     }
 
-    const interval = setInterval(() => {
+    const interval = setInterval(async () => {
       const myCursor = cursors[socketRef.current?.id || ''];
       
       if (myCursor) {
@@ -60,10 +60,7 @@ export const useStats = (
         if ((currentStillTime >= 30 || isFrozen) && lastStillTime < 30) {
           // If we don't have an AFK start time yet, start it now
           if (!afkStartTimeRef.current) {
-            // Calculate when the user actually became inactive
-            // The server's stillTime is in seconds, so we subtract that from now
-            const inactiveStartTime = Date.now() - (currentStillTime * 1000);
-            afkStartTimeRef.current = inactiveStartTime;
+            afkStartTimeRef.current = now;
             lastAFKUpdateRef.current = now;
           }
         }
@@ -71,10 +68,11 @@ export const useStats = (
         // Check if user is no longer AFK (stillTime < 30 AND not frozen)
         if (currentStillTime < 30 && !isFrozen && lastStillTime >= 30) {
           if (afkStartTimeRef.current) {
-            const afkDuration = Math.floor((Date.now() - afkStartTimeRef.current) / 1000);
-            updateAFKTime(afkDuration);
-            const updatedStats = getUserStats();
-            setUserStats(updatedStats);
+            // Calculate only the incremental time since last update
+            const incrementalTime = Math.floor((now - lastAFKUpdateRef.current) / 1000);
+            if (incrementalTime > 0) {
+              await updateAFKTime(incrementalTime);
+            }
             afkStartTimeRef.current = null;
             lastAFKUpdateRef.current = 0;
           }
@@ -84,10 +82,9 @@ export const useStats = (
         if ((currentStillTime >= 30 || isFrozen) && afkStartTimeRef.current) {
           const timeSinceLastUpdate = now - lastAFKUpdateRef.current;
           if (timeSinceLastUpdate >= 30000) { // 30 seconds
-            const afkDuration = Math.floor((Date.now() - afkStartTimeRef.current) / 1000);
-            updateAFKTime(afkDuration);
-          const updatedStats = getUserStats();
-            setUserStats(updatedStats);
+            // Calculate only the incremental time since last update
+            const incrementalTime = Math.floor(timeSinceLastUpdate / 1000);
+            await updateAFKTime(incrementalTime);
             lastAFKUpdateRef.current = now;
           }
         }
@@ -99,72 +96,7 @@ export const useStats = (
     return () => {
       clearInterval(interval);
     };
-  }, [hasConnected, userStats, cursors, socketRef, setUserStats]);
-
-  // Separate interval for updating AFK time while frozen (sitting in chairs/beds)
-  useEffect(() => {
-    if (!hasConnected || !userStats) {
-      return;
-    }
-
-    const frozenInterval = setInterval(() => {
-      const myCursor = cursors[socketRef.current?.id || ''];
-      
-      if (myCursor && myCursor.isFrozen && afkStartTimeRef.current) {
-        // User is frozen (sitting in chair/bed), update AFK time every 30 seconds
-        const now = Date.now();
-        const timeSinceLastUpdate = now - lastAFKUpdateRef.current;
-        
-        if (timeSinceLastUpdate >= 30000) { // 30 seconds
-          const afkDuration = Math.floor((Date.now() - afkStartTimeRef.current) / 1000);
-          updateAFKTime(afkDuration);
-          const updatedStats = getUserStats();
-          setUserStats(updatedStats);
-          lastAFKUpdateRef.current = now;
-        }
-      }
-    }, 30000); // Check every 30 seconds
-
-    return () => {
-      clearInterval(frozenInterval);
-    };
-  }, [hasConnected, userStats, cursors, socketRef, setUserStats]);
-
-  // Track furniture placement
-  useEffect(() => {
-    if (!hasConnected || !userStats) return;
-
-    const handleFurnitureSpawned = (furnitureData: any) => {
-      if (furnitureData.ownerId === socketRef.current?.id) {
-        recordFurniturePlacement(furnitureData.type);
-        setUserStats(getUserStats());
-      }
-    };
-
-    if (socketRef.current) {
-      socketRef.current.on('furnitureSpawned', handleFurnitureSpawned);
-    }
-
-    return () => {
-      if (socketRef.current) {
-        socketRef.current.off('furnitureSpawned', handleFurnitureSpawned);
-      }
-    };
-  }, [hasConnected, userStats, socketRef, setUserStats]);
-
-  // Refresh userStats periodically to update the display
-  useEffect(() => {
-    if (!hasConnected) return;
-
-    const interval = setInterval(() => {
-      const currentStats = getUserStats();
-      if (currentStats) {
-        setUserStats(currentStats);
-      }
-    }, 1000); // Update every 1 second (more responsive)
-
-    return () => clearInterval(interval);
-  }, [hasConnected, setUserStats]);
+  }, [hasConnected, userStats, cursors, socketRef, updateAFKTime]);
 
   return { afkStartTimeRef };
 }; 

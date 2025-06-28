@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Socket } from 'socket.io-client';
 import './App.css';
 import Panel from './components/ui/Panel';
 import GachaponMachine from './components/game/GachaponMachine';
@@ -8,6 +9,8 @@ import { ConfettiOverlay } from './components/overlay/ConfettiOverlay';
 import { DialogBanner } from './components/overlay/DialogBanner';
 import ConnectionModal from './components/ui/ConnectionModal';
 import CanvasContainer from './components/ui/CanvasContainer';
+import { UserStatsProvider, useUserStats } from './contexts/UserStatsContext';
+import Testing from './test/Testing';
 
 // Custom hooks
 import { useSocket } from './hooks/connection/useSocket';
@@ -29,25 +32,39 @@ import {
   Z_INDEX_LAYERS
 } from './constants';
 import { 
-  initializeUserData, 
   getSavedUsername,
   getSavedCursorType,
-  saveUsername,
-  getUserStats,
-  exportUserData,
-  setAFKTimeForTesting,
-  clearDailyFurnitureLimit,
-  testGachaponWinRate,
-  clearUserData,
-  getRemainingDailyPlacements
+  saveUsername
 } from './utils/localStorage';
 import { getGachaponStyle } from './utils/gachapon';
 
-function App() {
-  // ===== USER STATE =====
-  const [username, setUsername] = useState(getSavedUsername);
-  const [cursorType, setCursorType] = useState(getSavedCursorType);
-  const [userStats, setUserStats] = useState(getUserStats());
+function AppContent({
+  username,
+  setUsername,
+  cursorType,
+  setCursorType,
+  socketRef,
+  hasConnected,
+  setHasConnected,
+  cursors,
+  hearts,
+  setHearts,
+  circles,
+  setCircles,
+  emotes,
+  setEmotes,
+  furniture,
+  setFurniture,
+  showDialogBanner
+}: AppContentProps) {
+  // Use Context API for user stats
+  const { 
+    userStats, 
+    updateAFKTime, 
+    deductAFKBalance, 
+    recordFurniturePlacement,
+    canPlaceFurniture
+  } = useUserStats();
 
   // ===== UI STATE =====
   const [selectedFurnitureId, setSelectedFurnitureId] = useState<string | null>(null);
@@ -59,6 +76,10 @@ function App() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [confettiTimestamp, setConfettiTimestamp] = useState<number | null>(null);
 
+  // ===== GACHA NOTIFICATION STATE =====
+  const [showGachaNotification, setShowGachaNotification] = useState(false);
+  const [gachaNotificationText, setGachaNotificationText] = useState('');
+
   // ===== VIEWPORT STATE =====
   const [viewportOffset, setViewportOffset] = useState({ x: 0, y: 0 });
   
@@ -67,25 +88,8 @@ function App() {
   const usernameRef = useRef(username);
 
   // ===== CUSTOM HOOKS =====
-  // Socket and connection management
-  const {
-    socketRef,
-    hasConnected,
-    setHasConnected,
-    cursors,
-    hearts,
-    setHearts,
-    circles,
-    setCircles,
-    emotes,
-    setEmotes,
-    furniture,
-    setFurniture,
-    showDialogBanner
-  } = useSocket();
-
   // Game state management
-  const { afkStartTimeRef } = useStats(socketRef, hasConnected, cursors, userStats, setUserStats);
+  const { afkStartTimeRef } = useStats(socketRef, hasConnected, cursors, userStats, updateAFKTime);
   useCursor(socketRef, hasConnected, cursors, username, isCursorFrozen, setIsCursorFrozen, setFrozenCursorPosition);
   const { clickEnabledTimeRef, mouseStateRef, draggedFurnitureId } = useMouseInteractions({
     socketRef,
@@ -101,7 +105,7 @@ function App() {
     viewportOffset,
     setViewportOffset,
     username,
-    setUserStats,
+    recordFurniturePlacement,
     afkStartTimeRef
   });
   useKeyboardInteractions({
@@ -116,19 +120,19 @@ function App() {
     mouseStateRef
   });
   useFurniture(socketRef, setFurniture, setSelectedFurnitureId, hasConnected, draggedFurnitureId, mouseStateRef);
-  useConfetti(socketRef, setGachaponWinner, setShowConfetti);
+  useConfetti(socketRef, setGachaponWinner, setShowConfetti, setConfettiTimestamp);
 
   // Animation and cleanup
   useAnimationCleanup({
-    setHearts,
-    setCircles,
-    setEmotes
+    setHearts: setHearts,
+    setCircles: setCircles,
+    setEmotes: setEmotes
   });
 
   // Gachapon machine logic
   const { handleGachaponUse, handleGachaponUnfreeze } = useGachapon({
     socket: socketRef.current,
-    setUserStats,
+    deductAFKBalance,
     setFrozenCursorPosition,
     setIsCursorFrozen
   });
@@ -153,7 +157,6 @@ function App() {
     socket: socketRef.current,
     username,
     setHasConnected,
-    setUserStats,
     clickEnabledTimeRef
   });
 
@@ -164,8 +167,21 @@ function App() {
 
   const { handleMoveUp, handleMoveDown, handleFurnitureSpawn } = useFurnitureHandlers({
     socket: socketRef.current,
-    setUserStats
+    canPlaceFurniture,
+    recordFurniturePlacement
   });
+
+  // Gacha notification handler
+  const handleShowGachaNotification = (text: string) => {
+    setGachaNotificationText(text);
+    setShowGachaNotification(true);
+    
+    // Hide notification after 2 seconds
+    setTimeout(() => {
+      setShowGachaNotification(false);
+      setGachaNotificationText('');
+    }, 2000);
+  };
 
   // ===== EFFECTS =====
   useEffect(() => {
@@ -174,26 +190,9 @@ function App() {
 
   useEffect(() => {
     if (username.trim()) {
-      const userData = initializeUserData(username.trim());
-      setUserStats(userData.stats);
       saveUsername(username.trim());
     }
   }, [username]);
-
-  useEffect(() => {
-    (window as any).setAFKTimeForTesting = setAFKTimeForTesting;
-    (window as any).exportUserData = exportUserData;
-    (window as any).clearDailyFurnitureLimit = clearDailyFurnitureLimit;
-    (window as any).testGachaponWinRate = testGachaponWinRate;
-    (window as any).clearUserData = clearUserData;
-    (window as any).getRemainingDailyPlacements = getRemainingDailyPlacements;
-  }, []);
-
-  useEffect(() => {
-    if (showConfetti) {
-      setConfettiTimestamp(Date.now());
-    }
-  }, [showConfetti]);
 
   return (
     <div 
@@ -223,6 +222,8 @@ function App() {
           onMoveUp={handleMoveUp}
           onMoveDown={handleMoveDown}
           onDelete={(furnitureId) => setSelectedFurnitureId(prev => prev === furnitureId ? null : prev)}
+          showGachaNotification={showGachaNotification}
+          gachaNotificationText={gachaNotificationText}
         />
 
       {/* UI Elements */}
@@ -250,6 +251,7 @@ function App() {
         isCursorFrozen={isCursorFrozen}
         onUnfreeze={handleGachaponUnfreeze}
         style={getGachaponStyle(viewportOffset)}
+        onShowNotification={handleShowGachaNotification}
       />
 
       {/* Connection Modal */}
@@ -263,7 +265,80 @@ function App() {
       {/* Overlays */}
       <ConfettiOverlay showConfetti={showConfetti} confettiTimestamp={confettiTimestamp} />
       <DialogBanner showDialogBanner={showDialogBanner} />
+      
+      {/* Development Testing Component */}
+      {import.meta.env.DEV && <Testing />}
     </div>
+  );
+}
+
+interface AppContentProps {
+  username: string;
+  setUsername: (username: string) => void;
+  cursorType: string;
+  setCursorType: (type: string) => void;
+  socketRef: React.RefObject<Socket | null>;
+  hasConnected: boolean;
+  setHasConnected: (connected: boolean) => void;
+  cursors: { [key: string]: any };
+  hearts: any[];
+  setHearts: React.Dispatch<React.SetStateAction<any[]>>;
+  circles: any[];
+  setCircles: React.Dispatch<React.SetStateAction<any[]>>;
+  emotes: any[];
+  setEmotes: React.Dispatch<React.SetStateAction<any[]>>;
+  furniture: { [key: string]: any };
+  setFurniture: React.Dispatch<React.SetStateAction<{ [key: string]: any }>>;
+  showDialogBanner: boolean;
+}
+
+function App() {
+  const [username, setUsername] = useState(getSavedUsername);
+  const [cursorType, setCursorType] = useState(getSavedCursorType);
+  
+  // Socket and connection management
+  const {
+    socketRef,
+    hasConnected,
+    setHasConnected,
+    cursors,
+    hearts,
+    setHearts,
+    circles,
+    setCircles,
+    emotes,
+    setEmotes,
+    furniture,
+    setFurniture,
+    showDialogBanner
+  } = useSocket();
+
+  return (
+    <UserStatsProvider 
+      socket={socketRef.current} 
+      hasConnected={hasConnected} 
+      username={username}
+    >
+      <AppContent 
+        username={username}
+        setUsername={setUsername}
+        cursorType={cursorType}
+        setCursorType={setCursorType}
+        socketRef={socketRef}
+        hasConnected={hasConnected}
+        setHasConnected={setHasConnected}
+        cursors={cursors}
+        hearts={hearts}
+        setHearts={setHearts}
+        circles={circles}
+        setCircles={setCircles}
+        emotes={emotes}
+        setEmotes={setEmotes}
+        furniture={furniture}
+        setFurniture={setFurniture}
+        showDialogBanner={showDialogBanner}
+      />
+    </UserStatsProvider>
   );
 }
 

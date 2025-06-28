@@ -1,25 +1,27 @@
 import { useCallback } from 'react';
 import { Socket } from 'socket.io-client';
-import { getUserStats } from '../../utils/localStorage';
 
 interface UseGachaponProps {
   socket: Socket | null;
-  setUserStats: (stats: any) => void;
+  deductAFKBalance: (seconds: number) => Promise<boolean>;
   setFrozenCursorPosition: (position: { x: number; y: number } | null) => void;
   setIsCursorFrozen: (frozen: boolean) => void;
 }
 
 export const useGachapon = ({
   socket,
-  setUserStats,
+  deductAFKBalance,
   setFrozenCursorPosition,
   setIsCursorFrozen
 }: UseGachaponProps) => {
   
-  const handleGachaponUse = useCallback(() => {
-    const updatedStats = getUserStats();
-    setUserStats(updatedStats);
-  }, [setUserStats]);
+  const handleGachaponUse = useCallback(async () => {
+    // Deduct 30 seconds from AFK balance for gachapon use
+    const success = await deductAFKBalance(30);
+    if (!success) {
+      console.warn('Insufficient AFK balance for gachapon use');
+    }
+  }, [deductAFKBalance]);
 
   const handleGachaponUnfreeze = useCallback(() => {
     setFrozenCursorPosition(null);

@@ -1,6 +1,5 @@
 import { useCallback } from 'react';
 import { Socket } from 'socket.io-client';
-import { updateCursorPreference } from '../../utils/localStorage';
 
 interface UseCursorHandlersProps {
   socket: Socket | null;
@@ -16,7 +15,6 @@ export const useCursorHandlers = ({
     if (socket) {
       setCursorType(cursor.type);
       socket.emit('changeCursor', cursor);
-      updateCursorPreference(cursor.type);
     }
   }, [socket, setCursorType]);
 

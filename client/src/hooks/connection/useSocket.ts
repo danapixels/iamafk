@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { Socket, io } from 'socket.io-client';
 import { SERVER_CONFIG } from '../../constants';
+import { 
+  getSavedCursorType, 
+  saveUsername 
+} from '../../utils/localStorage';
 
 interface CursorData {
   x: number;
@@ -141,6 +145,26 @@ export const useSocket = () => {
     socket.on('showDialogBanner', () => {
       setShowDialogBanner(true);
       setTimeout(() => setShowDialogBanner(false), 60000); // 1 minute
+    });
+
+    socket.on('usernameError', () => {
+      // Show a friendly error message to the user
+      alert("nooo.. that's not a good name, try another..");
+    });
+
+    socket.on('usernameAccepted', (data: { username: string }) => {
+      // Username was accepted, complete the connection
+      setHasConnected(true);
+      
+      // Set up cursor and user data
+      const savedCursorType = getSavedCursorType();
+      if (savedCursorType) {
+        socket.emit('changeCursor', { type: savedCursorType });
+      }
+      
+      saveUsername(data.username);
+      
+      console.log('✅ Username accepted, connection completed');
     });
 
     return () => {

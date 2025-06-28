@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { getUserStats, deductAFKBalance } from '../../utils/localStorage';
 import { Socket } from 'socket.io-client';
+import { useUserStats } from '../../contexts/UserStatsContext';
 
 interface GachaponMachineProps {
   src: string;
@@ -12,6 +12,7 @@ interface GachaponMachineProps {
   onUse: () => void;
   isCursorFrozen?: boolean;
   onUnfreeze?: () => void;
+  onShowNotification?: (text: string) => void;
 }
 
 const GachaponMachine: React.FC<GachaponMachineProps> = ({
@@ -23,33 +24,25 @@ const GachaponMachine: React.FC<GachaponMachineProps> = ({
   socket,
   onUse,
   isCursorFrozen,
-  onUnfreeze
+  onUnfreeze,
+  onShowNotification
 }) => {
+  const { userStats, deductAFKBalance } = useUserStats();
   const [isPlaying, setIsPlaying] = useState(false);
   const [showMessage, setShowMessage] = useState(false);
   const [messageType, setMessageType] = useState<'win' | 'tryAgain' | null>(null);
   const [gifTimestamp, setGifTimestamp] = useState(0);
   const [currentImageSrc, setCurrentImageSrc] = useState('/UI/gachastill.png');
-  const [showNotification, setShowNotification] = useState(false);
-  const [notificationText, setNotificationText] = useState('');
   const messageRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const notificationRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const imgRef = useRef<HTMLImageElement>(null);
 
   // Check if user has enough AFK time (30 minutes = 1800 seconds)
   const checkAFKTime = () => {
-    const userStats = getUserStats();
-    
-    if (!userStats) {
+    if (!userStats || userStats.afkBalance < 1800) {
+      // Not enough AFK balance
       return false;
     }
-    
-    if (!userStats.afkBalance) {
-      return false;
-    }
-    
-    const hasEnough = userStats.afkBalance >= 1800;
-    return hasEnough;
+    return true;
   };
 
   useEffect(() => {
@@ -102,17 +95,10 @@ const GachaponMachine: React.FC<GachaponMachineProps> = ({
     
     // Show notification immediately when clicked
     if (enoughTime) {
-      setNotificationText('-30m');
+      onShowNotification?.('-30m');
     } else {
-      setNotificationText('needs more time');
+      onShowNotification?.('needs more time');
     }
-    setShowNotification(true);
-
-    // Hide notification after animation completes
-    notificationRef.current = setTimeout(() => {
-      setShowNotification(false);
-      setNotificationText('');
-    }, 2000);
 
     setIsPlaying(true);
     
@@ -136,7 +122,7 @@ const GachaponMachine: React.FC<GachaponMachineProps> = ({
         console.log('Failed to deduct AFK balance - insufficient funds');
         setIsPlaying(false);
         setCurrentImageSrc('/UI/gachastill.png');
-        setNotificationText('insufficient funds');
+        onShowNotification?.('insufficient funds');
         return;
       }
       
@@ -204,9 +190,6 @@ const GachaponMachine: React.FC<GachaponMachineProps> = ({
       if (messageRef.current) {
         clearTimeout(messageRef.current);
       }
-      if (notificationRef.current) {
-        clearTimeout(notificationRef.current);
-      }
     };
   }, []);
 
@@ -236,30 +219,6 @@ const GachaponMachine: React.FC<GachaponMachineProps> = ({
           console.error('Gachapon image failed to load:', gifUrl);
         }}
       />
-      
-      {/* Notification overlay */}
-      {showNotification && (
-        <div
-          style={{
-            position: 'absolute',
-            top: '270px',
-            left: '140px',
-            zIndex: 9999999,
-            pointerEvents: 'none'
-          }}
-        >
-          <div style={{
-            fontFamily: '"Press Start 2P", monospace',
-            fontSize: '0.5em',
-            color: 'white',
-            textAlign: 'center',
-            whiteSpace: 'nowrap',
-            animation: 'notificationRiseAndFade 2s ease-out forwards'
-          }}>
-            {notificationText}
-          </div>
-        </div>
-      )}
       
       {/* gacha output msg */}
       {showMessage && (
