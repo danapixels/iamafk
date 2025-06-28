@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo  from 'react';
 
 interface ConnectionModalProps {
 username: string;
@@ -7,7 +7,7 @@ onConnect: () => void;
 hasConnected: boolean;
 
 
-const ConnectionModal: React.FC<ConnectionModalProps> = ({
+const ConnectionModal: React.FC<ConnectionModalProps> = memo(({
 username,
 onUsernameChange,
 onConnect,
@@ -16,6 +16,14 @@ hasConnected
 const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
 if (e.key === 'Enter' && username.trim() !== '') {
 onConnect();
+
+;
+
+const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+const value = e.target.value;
+// Limit to 50 characters
+if (value.length <= 50) {
+onUsernameChange(value);
 
 ;
 
@@ -31,9 +39,10 @@ return (
 id="username"
 className="input-global"
 value={username
-onChange={(e) => onUsernameChange(e.target.value)
+onChange={handleUsernameChange
 onKeyDown={handleKeyDown
 placeholder="Type a name.."
+maxLength={50
 />
 <button onClick={onConnect disabled={username.trim() === ''>
 Connect
@@ -41,6 +50,6 @@ Connect
 </div>
 </div>
 );
-;
+);
 
 export default ConnectionModal; 

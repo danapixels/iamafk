@@ -86,20 +86,14 @@ return filtered;
 
 const visibleFurniture = useMemo(() => {
 // Show all furniture - no filtering, even before connecting
+// Use Object.values directly for better performance
 return Object.values(furniture);
 , [furniture]);
 
 const visibleCursors = useMemo(() => {
 // Show all cursors - no filtering, even before connecting
-const filtered: [string, any][] = [];
-
-Object.entries(cursors).forEach(([id, cursor]) => {
-if (cursor && cursor.name) {
-filtered.push([id, cursor]);
-
-);
-
-return filtered;
+// Use Object.entries directly and filter in one pass
+return Object.entries(cursors).filter(([_id, cursor]) => cursor && cursor.name);
 , [cursors]);
 
 return {

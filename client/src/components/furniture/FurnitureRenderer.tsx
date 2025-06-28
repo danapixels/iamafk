@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo  from 'react';
 import type { Furniture  from '../../types';
 import { FURNITURE_IMAGES, Z_INDEX_LAYERS  from '../../constants';
 import { FurnitureControlButtons  from './FurnitureControlButtons';
@@ -13,7 +13,7 @@ onMoveDown: (furnitureId: string) => void;
 onDelete: (furnitureId: string) => void;
 
 
-const FurnitureRenderer: React.FC<FurnitureRendererProps> = ({
+const FurnitureRenderer: React.FC<FurnitureRendererProps> = memo(({
 visibleFurniture,
 selectedFurnitureId,
 furnitureRefs,
@@ -38,7 +38,7 @@ onDelete(furnitureId);
 return (
 <>
 {visibleFurniture.map((item) => (
-<React.Fragment key={`${item.id-${item.x-${item.y`>
+<React.Fragment key={item.id>
 <img
 key={item.id
 ref={(el) => {
@@ -81,6 +81,6 @@ onFlip={handleFlip
 ))
 </>
 );
-;
+);
 
 export default FurnitureRenderer; 

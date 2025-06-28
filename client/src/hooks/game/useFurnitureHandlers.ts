@@ -1,19 +1,16 @@
 import { useCallback  from 'react';
 import { Socket  from 'socket.io-client';
-import { 
-getUserStats, 
-recordFurniturePlacement, 
-canPlaceFurniture 
- from '../../utils/localStorage';
 
 interface UseFurnitureHandlersProps {
 socket: Socket | null;
-setUserStats: (stats: any) => void;
+canPlaceFurniture: () => boolean;
+recordFurniturePlacement: (type: string) => Promise<boolean>;
 
 
 export const useFurnitureHandlers = ({
 socket,
-setUserStats
+canPlaceFurniture,
+recordFurniturePlacement
 : UseFurnitureHandlersProps) => {
 
 const handleMoveUp = useCallback((furnitureId: string) => {
@@ -28,7 +25,7 @@ socket.emit('moveFurnitureDown', { furnitureId );
 
 , [socket]);
 
-const handleFurnitureSpawn = useCallback((furnitureType: string, x: number, y: number) => {
+const handleFurnitureSpawn = useCallback(async (furnitureType: string, x: number, y: number) => {
 if (!canPlaceFurniture()) {
 console.log('Daily furniture placement limit reached (1000 items)');
 return;
@@ -41,12 +38,12 @@ x,
 y
 );
 
-const success = recordFurniturePlacement(furnitureType);
-if (success) {
-setUserStats(getUserStats());
+const success = await recordFurniturePlacement(furnitureType);
+if (!success) {
+console.warn('Failed to record furniture placement');
 
 
-, [socket, setUserStats]);
+, [socket, canPlaceFurniture, recordFurniturePlacement]);
 
 return {
 handleMoveUp,

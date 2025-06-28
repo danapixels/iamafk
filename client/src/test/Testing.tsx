@@ -1,51 +1,101 @@
-import React, { useState  from 'react';
-import { clearDailyFurnitureLimit, setAFKTimeForTesting, exportUserData  from '../utils/localStorage';
+import React from 'react';
+import { useUserStats  from '../contexts/UserStatsContext';
 
 const Testing: React.FC = () => {
-const [afkTime, setAfkTime] = useState(0);
-const [message, setMessage] = useState('');
+const { 
+userStats, 
+updateAFKTime, 
+deductAFKBalance, 
+recordFurniturePlacement,
+canPlaceFurniture,
+getRemainingDailyPlacements,
+refreshStats
+ = useUserStats();
 
-const handleClearFurniture = () => {
-clearDailyFurnitureLimit();
-setMessage('Daily furniture placement limit cleared!');
+const handleTestAFKTime = async () => {
+console.log('Testing AFK time update...');
+const success = await updateAFKTime(60); // Add 60 seconds
+console.log('AFK time update result:', success);
+if (success) {
+refreshStats(); // Refresh to see updated stats
+
 ;
 
-const handleSetAFK = () => {
-setAFKTimeForTesting(Number(afkTime));
-setMessage(`AFK time set to ${afkTime seconds!`);
+const handleTestDeductBalance = async () => {
+console.log('Testing AFK balance deduction...');
+const success = await deductAFKBalance(30); // Deduct 30 seconds
+console.log('AFK balance deduction result:', success);
+if (success) {
+refreshStats(); // Refresh to see updated stats
+
 ;
 
-const handleExportUserData = () => {
-exportUserData();
-setMessage('User data exported (check your downloads or console).');
+const handleTestFurniturePlacement = async () => {
+console.log('Testing furniture placement...');
+const success = await recordFurniturePlacement('test-furniture');
+console.log('Furniture placement result:', success);
+if (success) {
+refreshStats(); // Refresh to see updated stats
+
+;
+
+const handleTestDailyLimit = () => {
+console.log('Can place furniture:', canPlaceFurniture());
+console.log('Remaining daily placements:', getRemainingDailyPlacements());
 ;
 
 return (
-<div style={{ padding: 24, maxWidth: 400, margin: '40px auto', background: '#222', color: '#fff', borderRadius: 8 >
-<h2>Testing Utilities</h2>
-<p>Use these buttons to run test utilities for development and QA.</p>
-<button onClick={handleClearFurniture style={{ margin: '8px 0', width: '100%' >
-Clear Daily Furniture Limit
+<div style={{ 
+position: 'fixed', 
+top: '10px', 
+right: '10px', 
+background: 'rgba(0,0,0,0.8)', 
+color: 'white', 
+padding: '10px', 
+borderRadius: '5px',
+zIndex: 10000,
+fontSize: '12px'
+>
+<h3>Server-Side Validation Testing</h3>
+
+<div>
+<strong>Current Stats:</strong>
+<pre>{JSON.stringify(userStats, null, 2)</pre>
+</div>
+
+<div style={{ marginTop: '10px' >
+<button onClick={handleTestAFKTime style={{ margin: '2px' >
+Test AFK Time (+60s)
 </button>
-<div style={{ margin: '12px 0' >
-<input
-type="number"
-value={afkTime
-onChange={e => setAfkTime(Number(e.target.value))
-placeholder="Set AFK time (seconds)"
-style={{ width: '70%', marginRight: 8 
-/>
-<button onClick={handleSetAFK style={{ width: '25%' >
-Set AFK Time
+<button onClick={handleTestDeductBalance style={{ margin: '2px' >
+Test Deduct Balance (-30s)
+</button>
+<button onClick={handleTestFurniturePlacement style={{ margin: '2px' >
+Test Furniture Placement
+</button>
+<button onClick={handleTestDailyLimit style={{ margin: '2px' >
+Test Daily Limit
+</button>
+<button onClick={refreshStats style={{ margin: '2px' >
+Refresh Stats
 </button>
 </div>
-<button onClick={handleExportUserData style={{ margin: '8px 0', width: '100%' >
-Export User Data
-</button>
-{message && <div style={{ marginTop: 16, color: '#8f8' >{message</div>
-<div style={{ marginTop: 32, fontSize: 12, color: '#aaa' >
-<strong>Note:</strong> This panel is for development/testing only.<br />
-You can remove it from production builds.
+
+<div style={{ marginTop: '10px', fontSize: '10px' >
+<strong>Security Features:</strong>
+<ul>
+<li>✅ AFK time validated server-side</li>
+<li>✅ Balance deductions validated server-side</li>
+<li>✅ Furniture placement limits enforced server-side</li>
+<li>✅ No localStorage manipulation possible</li>
+<li>✅ Real-time stats updates via Context API</li>
+</ul>
+
+<strong>Connection Status:</strong>
+<ul>
+<li>Context API: {userStats ? '✅ Connected' : '❌ Not Connected'</li>
+<li>Stats Loading: {userStats ? '✅ Loaded' : '⏳ Loading...'</li>
+</ul>
 </div>
 </div>
 );

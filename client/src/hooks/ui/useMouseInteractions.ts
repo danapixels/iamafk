@@ -2,7 +2,6 @@ import { useEffect, useRef  from 'react';
 import { Socket  from 'socket.io-client';
 import { CANVAS_SIZE  from '../../constants';
 import { screenToCanvas, clampToCanvas  from '../../utils/canvas';
-import { updateAFKTime, getUserStats  from '../../utils/localStorage';
 
 interface MouseInteractionsProps {
 socketRef: React.RefObject<Socket | null>;
@@ -18,7 +17,7 @@ setFrozenCursorPosition: (pos: { x: number; y: number  | null) => void;
 viewportOffset: { x: number; y: number ;
 setViewportOffset: React.Dispatch<React.SetStateAction<{ x: number; y: number >>;
 username: string;
-setUserStats: (stats: any) => void;
+recordFurniturePlacement: (type: string) => Promise<boolean>;
 afkStartTimeRef: React.RefObject<number | null>;
 
 
@@ -36,7 +35,7 @@ setFrozenCursorPosition,
 viewportOffset,
 setViewportOffset,
 username,
-setUserStats,
+recordFurniturePlacement,
 afkStartTimeRef
 : MouseInteractionsProps) => {
 const heartCounterRef = useRef(0);
@@ -46,6 +45,11 @@ const draggedFurnitureId = useRef<string | null>(null);
 const viewportDragStart = useRef<{ x: number; y: number  | null>(null);
 const clickEnabledTimeRef = useRef<number | null>(null);
 const confettiTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+const lastDoubleClickTimeRef = useRef(0);
+const lastSentPositionRef = useRef<{ x: number; y: number  | null>(null);
+const lastSentCursorRef = useRef<{ x: number; y: number  | null>(null);
+const lastSentViewportRef = useRef<{ x: number; y: number  | null>(null);
+const DOUBLE_CLICK_COOLDOWN_MS = 1000; // 1 second cooldown between double-clicks
 
 // Mouse state ref for optimized handling
 const mouseStateRef = useRef({
@@ -58,7 +62,7 @@ lastEvent: null as MouseEvent | null,
 
 // Throttle emits for furniture dragging
 let lastEmitTime = 0;
-const DRAG_THROTTLE_MS = 50; // 50ms throttle for furniture dragging
+const DRAG_THROTTLE_MS = 16; // Reduced from 50ms to 16ms (60fps) for smoother dragging
 
 // Helper function to convert screen coordinates to canvas coordinates
 const convertScreenToCanvas = (screenX: number, screenY: number) => {
@@ -70,10 +74,15 @@ const handleAFKDetection = () => {
 if (hasConnected && afkStartTimeRef.current) {
 const myCursor = cursors[socketRef.current?.id || ''];
 if (myCursor) {
-const afkDuration = Math.floor((Date.now() - afkStartTimeRef.current) / 1000);
-updateAFKTime(afkDuration);
-const updatedStats = getUserStats();
-setUserStats(updatedStats);
+// Only update AFK time if user was actually AFK (stillTime >= 30)
+if (myCursor.stillTime >= 30) {
+// Calculate only the incremental time since last update
+const now = Date.now();
+const incrementalTime = Math.floor((now - afkStartTimeRef.current) / 1000);
+if (incrementalTime > 0) {
+// Use context API for AFK time updates
+
+
 afkStartTimeRef.current = null;
 
 
@@ -87,15 +96,17 @@ let lastFrame = 0;
 
 // Animation loop for smooth updates
 function animationLoop() {
-if (mouseStateRef.current.isDraggingFurniture && draggedFurnitureId.current && dragStart.current && mouseStateRef.current.lastEvent) {
-const dx = mouseStateRef.current.lastX - dragStart.current.x;
-const dy = mouseStateRef.current.lastY - dragStart.current.y;
-const item = furniture[draggedFurnitureId.current];
-if (item) {
-const newCanvasX = item.x + dx;
-const newCanvasY = item.y + dy;
-const clampedCoords = clampToCanvas(newCanvasX, newCanvasY);
+if (mouseStateRef.current.isDraggingFurniture && draggedFurnitureId.current && mouseStateRef.current.lastEvent) {
+// Get the cursor's canvas coordinates
+const canvasCoords = convertScreenToCanvas(mouseStateRef.current.lastX, mouseStateRef.current.lastY);
+const clampedCoords = clampToCanvas(canvasCoords.x, canvasCoords.y);
 
+// Only update if position changed
+if (
+!lastSentPositionRef.current ||
+lastSentPositionRef.current.x !== clampedCoords.x ||
+lastSentPositionRef.current.y !== clampedCoords.y
+) {
 setFurniture(prev => ({
 ...prev,
 [draggedFurnitureId.current!]: {
@@ -118,33 +129,56 @@ lastEmitTime = now;
 
 
 
-dragStart.current = { x: mouseStateRef.current.lastX, y: mouseStateRef.current.lastY ;
+lastSentPositionRef.current = { x: clampedCoords.x, y: clampedCoords.y ;
+
 
 
 if (mouseStateRef.current.isDraggingViewport && viewportDrag.current && mouseStateRef.current.lastEvent) {
 const dx = mouseStateRef.current.lastX - viewportDrag.current.x;
 const dy = mouseStateRef.current.lastY - viewportDrag.current.y;
+
+// Only update if mouse actually moved
+if (dx !== 0 || dy !== 0) {
 setViewportOffset(prev => {
 const newX = prev.x - dx;
 const newY = prev.y - dy;
 const maxOffsetX = Math.max(0, CANVAS_SIZE - window.innerWidth);
 const maxOffsetY = Math.max(0, CANVAS_SIZE - window.innerHeight);
-return {
-x: Math.max(0, Math.min(maxOffsetX, newX)),
-y: Math.max(0, Math.min(maxOffsetY, newY))
-;
+const clampedX = Math.max(0, Math.min(maxOffsetX, newX));
+const clampedY = Math.max(0, Math.min(maxOffsetY, newY));
+
+// Only update if viewport position actually changed
+if (
+!lastSentViewportRef.current ||
+lastSentViewportRef.current.x !== clampedX ||
+lastSentViewportRef.current.y !== clampedY
+) {
+lastSentViewportRef.current = { x: clampedX, y: clampedY ;
+return { x: clampedX, y: clampedY ;
+
+return prev;
 );
 viewportDrag.current = { x: mouseStateRef.current.lastX, y: mouseStateRef.current.lastY ;
+
 
 
 if (socketRef.current?.connected && !isCursorFrozen && hasConnected && mouseStateRef.current.lastEvent && !mouseStateRef.current.isDraggingViewport) {
 const canvasCoords = convertScreenToCanvas(mouseStateRef.current.lastX, mouseStateRef.current.lastY);
 const clampedCoords = clampToCanvas(canvasCoords.x, canvasCoords.y);
+
+// Only emit if cursor position changed
+if (
+!lastSentCursorRef.current ||
+lastSentCursorRef.current.x !== clampedCoords.x ||
+lastSentCursorRef.current.y !== clampedCoords.y
+) {
 socketRef.current.emit('cursorMove', {
 x: clampedCoords.x,
 y: clampedCoords.y,
 name: username,
 );
+lastSentCursorRef.current = { x: clampedCoords.x, y: clampedCoords.y ;
+
 
 
 lastFrame = requestAnimationFrame(animationLoop);
@@ -156,13 +190,9 @@ mouseStateRef.current.lastX = e.clientX;
 mouseStateRef.current.lastY = e.clientY;
 mouseStateRef.current.lastEvent = e;
 
-handleAFKDetection();
-
 
 function onMouseDown(e: MouseEvent) {
 const target = e.target as HTMLElement;
-
-handleAFKDetection();
 
 // Check if clicking on furniture
 const furnitureElement = target.closest('[data-furniture-id]');
@@ -185,6 +215,7 @@ y: e.clientY
 mouseStateRef.current.isDraggingFurniture = true;
 draggedFurnitureId.current = furnitureId;
 dragStart.current = { x: e.clientX, y: e.clientY ;
+lastSentPositionRef.current = null;
 
 if (selectedFurnitureId === furnitureId) {
 setSelectedFurnitureId(null);
@@ -206,6 +237,7 @@ dragStart.current = null;
 if (e.button === 0 && (target.id === 'app-root' || target.classList.contains('canvas-container'))) {
 mouseStateRef.current.isDraggingViewport = true;
 viewportDrag.current = { x: e.clientX, y: e.clientY ;
+lastSentCursorRef.current = null; // Reset to ensure first cursor update happens
 
 
 
@@ -213,11 +245,13 @@ function onMouseUp() {
 if (mouseStateRef.current.isDraggingViewport) {
 mouseStateRef.current.isDraggingViewport = false;
 viewportDrag.current = null;
+lastSentCursorRef.current = null; // Reset when viewport dragging ends
 
 if (mouseStateRef.current.isDraggingFurniture) {
 mouseStateRef.current.isDraggingFurniture = false;
 draggedFurnitureId.current = null;
 dragStart.current = null;
+lastSentPositionRef.current = null;
 
 
 
@@ -269,7 +303,7 @@ window.removeEventListener('mouseup', onMouseUp);
 window.removeEventListener('click', onClick);
 cancelAnimationFrame(lastFrame);
 ;
-, [furniture, isCursorFrozen, hasConnected, viewportOffset, socketRef, cursors, username, setFurniture, setSelectedFurnitureId, selectedFurnitureId, setIsCursorFrozen, setFrozenCursorPosition, setViewportOffset, setUserStats, afkStartTimeRef]);
+, [furniture, isCursorFrozen, hasConnected, viewportOffset, socketRef, cursors, username, setFurniture, setSelectedFurnitureId, selectedFurnitureId, setIsCursorFrozen, setFrozenCursorPosition, setViewportOffset, recordFurniturePlacement, afkStartTimeRef]);
 
 // Double-click handler
 useEffect(() => {
@@ -328,6 +362,16 @@ return;
 
 
 if (!socketRef.current?.connected || !hasConnected) return;
+
+// Check double-click cooldown to prevent spam
+const now = Date.now();
+if (now - lastDoubleClickTimeRef.current < DOUBLE_CLICK_COOLDOWN_MS) {
+return;
+
+
+// Update last double-click time
+lastDoubleClickTimeRef.current = now;
+
 socketRef.current.emit('resetStillTime');
 const canvasCoords = convertScreenToCanvas(e.clientX, e.clientY);
 const clampedCoords = clampToCanvas(canvasCoords.x, canvasCoords.y);

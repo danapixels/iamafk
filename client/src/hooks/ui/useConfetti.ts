@@ -4,7 +4,8 @@ import { Socket  from 'socket.io-client';
 export const useConfetti = (
 socketRef: React.RefObject<Socket | null>,
 setGachaponWinner: (winner: string | null) => void,
-setShowConfetti: (show: boolean) => void
+setShowConfetti: (show: boolean) => void,
+setConfettiTimestamp?: (timestamp: number | null) => void
 ) => {
 const confettiTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -25,10 +26,16 @@ confettiTimeoutRef.current = null;
 
 // Show confetti immediately
 setShowConfetti(true);
+if (setConfettiTimestamp) {
+setConfettiTimestamp(Date.now());
+
 
 // Remove confetti after animation finishes (confetti.gif duration)
 confettiTimeoutRef.current = setTimeout(() => {
 setShowConfetti(false);
+if (setConfettiTimestamp) {
+setConfettiTimestamp(null);
+
 confettiTimeoutRef.current = null;
 , 3000); // Assuming confetti.gif is 3 seconds
 
@@ -49,7 +56,7 @@ clearTimeout(confettiTimeoutRef.current);
 confettiTimeoutRef.current = null;
 
 ;
-, [socketRef, setGachaponWinner, setShowConfetti]);
+, [socketRef, setGachaponWinner, setShowConfetti, setConfettiTimestamp]);
 
 // Update confettiTimestamp whenever showConfetti is set to true
 useEffect(() => {

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo  from 'react';
 import { CANVAS_SIZE  from '../../constants';
 import TutorialOverlay from '../overlay/TutorialOverlay';
 import AnimationRenderer from '../cursor/emotes';
@@ -23,9 +23,11 @@ frozenCursorPosition: { x: number; y: number  | null;
 onMoveUp: (furnitureId: string) => void;
 onMoveDown: (furnitureId: string) => void;
 onDelete: (furnitureId: string) => void;
+showGachaNotification?: boolean;
+gachaNotificationText?: string;
 
 
-const CanvasContainer: React.FC<CanvasContainerProps> = ({
+const CanvasContainer: React.FC<CanvasContainerProps> = memo(({
 viewportOffset,
 visibleCircles,
 visibleHearts,
@@ -40,7 +42,9 @@ isCursorFrozen,
 frozenCursorPosition,
 onMoveUp,
 onMoveDown,
-onDelete
+onDelete,
+showGachaNotification,
+gachaNotificationText
 ) => {
 return (
 <div 
@@ -67,6 +71,30 @@ pointerEvents: 'none',
 
 >
 <TutorialOverlay />
+
+{/* Gacha notification - positioned absolutely on canvas like tutorial */
+{showGachaNotification && gachaNotificationText && (
+<div
+style={{
+position: 'absolute',
+top: 270,
+left: 140,
+zIndex: 9999999,
+pointerEvents: 'none'
+
+>
+<div style={{
+fontFamily: '"Press Start 2P", monospace',
+fontSize: '0.5em',
+color: 'white',
+textAlign: 'center',
+whiteSpace: 'nowrap',
+animation: 'notificationRiseAndFade 2s ease-out forwards'
+>
+{gachaNotificationText
+</div>
+</div>
+)
 
 <AnimationRenderer
 visibleCircles={visibleCircles
@@ -95,6 +123,6 @@ formatTime={formatTime
 </div>
 </div>
 );
-;
+);
 
 export default CanvasContainer; 

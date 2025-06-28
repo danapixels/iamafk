@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo  from 'react';
 import { Z_INDEX_LAYERS  from '../../constants';
 import { formatTime  from '../../utils/helpers';
 
@@ -7,7 +7,7 @@ hasConnected: boolean;
 userStats: any;
 
 
-export const AFKTimeDisplay: React.FC<AFKTimeDisplayProps> = ({ hasConnected, userStats ) => {
+export const AFKTimeDisplay: React.FC<AFKTimeDisplayProps> = memo(({ hasConnected, userStats ) => {
 if (!hasConnected || !userStats) return null;
 return (
 <div style={{
@@ -69,4 +69,4 @@ marginLeft: '20px'
 </div>
 </div>
 );
-; 
+); 

@@ -4,6 +4,7 @@ const { Server  = require('socket.io');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+const { validateUsername  = require('./usernameFilter');
 
 const app = express();
 
@@ -61,6 +62,11 @@ const USER_ACTIVITY_FILE = path.join(__dirname, 'data', 'user_activity.json');
 
 // Z-index management
 let nextZIndex = 5000; // Base z-index for furniture
+
+// Server-side user stats storage and validation
+const userStats = {; // In-memory storage for user stats
+const userAFKTracking = {; // AFK time for each user
+const DAILY_FURNITURE_LIMIT = 1000;
 
 function getNextZIndex() {
 return nextZIndex++;
@@ -273,12 +279,28 @@ socketId: socket.id,
 cursor: cursors[socket.id] 
 );
 
-socket.on('setName', ({ name ) => {
+socket.on('setName', async ({ name ) => {
 if (cursors[socket.id]) {
+// Validate username before setting it
+const validation = await validateUsername(name);
+
+if (!validation.isAppropriate) {
+// Send error message to client
+socket.emit('usernameError', { 
+message: validation.reason || 'Username is not allowed' 
+);
+return;
+
+
 const username = name?.trim() || 'Anonymous';
 cursors[socket.id].name = username;
 // Update user activity with the username
 updateUserActivity(socket.id, username);
+
+// Send success response to client
+socket.emit('usernameAccepted', { username );
+
+// Broadcast updated cursors to all clients
 io.emit('cursors', getValidCursors());
 
 );
@@ -382,7 +404,7 @@ furniture[furnitureId].isFlipped = isFlipped;
 furniture[furnitureId].timestamp = Date.now();
 // Save to persistent storage
 addToBatch('furniture', furniture[furnitureId]);
-// Broadcast to ALL clients EXCEPT sender
+// Broadcast to ALL clients including sender
 const broadcastData = { 
 id: furnitureId, 
 x, 
@@ -390,7 +412,7 @@ y,
 isFlipped: furniture[furnitureId].isFlipped 
 ;
 console.log('Server broadcasting furnitureMoved:', broadcastData);
-socket.broadcast.emit('furnitureMoved', broadcastData);
+io.emit('furnitureMoved', broadcastData);
 
 );
 
@@ -570,9 +592,33 @@ socket.on('gachaponAnimation', ({ userId, hasEnoughTime ) => {
 socket.broadcast.emit('gachaponAnimation', { userId, hasEnoughTime );
 );
 
+// Server-side user stats validation handlers
+socket.on('requestUserStats', () => {
+const userStats = getUserStatsFromServer(socket.id);
+socket.emit('userStats', userStats);
+);
+
+socket.on('updateAFKTime', ({ seconds , callback) => {
+const result = updateAFKTimeOnServer(socket.id, seconds);
+callback(result);
+);
+
+socket.on('deductAFKBalance', ({ seconds , callback) => {
+const result = deductAFKBalanceOnServer(socket.id, seconds);
+callback(result);
+);
+
+socket.on('recordFurniturePlacement', ({ type , callback) => {
+const result = recordFurniturePlacementOnServer(socket.id, type);
+callback(result);
+);
+
 socket.on('disconnect', () => {
 // Save any pending changes immediately when user disconnects
 saveBatch();
+
+// Clean up user stats
+cleanupUserStats(socket.id);
 
 // Remove cursor
 delete cursors[socket.id];
@@ -621,3 +667,184 @@ const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
 console.log(`Server running on port ${PORT`);
 );
+
+// Get user stats from server storage
+function getUserStatsFromServer(socketId) {
+const user = userStats[socketId];
+if (!user) {
+// Initialize new user stats
+const newUser = {
+username: cursors[socketId]?.name || 'Anonymous',
+totalAFKTime: 0,
+afkBalance: 0,
+furniturePlaced: 0,
+furnitureByType: {,
+lastSeen: Date.now(),
+firstSeen: Date.now(),
+sessions: 1,
+dailyFurniturePlacements: {
+;
+userStats[socketId] = newUser;
+return newUser;
+
+return user;
+
+
+// Update AFK time with server-side validation
+function updateAFKTimeOnServer(socketId, seconds) {
+// Validate input
+if (typeof seconds !== 'number' || seconds <= 0 || seconds > 86400) {
+return { success: false, error: 'Invalid AFK time value' ;
+
+
+const user = getUserStatsFromServer(socketId);
+user.totalAFKTime += seconds;
+user.afkBalance += seconds;
+user.lastSeen = Date.now();
+
+// Save to persistent storage
+addToBatch('userStats', { socketId, stats: user );
+
+return { success: true ;
+
+
+// Deduct AFK balance with server-side validation
+function deductAFKBalanceOnServer(socketId, seconds) {
+// Validate input
+if (typeof seconds !== 'number' || seconds <= 0) {
+return { success: false, error: 'Invalid deduction amount' ;
+
+
+const user = getUserStatsFromServer(socketId);
+
+// Check if user has enough balance
+if (user.afkBalance < seconds) {
+return { success: false, error: 'Insufficient AFK balance' ;
+
+
+user.afkBalance -= seconds;
+user.lastSeen = Date.now();
+
+// Save to persistent storage
+addToBatch('userStats', { socketId, stats: user );
+
+return { success: true ;
+
+
+// Record furniture placement with server-side validation
+function recordFurniturePlacementOnServer(socketId, type) {
+// Validate input
+if (typeof type !== 'string' || !type.trim()) {
+return { success: false, error: 'Invalid furniture type' ;
+
+
+const user = getUserStatsFromServer(socketId);
+const today = new Date().toISOString().split('T')[0];
+const dailyPlacements = user.dailyFurniturePlacements[today] || 0;
+
+// Check daily limit
+if (dailyPlacements >= DAILY_FURNITURE_LIMIT) {
+return { success: false, error: 'Daily furniture placement limit reached' ;
+
+
+// Update stats
+user.dailyFurniturePlacements[today] = dailyPlacements + 1;
+user.furniturePlaced += 1;
+user.furnitureByType[type] = (user.furnitureByType[type] || 0) + 1;
+user.lastSeen = Date.now();
+
+// Save to persistent storage
+addToBatch('userStats', { socketId, stats: user );
+
+return { success: true ;
+
+
+// AFK time for users
+function startAFKTracking(socketId) {
+if (!userAFKTracking[socketId]) {
+userAFKTracking[socketId] = {
+startTime: null,
+lastUpdate: null
+;
+
+
+
+function updateAFKTracking(socketId, isAFK) {
+const tracking = userAFKTracking[socketId];
+if (!tracking) return;
+
+const now = Date.now();
+
+if (isAFK && !tracking.startTime) {
+// Start AFK tracking
+tracking.startTime = now;
+tracking.lastUpdate = now;
+ else if (!isAFK && tracking.startTime) {
+// End AFK tracking and add time
+const afkDuration = Math.floor((now - tracking.lastUpdate) / 1000);
+if (afkDuration > 0) {
+const result = updateAFKTimeOnServer(socketId, afkDuration);
+if (!result.success) {
+console.warn('Failed to update AFK time:', result.error);
+
+
+tracking.startTime = null;
+tracking.lastUpdate = null;
+ else if (isAFK && tracking.startTime) {
+// Update AFK time periodically (every 30 seconds)
+const timeSinceLastUpdate = now - tracking.lastUpdate;
+if (timeSinceLastUpdate >= 30000) {
+const afkDuration = Math.floor(timeSinceLastUpdate / 1000);
+if (afkDuration > 0) {
+const result = updateAFKTimeOnServer(socketId, afkDuration);
+if (!result.success) {
+console.warn('Failed to update AFK time:', result.error);
+
+
+tracking.lastUpdate = now;
+
+
+
+
+// Clean up user stats when user disconnects
+function cleanupUserStats(socketId) {
+delete userStats[socketId];
+delete userAFKTracking[socketId];
+
+
+// Load user stats from persistent storage
+function loadUserStats() {
+
+const data = fs.readFileSync('userStats.json', 'utf8');
+const parsed = JSON.parse(data);
+Object.assign(userStats, parsed);
+
+console.log('No existing user stats found, starting fresh');
+
+
+
+// Save user stats to persistent storage
+function saveUserStats() {
+
+fs.writeFileSync('userStats.json', JSON.stringify(userStats, null, 2));
+
+console.error('Error saving user stats:', error);
+
+
+
+// Load user stats on startup
+loadUserStats();
+
+// Save user stats periodically
+setInterval(saveUserStats, 60000); // Save every minute
+
+// AFK time for all users
+setInterval(() => {
+Object.keys(cursors).forEach(socketId => {
+const cursor = cursors[socketId];
+if (cursor) {
+const isAFK = cursor.stillTime >= 30 || cursor.isFrozen;
+updateAFKTracking(socketId, isAFK);
+
+);
+, 1000); // Check every second

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo  from 'react';
 import { Z_INDEX_LAYERS  from '../../constants';
 
 interface CursorData {
@@ -21,7 +21,7 @@ frozenCursorPosition: { x: number; y: number  | null;
 formatTime: (seconds: number) => string;
 
 
-const CursorRenderer: React.FC<CursorRendererProps> = ({
+const CursorRenderer: React.FC<CursorRendererProps> = memo(({
 visibleCursors,
 socketRef,
 cursorType,
@@ -86,6 +86,6 @@ pointerEvents: 'none'
 )
 </>
 );
-;
+);
 
 export default CursorRenderer; 

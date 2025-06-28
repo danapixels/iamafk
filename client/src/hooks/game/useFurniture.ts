@@ -8,6 +8,7 @@ x: number;
 y: number;
 zIndex?: number;
 isFlipped?: boolean;
+ownerId?: string;
 
 
 export const useFurniture = (
@@ -29,6 +30,11 @@ const socket = socketRef.current;
 socket.on('furnitureSpawned', (data: any) => {
 if (data && data.id) {
 setFurniture(prev => ({ ...prev, [data.id]: data ));
+
+// Auto-select the furniture if this user spawned it
+if (data.ownerId === socket.id) {
+setSelectedFurnitureId(data.id);
+
 
 );
 

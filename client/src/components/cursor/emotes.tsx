@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo, useEffect, useState  from 'react';
 import { HEART_DURATION, CIRCLE_DURATION, THUMBSUP_DURATION, ANIMATION_CONSTANTS, UI_IMAGES  from '../../constants';
 import type { Circle, Heart, Emote  from '../../types';
 
@@ -8,11 +8,33 @@ visibleHearts: Heart[];
 visibleEmotes: Emote[];
 
 
-const AnimationRenderer: React.FC<AnimationRendererProps> = ({
+const AnimationRenderer: React.FC<AnimationRendererProps> = memo(({
 visibleCircles,
 visibleHearts,
 visibleEmotes
 ) => {
+// Add a state to force re-render
+const [, setTick] = useState(0);
+
+useEffect(() => {
+let frame: number;
+function loop() {
+setTick(tick => tick + 1);
+frame = requestAnimationFrame(loop);
+
+// Only run the loop if there are active animations
+if (
+visibleCircles.length > 0 ||
+visibleHearts.length > 0 ||
+visibleEmotes.length > 0
+) {
+frame = requestAnimationFrame(loop);
+
+return () => {
+if (frame) cancelAnimationFrame(frame);
+;
+, [visibleCircles.length, visibleHearts.length, visibleEmotes.length]);
+
 return (
 <>
 {/* circles */
@@ -107,6 +129,6 @@ zIndex: 9996,
 )
 </>
 );
-;
+);
 
 export default AnimationRenderer; 

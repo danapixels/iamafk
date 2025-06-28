@@ -33,6 +33,9 @@ viewportOffset,
 mouseStateRef
 : KeyboardInteractionsProps) => {
 const emojiCounterRef = useRef(0);
+const lastEmoteTimeRef = useRef<{ [key: string]: number >({);
+const pressedKeysRef = useRef<{ [key: string]: boolean >({);
+const EMOTE_COOLDOWN_MS = 500; // 500ms cooldown between emotes
 
 // Helper function to convert screen coordinates to canvas coordinates
 const convertScreenToCanvas = (screenX: number, screenY: number) => {
@@ -41,7 +44,7 @@ return screenToCanvas(screenX, screenY, viewportOffset);
 
 // Handle keyboard interactions (emotes and backspace)
 useEffect(() => {
-const handleKeyPress = (e: KeyboardEvent) => {
+const handleKeyDown = (e: KeyboardEvent) => {
 if (socketRef.current?.connected && hasConnected && socketRef.current.id) {
 // Handle backspace for deleting selected furniture
 if (e.key === 'Backspace' && selectedFurnitureId) {
@@ -55,24 +58,6 @@ setSelectedFurnitureId(null);
 
 return;
 
-
-const cursorX = isCursorFrozen && frozenCursorPosition ? frozenCursorPosition.x : cursors[socketRef.current.id]?.x || 0;
-const cursorY = isCursorFrozen && frozenCursorPosition ? frozenCursorPosition.y : cursors[socketRef.current.id]?.y || 0;
-
-let finalCursorX = cursorX;
-let finalCursorY = cursorY;
-
-if (cursorX === 0 && cursorY === 0 && mouseStateRef.current.lastEvent) {
-const canvasCoords = convertScreenToCanvas(mouseStateRef.current.lastX, mouseStateRef.current.lastY);
-finalCursorX = canvasCoords.x;
-finalCursorY = canvasCoords.y;
-
-
-const emoteX = finalCursorX - ANIMATION_CONSTANTS.Emote_OFFSET_X;
-const emoteY = finalCursorY;
-
-const now = Date.now();
-const emoteId = `${socketRef.current.id-${now-${++emojiCounterRef.current`;
 
 const emoteMap: { [key: string]: string  = {
 '1': 'thumbsup',
@@ -89,6 +74,41 @@ const emoteMap: { [key: string]: string  = {
 
 const emoteType = emoteMap[e.key];
 if (emoteType) {
+// Check if key is already pressed (prevent spam)
+if (pressedKeysRef.current[e.key]) {
+return;
+
+
+// Check cooldown for this specific emote
+const now = Date.now();
+const lastEmoteTime = lastEmoteTimeRef.current[e.key] || 0;
+if (now - lastEmoteTime < EMOTE_COOLDOWN_MS) {
+return;
+
+
+// Mark key as pressed
+pressedKeysRef.current[e.key] = true;
+
+// Update last emote time
+lastEmoteTimeRef.current[e.key] = now;
+
+const cursorX = isCursorFrozen && frozenCursorPosition ? frozenCursorPosition.x : cursors[socketRef.current.id]?.x || 0;
+const cursorY = isCursorFrozen && frozenCursorPosition ? frozenCursorPosition.y : cursors[socketRef.current.id]?.y || 0;
+
+let finalCursorX = cursorX;
+let finalCursorY = cursorY;
+
+if (cursorX === 0 && cursorY === 0 && mouseStateRef.current.lastEvent) {
+const canvasCoords = convertScreenToCanvas(mouseStateRef.current.lastX, mouseStateRef.current.lastY);
+finalCursorX = canvasCoords.x;
+finalCursorY = canvasCoords.y;
+
+
+const emoteX = finalCursorX - ANIMATION_CONSTANTS.Emote_OFFSET_X;
+const emoteY = finalCursorY;
+
+const emoteId = `${socketRef.current.id-${now-${++emojiCounterRef.current`;
+
 socketRef.current.emit('resetStillTime');
 
 socketRef.current.emit('spawnEmote', {
@@ -101,7 +121,17 @@ type: emoteType
 
 ;
 
-window.addEventListener('keydown', handleKeyPress);
-return () => window.removeEventListener('keydown', handleKeyPress);
+const handleKeyUp = (e: KeyboardEvent) => {
+// Mark key as released
+pressedKeysRef.current[e.key] = false;
+;
+
+window.addEventListener('keydown', handleKeyDown);
+window.addEventListener('keyup', handleKeyUp);
+
+return () => {
+window.removeEventListener('keydown', handleKeyDown);
+window.removeEventListener('keyup', handleKeyUp);
+;
 , [hasConnected, isCursorFrozen, frozenCursorPosition, cursors, socketRef, viewportOffset, selectedFurnitureId, setSelectedFurnitureId, mouseStateRef]);
 ; 
