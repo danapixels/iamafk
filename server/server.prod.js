@@ -63,27 +63,20 @@ const io = new Server(server, {
   allowEIO3: true
 });
 
-// Global variables
-const cursors = {};
-const lastMoveTimestamps = {};
+// Global state
+let cursors = {};
 let furniture = {};
-const hearts = [];
-const circles = [];
-const emotes = [];
-let userActivity = {};
-let userStats = {};
-let userAFKTracking = {};
-const allTimeRecord = { name: 'Anonymous', time: 0, lastUpdated: Date.now() };
-const jackpotRecord = { name: 'Anonymous', wins: 0, lastUpdated: Date.now() };
+let lastMoveTimestamps = {};
 let pendingChanges = [];
 let batchTimer = null;
-const BATCH_INTERVAL = 5000; // 5 seconds
+let userActivity = {};
+let userStats = {};
+let allTimeRecord = { name: '', time: 0, lastUpdated: 0 };
+let jackpotRecord = { name: '', wins: 0, lastUpdated: 0 };
+let deviceToSocketMap = {};
+let socketToDeviceMap = {};
 
 // Device ID to socket ID mapping for persistence
-const deviceToSocketMap = {};
-const socketToDeviceMap = {};
-
-// Persistent furniture storage with expiration
 const FURNITURE_FILE = path.join(__dirname, 'data', 'furniture.json');
 const FURNITURE_EXPIRY_HOURS = 48;
 const USER_ACTIVITY_FILE = path.join(__dirname, 'data', 'user_activity.json');
@@ -102,6 +95,12 @@ const DAILY_FURNITURE_LIMIT = 1000;
 let badgeCache = {};
 let lastBadgeCalculation = 0;
 const BADGE_CACHE_DURATION = 5000; // 5 seconds
+
+// Batch save system
+const BATCH_INTERVAL = 5 * 60 * 1000; // 5 minutes
+
+// Server-side AFK validation (without accumulation)
+let userAFKValidation = {}; // Track for validation only
 
 function getNextZIndex() {
   return nextZIndex++;
@@ -274,13 +273,6 @@ function cleanupOldUserStats() {
     }
   }
   
-  // Clean up AFK tracking only for users who are completely disconnected
-  for (const socketId in userAFKTracking) {
-    if (!cursors[socketId]) {
-      delete userAFKTracking[socketId];
-    }
-  }
-  
   if (cleanedCount > 0) {
     console.log(`Cleaned up ${cleanedCount} old user stats entries (7+ days inactive)`);
     addToBatch('cleanup', { cleanedCount, type: 'userStats' });
@@ -319,19 +311,63 @@ function getUserStatsFromServer(socketId) {
   return user;
 }
 
-// Start AFK tracking for a user
-function startAFKTracking(deviceId) {
-  if (!userAFKTracking[deviceId]) {
-    userAFKTracking[deviceId] = {
-      startTime: null,
-      lastUpdate: Date.now()
+// Validate AFK time reports from client
+function validateAFKTimeReport(socketId, reportedSeconds) {
+  const deviceId = socketToDeviceMap[socketId] || socketId;
+  const validation = userAFKValidation[deviceId];
+  const now = Date.now();
+  
+  // Initialize validation tracking if needed
+  if (!validation) {
+    userAFKValidation[deviceId] = {
+      lastReport: now,
+      totalReported: 0,
+      sessionStart: now
+    };
+    return { valid: true, reason: 'First report' };
+  }
+  
+  // Check for unreasonable time jumps
+  const timeSinceLastReport = Math.floor((now - validation.lastReport) / 1000);
+  const maxReasonableJump = timeSinceLastReport + 10; // Allow 10 second buffer
+  
+  if (reportedSeconds > maxReasonableJump) {
+    console.warn(`Suspicious AFK time report: ${reportedSeconds}s reported, max reasonable: ${maxReasonableJump}s`);
+    return { 
+      valid: false, 
+      reason: `Reported time (${reportedSeconds}s) exceeds reasonable limit (${maxReasonableJump}s)` 
     };
   }
+  
+  // Check for excessive total AFK time in one session
+  validation.totalReported += reportedSeconds;
+  const sessionDuration = Math.floor((now - validation.sessionStart) / 1000);
+  const maxReasonableSession = sessionDuration + 60; // Allow 1 minute buffer
+  
+  if (validation.totalReported > maxReasonableSession) {
+    console.warn(`Suspicious total AFK time: ${validation.totalReported}s in ${sessionDuration}s session`);
+    return { 
+      valid: false, 
+      reason: `Total AFK time (${validation.totalReported}s) exceeds session duration (${sessionDuration}s)` 
+    };
+  }
+  
+  // Update validation tracking
+  validation.lastReport = now;
+  
+  return { valid: true, reason: 'Valid report' };
 }
 
 // Update AFK time on server (validated)
 function updateAFKTimeOnServer(socketId, seconds) {
   try {
+    // Validate the AFK time report
+    const validation = validateAFKTimeReport(socketId, seconds);
+    if (!validation.valid) {
+      console.error(`AFK time validation failed: ${validation.reason}`);
+      return { success: false, error: `Validation failed: ${validation.reason}` };
+    }
+    
     const deviceId = socketToDeviceMap[socketId] || socketId;
     const user = userStats[deviceId];
     
@@ -342,6 +378,11 @@ function updateAFKTimeOnServer(socketId, seconds) {
       
       // Add to batch for persistence
       addToBatch('userStats', { socketId: deviceId, stats: user });
+      
+      // Check for new all-time record based on total AFK time
+      if (user.username && user.username !== SERVER_CONFIG.ANONYMOUS_NAME) {
+        updateAllTimeRecord(socketId, user.username, 0); // stillTime parameter not used anymore
+      }
       
       console.log(`Updated AFK time for ${user.username}: +${seconds}s (Total: ${user.totalAFKTime}s, Balance: ${user.afkBalance}s)`);
       return { success: true };
@@ -383,6 +424,20 @@ function deductAFKBalanceOnServer(socketId, seconds) {
   }
 }
 
+// Clean up user stats when user disconnects
+function cleanupUserStats(socketId) {
+  // Only remove from memory if user is not in cursors (completely disconnected)
+  if (!cursors[socketId]) {
+    const deviceId = socketToDeviceMap[socketId];
+    if (deviceId) {
+      delete socketToDeviceMap[socketId];
+      delete deviceToSocketMap[deviceId];
+      delete userAFKValidation[deviceId]; // Clean up validation data
+    }
+    // Don't delete userStats - keep them persistent by device ID
+  }
+}
+
 // Record furniture placement on server (validated)
 function recordFurniturePlacementOnServer(socketId, type) {
   try {
@@ -414,54 +469,6 @@ function recordFurniturePlacementOnServer(socketId, type) {
   } catch (error) {
     console.error('Error recording furniture placement:', error);
     return { success: false, error: 'Server error' };
-  }
-}
-
-// Track AFK time for users
-function updateAFKTracking(socketId, isAFK) {
-  const deviceId = socketToDeviceMap[socketId] || socketId;
-  const tracking = userAFKTracking[deviceId];
-  
-  if (tracking) {
-    if (isAFK && !tracking.startTime) {
-      tracking.startTime = Date.now();
-      tracking.lastUpdate = Date.now();
-    } else if (!isAFK && tracking.startTime) {
-      // Calculate AFK time and update user stats
-      const afkTime = Math.floor((Date.now() - tracking.lastUpdate) / 1000);
-      if (afkTime > 0) {
-        updateAFKTimeOnServer(socketId, afkTime);
-      }
-      tracking.startTime = null;
-      tracking.lastUpdate = null;
-    } else if (isAFK && tracking.startTime) {
-      // Update AFK time periodically (every 30 seconds)
-      const timeSinceLastUpdate = Date.now() - tracking.lastUpdate;
-      if (timeSinceLastUpdate >= 30000) {
-        const afkDuration = Math.floor(timeSinceLastUpdate / 1000);
-        if (afkDuration > 0) {
-          const result = updateAFKTimeOnServer(socketId, afkDuration);
-          if (!result.success) {
-            console.warn('Failed to update AFK time:', result.error);
-          }
-        }
-        tracking.lastUpdate = Date.now();
-      }
-    }
-  }
-}
-
-// Clean up user stats when user disconnects
-function cleanupUserStats(socketId) {
-  // Only remove from memory if user is not in cursors (completely disconnected)
-  if (!cursors[socketId]) {
-    const deviceId = socketToDeviceMap[socketId];
-    if (deviceId) {
-      delete userAFKTracking[deviceId];
-      delete socketToDeviceMap[socketId];
-      delete deviceToSocketMap[deviceId];
-    }
-    // Don't delete userStats - keep them persistent by device ID
   }
 }
 
@@ -508,9 +515,15 @@ function saveAllTimeRecord() {
 }
 
 function updateAllTimeRecord(socketId, username, stillTime) {
-  if (stillTime > allTimeRecord.time) {
+  // Get device ID for this socket, fallback to socket ID if no device ID
+  const deviceId = socketToDeviceMap[socketId] || socketId;
+  
+  // Get user's total AFK time instead of current session stillTime
+  const userTotalAFKTime = userStats[deviceId]?.totalAFKTime || 0;
+  
+  if (userTotalAFKTime > allTimeRecord.time) {
     allTimeRecord.name = username;
-    allTimeRecord.time = stillTime;
+    allTimeRecord.time = userTotalAFKTime;
     allTimeRecord.lastUpdated = Date.now();
     
     // Add to batch instead of immediate save
@@ -519,7 +532,7 @@ function updateAllTimeRecord(socketId, username, stillTime) {
     // Broadcast to all clients
     io.emit('allTimeRecordUpdated', allTimeRecord);
     
-    console.log('New all-time record set by', username, 'with', stillTime, 'seconds');
+    console.log('New all-time record set by', username, 'with', userTotalAFKTime, 'seconds (total AFK time)');
     return true;
   }
   return false;
@@ -710,14 +723,21 @@ io.on('connection', (socket) => {
       // Update user activity with the username
       updateUserActivity(socket.id, username);
       
-      // Initialize user stats for server-side validation
-      startAFKTracking(deviceId || socket.id);
-      
       // Send success response to client
       socket.emit('usernameAccepted', { username });
       
       // Broadcast updated cursors to all clients
       io.emit('cursors', getValidCursors());
+    }
+  });
+
+  // Handle device ID setup immediately on connection
+  socket.on('setDeviceId', ({ deviceId }) => {
+    if (deviceId) {
+      deviceToSocketMap[deviceId] = socket.id;
+      socketToDeviceMap[socket.id] = deviceId;
+      
+      console.log('Device ID mapped:', deviceId, '->', socket.id);
     }
   });
 
@@ -772,10 +792,7 @@ io.on('connection', (socket) => {
         const diffSeconds = Math.floor((now - lastMoveTimestamps[socket.id]) / 1000);
         cursors[socket.id].stillTime = diffSeconds;
         
-        // Check for new all-time record
-        if (cursors[socket.id].name && cursors[socket.id].name !== SERVER_CONFIG.ANONYMOUS_NAME) {
-          updateAllTimeRecord(socket.id, cursors[socket.id].name, diffSeconds);
-        }
+        // All-time record is now checked when AFK time is updated, not here
       }
 
       if (name && name.trim() !== '') {
@@ -1100,17 +1117,6 @@ setInterval(() => {
     io.emit('cursors', getValidCursors());
   }
 }, 2000);
-
-// Track AFK time for all users
-setInterval(() => {
-  Object.keys(cursors).forEach(socketId => {
-    const cursor = cursors[socketId];
-    if (cursor) {
-      const isAFK = cursor.stillTime >= 30 || cursor.isFrozen;
-      updateAFKTracking(socketId, isAFK);
-    }
-  });
-}, 30000); // Check every 30 seconds to match internal update logic
 
 // Graceful shutdown handlers
 process.on('SIGINT', () => {
