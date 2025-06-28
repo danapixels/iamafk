@@ -425,15 +425,29 @@ const tracking = userAFKTracking[deviceId];
 if (tracking) {
 if (isAFK && !tracking.startTime) {
 tracking.startTime = Date.now();
+tracking.lastUpdate = Date.now();
  else if (!isAFK && tracking.startTime) {
 // Calculate AFK time and update user stats
-const afkTime = Math.floor((Date.now() - tracking.startTime) / 1000);
+const afkTime = Math.floor((Date.now() - tracking.lastUpdate) / 1000);
 if (afkTime > 0) {
 updateAFKTimeOnServer(socketId, afkTime);
 
 tracking.startTime = null;
+tracking.lastUpdate = null;
+ else if (isAFK && tracking.startTime) {
+// Update AFK time periodically (every 30 seconds)
+const timeSinceLastUpdate = Date.now() - tracking.lastUpdate;
+if (timeSinceLastUpdate >= 30000) {
+const afkDuration = Math.floor(timeSinceLastUpdate / 1000);
+if (afkDuration > 0) {
+const result = updateAFKTimeOnServer(socketId, afkDuration);
+if (!result.success) {
+console.warn('Failed to update AFK time:', result.error);
+
 
 tracking.lastUpdate = Date.now();
+
+
 
 
 
