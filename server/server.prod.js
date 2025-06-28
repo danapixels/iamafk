@@ -66,7 +66,7 @@ allowEIO3: true
 // Global variables
 const cursors = {;
 const lastMoveTimestamps = {;
-const furniture = {;
+let furniture = {;
 const hearts = [];
 const circles = [];
 const emotes = [];
