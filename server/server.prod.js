@@ -66,7 +66,7 @@ const io = new Server(server, {
 // Global variables
 const cursors = {};
 const lastMoveTimestamps = {};
-const furniture = {};
+let furniture = {};
 const hearts = [];
 const circles = [];
 const emotes = [];
