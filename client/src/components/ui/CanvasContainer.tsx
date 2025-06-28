@@ -4,6 +4,11 @@ import TutorialOverlay from '../overlay/TutorialOverlay';
 import AnimationRenderer from '../cursor/emotes';
 import FurnitureRenderer from '../furniture/FurnitureRenderer';
 import CursorRenderer from '../cursor/cursoractions';
+import { Statue } from './Statue';
+import { AllTimeStatue } from './AllTimeStatue';
+import { JackpotStatue } from './JackpotStatue';
+import { getStatueStyle, getAllTimeStatueStyle, getJackpotStatueStyle } from '../../utils/statue';
+import { useStatueBadges } from '../../hooks/game/useStatueBadges';
 import type { Circle, Heart, Emote, Furniture } from '../../types';
 import { formatTime } from '../../utils/helpers';
 
@@ -25,9 +30,10 @@ interface CanvasContainerProps {
   onDelete: (furnitureId: string) => void;
   showGachaNotification?: boolean;
   gachaNotificationText?: string;
+  username?: string;
 }
 
-const CanvasContainer: React.FC<CanvasContainerProps> = memo(({
+export const CanvasContainer: React.FC<CanvasContainerProps> = memo(({
   viewportOffset,
   visibleCircles,
   visibleHearts,
@@ -44,8 +50,16 @@ const CanvasContainer: React.FC<CanvasContainerProps> = memo(({
   onMoveDown,
   onDelete,
   showGachaNotification,
-  gachaNotificationText
+  gachaNotificationText,
+  username
 }) => {
+  // Get user badges for statue achievements
+  const userBadges = useStatueBadges({
+    cursors: visibleCursors.reduce((acc, [id, cursor]) => ({ ...acc, [id]: cursor }), {}),
+    username: username || '',
+    socket: socketRef.current
+  });
+
   return (
     <div 
       style={{
@@ -71,6 +85,24 @@ const CanvasContainer: React.FC<CanvasContainerProps> = memo(({
         }}
       >
         <TutorialOverlay />
+
+        {/* Statue with leaderboard */}
+        <Statue 
+          cursors={Object.fromEntries(visibleCursors)} 
+          style={getStatueStyle()}
+        />
+
+        {/* All-time statue with historical record */}
+        <AllTimeStatue 
+          socket={socketRef.current}
+          style={getAllTimeStatueStyle()}
+        />
+
+        {/* Jackpot statue with gachapon wins record */}
+        <JackpotStatue 
+          socket={socketRef.current}
+          style={getJackpotStatueStyle()}
+        />
 
         {/* Gacha notification - positioned absolutely on canvas like tutorial */}
         {showGachaNotification && gachaNotificationText && (
@@ -119,6 +151,7 @@ const CanvasContainer: React.FC<CanvasContainerProps> = memo(({
           isCursorFrozen={isCursorFrozen}
           frozenCursorPosition={frozenCursorPosition}
           formatTime={formatTime}
+          userBadges={userBadges}
         />
       </div>
     </div>

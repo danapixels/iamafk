@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { Z_INDEX_LAYERS } from '../../constants';
+import { Z_INDEX_LAYERS, UI_IMAGES } from '../../constants';
 
 interface CursorData {
   x: number;
@@ -19,6 +19,11 @@ interface CursorRendererProps {
   isCursorFrozen: boolean;
   frozenCursorPosition: { x: number; y: number } | null;
   formatTime: (seconds: number) => string;
+  userBadges?: {
+    dailyBadge: boolean;
+    crownBadge: boolean;
+    gachaBadge: boolean;
+  };
 }
 
 const CursorRenderer: React.FC<CursorRendererProps> = memo(({
@@ -27,7 +32,8 @@ const CursorRenderer: React.FC<CursorRendererProps> = memo(({
   cursorType,
   isCursorFrozen,
   frozenCursorPosition,
-  formatTime
+  formatTime,
+  userBadges
 }) => {
   return (
     <>
@@ -61,6 +67,47 @@ const CursorRenderer: React.FC<CursorRendererProps> = memo(({
                   <div className="cursor-timer">AFK {formatTime(cursor.stillTime)}</div>
                 )}
                 <div className="cursor-id-label" style={{ position: 'relative' }}>
+                  {/* Badges for current user */}
+                  {isMe && userBadges && (
+                    <div style={{ 
+                      position: 'absolute', 
+                      right: '100%', 
+                      top: '50%', 
+                      transform: 'translateY(-50%)',
+                      display: 'flex',
+                      gap: '2px',
+                      marginRight: '4px',
+                      pointerEvents: 'none'
+                    }}>
+                      {userBadges.dailyBadge && (
+                        <img
+                          src={UI_IMAGES.DAILY_BADGE}
+                          alt="Daily Badge"
+                          style={{
+                            imageRendering: 'pixelated'
+                          }}
+                        />
+                      )}
+                      {userBadges.crownBadge && (
+                        <img
+                          src={UI_IMAGES.CROWN_BADGE}
+                          alt="Crown Badge"
+                          style={{
+                            imageRendering: 'pixelated'
+                          }}
+                        />
+                      )}
+                      {userBadges.gachaBadge && (
+                        <img
+                          src={UI_IMAGES.GACHA_BADGE}
+                          alt="Gacha Badge"
+                          style={{
+                            imageRendering: 'pixelated'
+                          }}
+                        />
+                      )}
+                    </div>
+                  )}
                   {cursor.name}
                   {cursor.isFrozen && cursor.sleepingOnBed && (
                     <img

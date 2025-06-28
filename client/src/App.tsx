@@ -4,7 +4,7 @@ import './App.css';
 import Panel from './components/ui/Panel';
 import GachaponMachine from './components/game/GachaponMachine';
 import { AFKTimeDisplay } from './components/ui/AFKTimeDisplay';
-import { LogoAndLeaderboard } from './components/ui/LogoAndLeaderboard';
+import { Logo } from './components/ui/Logo';
 import { ConfettiOverlay } from './components/overlay/ConfettiOverlay';
 import { DialogBanner } from './components/overlay/DialogBanner';
 import ConnectionModal from './components/ui/ConnectionModal';
@@ -224,6 +224,7 @@ function AppContent({
           onDelete={(furnitureId) => setSelectedFurnitureId(prev => prev === furnitureId ? null : prev)}
           showGachaNotification={showGachaNotification}
           gachaNotificationText={gachaNotificationText}
+          username={username}
         />
 
       {/* UI Elements */}
@@ -239,7 +240,7 @@ function AppContent({
       />
       
       <AFKTimeDisplay hasConnected={hasConnected} userStats={userStats} />
-      <LogoAndLeaderboard cursors={cursors} />
+      <Logo />
 
       {/* Gachapon Machine */}
       <GachaponMachine
