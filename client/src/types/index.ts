@@ -10,6 +10,11 @@ export interface CursorData {
   isFrozen?: boolean;
   frozenPosition?: { x: number; y: number };
   sleepingOnBed?: boolean;
+  badges?: {
+    dailyBadge: boolean;
+    crownBadge: boolean;
+    gachaBadge: boolean;
+  };
 }
 
 export interface CursorsMap {

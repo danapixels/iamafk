@@ -208,24 +208,23 @@ function AppContent({
       {/* Canvas container with viewport offset */}
       <CanvasContainer
         viewportOffset={viewportOffset}
-          visibleCircles={visibleCircles}
-          visibleHearts={visibleHearts}
-          visibleEmotes={visibleEmotes}
-          visibleFurniture={visibleFurniture}
+        visibleCircles={visibleCircles}
+        visibleHearts={visibleHearts}
+        visibleEmotes={visibleEmotes}
+        visibleFurniture={visibleFurniture}
         visibleCursors={visibleCursors}
-          selectedFurnitureId={selectedFurnitureId}
-          furnitureRefs={furnitureRefs}
-          socketRef={socketRef}
+        selectedFurnitureId={selectedFurnitureId}
+        furnitureRefs={furnitureRefs}
+        socketRef={socketRef}
         cursorType={cursorType}
         isCursorFrozen={isCursorFrozen}
         frozenCursorPosition={frozenCursorPosition}
-          onMoveUp={handleMoveUp}
-          onMoveDown={handleMoveDown}
-          onDelete={(furnitureId) => setSelectedFurnitureId(prev => prev === furnitureId ? null : prev)}
-          showGachaNotification={showGachaNotification}
-          gachaNotificationText={gachaNotificationText}
-          username={username}
-        />
+        onMoveUp={handleMoveUp}
+        onMoveDown={handleMoveDown}
+        onDelete={(furnitureId) => setSelectedFurnitureId(prev => prev === furnitureId ? null : prev)}
+        showGachaNotification={showGachaNotification}
+        gachaNotificationText={gachaNotificationText}
+      />
 
       {/* UI Elements */}
       <Panel 

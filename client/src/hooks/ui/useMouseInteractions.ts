@@ -93,9 +93,18 @@ export const useMouseInteractions = ({
   // Main mouse interaction handler
   useEffect(() => {
     let lastFrame = 0;
+    let isPageVisible = !document.hidden;
+    let lastMouseUpdate = 0;
+    const MOUSE_THROTTLE_MS = 16; // 60fps when visible, but can be increased when hidden
 
     // Animation loop for smooth updates
     function animationLoop() {
+      // Only run animation loop if page is visible
+      if (!isPageVisible) {
+        lastFrame = requestAnimationFrame(animationLoop);
+        return;
+      }
+
       if (mouseStateRef.current.isDraggingFurniture && draggedFurnitureId.current && mouseStateRef.current.lastEvent) {
         // Get the cursor's canvas coordinates
         const canvasCoords = convertScreenToCanvas(mouseStateRef.current.lastX, mouseStateRef.current.lastY);
@@ -166,23 +175,39 @@ export const useMouseInteractions = ({
         const canvasCoords = convertScreenToCanvas(mouseStateRef.current.lastX, mouseStateRef.current.lastY);
         const clampedCoords = clampToCanvas(canvasCoords.x, canvasCoords.y);
         
-        // Only emit if cursor position changed
-        if (
-          !lastSentCursorRef.current ||
-          lastSentCursorRef.current.x !== clampedCoords.x ||
-          lastSentCursorRef.current.y !== clampedCoords.y
-        ) {
-          socketRef.current.emit('cursorMove', {
-            x: clampedCoords.x,
-            y: clampedCoords.y,
-            name: username,
-          });
-          lastSentCursorRef.current = { x: clampedCoords.x, y: clampedCoords.y };
+        // Throttle cursor updates based on page visibility
+        const now = Date.now();
+        const throttleMs = isPageVisible ? MOUSE_THROTTLE_MS : 100; // Slower updates when hidden
+        
+        if (now - lastMouseUpdate > throttleMs) {
+          // Only emit if cursor position changed
+          if (
+            !lastSentCursorRef.current ||
+            lastSentCursorRef.current.x !== clampedCoords.x ||
+            lastSentCursorRef.current.y !== clampedCoords.y
+          ) {
+            socketRef.current.emit('cursorMove', {
+              x: clampedCoords.x,
+              y: clampedCoords.y,
+              name: username,
+            });
+            lastSentCursorRef.current = { x: clampedCoords.x, y: clampedCoords.y };
+          }
+          lastMouseUpdate = now;
         }
       }
 
       lastFrame = requestAnimationFrame(animationLoop);
     }
+
+    // Handle page visibility changes
+    const handleVisibilityChange = () => {
+      isPageVisible = !document.hidden;
+      // Reset mouse update timer when visibility changes
+      lastMouseUpdate = 0;
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     // Mouse event handlers
     function onMouseMove(e: MouseEvent) {
@@ -320,6 +345,7 @@ export const useMouseInteractions = ({
       window.removeEventListener('mouseup', onMouseUp);
       window.removeEventListener('click', onClick);
       cancelAnimationFrame(lastFrame);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [furniture, isCursorFrozen, hasConnected, viewportOffset, socketRef, cursors, username, setFurniture, setSelectedFurnitureId, selectedFurnitureId, setIsCursorFrozen, setFrozenCursorPosition, setViewportOffset, recordFurniturePlacement, afkStartTimeRef]);
 

@@ -5,6 +5,27 @@ const STORAGE_KEYS = {
   DEVICE_ID: 'iamafk_device_id'
 } as const;
 
+// Generate a unique device ID
+const generateDeviceId = (): string => {
+  return 'device_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now().toString(36);
+};
+
+// Get or create device ID
+export const getDeviceId = (): string => {
+  try {
+    let deviceId = localStorage.getItem(STORAGE_KEYS.DEVICE_ID);
+    if (!deviceId) {
+      deviceId = generateDeviceId();
+      localStorage.setItem(STORAGE_KEYS.DEVICE_ID, deviceId);
+    }
+    return deviceId;
+  } catch (error) {
+    console.error('Error managing device ID:', error);
+    // Fallback to session-based ID if localStorage fails
+    return 'session_' + Math.random().toString(36).substr(2, 9);
+  }
+};
+
 // Save username for next session
 export const saveUsername = (username: string): void => {
   try {

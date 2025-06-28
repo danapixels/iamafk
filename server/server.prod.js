@@ -63,47 +63,45 @@ const io = new Server(server, {
   allowEIO3: true
 });
 
-let cursors = {};
-let hearts = [];
-let circles = [];
-let Emotes = [];
-let furniture = {};
-let lastMoveTimestamps = {};
-let userActivity = {};
-
-// Batch save system
-let pendingChanges = [];
-const BATCH_INTERVAL = 5 * 60 * 1000; // 5 minutes
+// Global variables
+const cursors = {};
+const lastMoveTimestamps = {};
+const furniture = {};
+const hearts = [];
+const circles = [];
+const emotes = [];
+const userActivity = {};
+const userStats = {};
+const userAFKTracking = {};
+const allTimeRecord = { name: 'Anonymous', time: 0, lastUpdated: Date.now(), deviceId: null };
+const jackpotRecord = { name: 'Anonymous', wins: 0, lastUpdated: Date.now(), deviceId: null };
+const pendingChanges = [];
 let batchTimer = null;
+const BATCH_INTERVAL = 5000; // 5 seconds
+
+// Device ID to socket ID mapping
+const deviceToSocketMap = {};
+const socketToDeviceMap = {};
 
 // Persistent furniture storage with expiration
 const FURNITURE_FILE = path.join(__dirname, 'data', 'furniture.json');
 const FURNITURE_EXPIRY_HOURS = 48;
 const USER_ACTIVITY_FILE = path.join(__dirname, 'data', 'user_activity.json');
 
+// Record files
+const ALL_TIME_RECORD_FILE = path.join(__dirname, 'data', 'all_time_record.json');
+const JACKPOT_RECORD_FILE = path.join(__dirname, 'data', 'jackpot_record.json');
+
 // Z-index management
 let nextZIndex = 5000; // Base z-index for furniture
 
 // Server-side user stats storage and validation
-const userStats = {}; // In-memory storage for user stats
-const userAFKTracking = {}; // Track AFK time for each user
 const DAILY_FURNITURE_LIMIT = 1000;
 
-// All-time AFK record tracking
-const allTimeRecord = {
-  name: '',
-  time: 0,
-  lastUpdated: null
-};
-const ALL_TIME_RECORD_FILE = path.join(__dirname, 'data', 'all_time_record.json');
-
-// Jackpot wins tracking
-const jackpotRecord = {
-  name: '',
-  wins: 0,
-  lastUpdated: null
-};
-const JACKPOT_RECORD_FILE = path.join(__dirname, 'data', 'jackpot_record.json');
+// Cache for badge calculations to reduce computational overhead
+let badgeCache = {};
+let lastBadgeCalculation = 0;
+const BADGE_CACHE_DURATION = 5000; // 5 seconds
 
 function getNextZIndex() {
   return nextZIndex++;
@@ -198,9 +196,48 @@ function cleanupExpiredFurniture() {
 
 function getValidCursors() {
   const filtered = {};
+  const now = Date.now();
+  
+  // Only recalculate badges if cache is expired
+  const shouldRecalculateBadges = (now - lastBadgeCalculation) > BADGE_CACHE_DURATION;
+  
+  if (shouldRecalculateBadges) {
+    badgeCache = {};
+    lastBadgeCalculation = now;
+    
+    // Calculate daily badge once for all users
+    let dailyBest = { name: '', time: 0 };
+    Object.values(cursors).forEach((c) => {
+      if (!c || !c.name || c.name === 'Anonymous') return;
+      const stillTime = c.stillTime || 0;
+      if (stillTime > dailyBest.time) {
+        dailyBest = { name: c.name, time: stillTime };
+      }
+    });
+    
+    // Cache badge calculations
+    Object.entries(cursors).forEach(([id, cursor]) => {
+      if (cursor.name && cursor.name.trim() !== '' && cursor.name !== 'Anonymous') {
+        const userBadges = {
+          dailyBadge: dailyBest.name === cursor.name && dailyBest.time > 0,
+          crownBadge: allTimeRecord.name === cursor.name,
+          gachaBadge: jackpotRecord.name === cursor.name
+        };
+        badgeCache[id] = userBadges;
+      }
+    });
+  }
+  
   Object.entries(cursors).forEach(([id, cursor]) => {
     if (cursor.name && cursor.name.trim() !== '' && cursor.name !== 'Anonymous') {
-      filtered[id] = cursor;
+      filtered[id] = {
+        ...cursor,
+        badges: badgeCache[id] || {
+          dailyBadge: false,
+          crownBadge: false,
+          gachaBadge: false
+        }
+      };
     }
   });
   return filtered;
@@ -227,20 +264,20 @@ function cleanupOldUserStats() {
   
   // Only remove user stats older than 7 days AND not currently connected
   // This preserves AFK users' data for a reasonable time
-  for (const socketId in userStats) {
-    const lastSeen = userStats[socketId]?.lastSeen || 0;
-    const isCurrentlyConnected = cursors[socketId] !== undefined;
+  for (const deviceId in userStats) {
+    const lastSeen = userStats[deviceId]?.lastSeen || 0;
+    const isCurrentlyConnected = deviceToSocketMap[deviceId] && cursors[deviceToSocketMap[deviceId]];
     
     if (now - lastSeen > SEVEN_DAYS && !isCurrentlyConnected) {
-      delete userStats[socketId];
+      delete userStats[deviceId];
       cleanedCount++;
     }
   }
   
   // Clean up AFK tracking only for users who are completely disconnected
-  for (const socketId in userAFKTracking) {
-    if (!cursors[socketId]) {
-      delete userAFKTracking[socketId];
+  for (const deviceId in userAFKTracking) {
+    if (!deviceToSocketMap[deviceId] || !cursors[deviceToSocketMap[deviceId]]) {
+      delete userAFKTracking[deviceId];
     }
   }
   
@@ -258,7 +295,10 @@ loadJackpotRecord();
 
 // Server-side validation functions
 function getUserStatsFromServer(socketId) {
-  const user = userStats[socketId];
+  // Get device ID for this socket, fallback to socket ID if no device ID
+  const deviceId = socketToDeviceMap[socketId] || socketId;
+  
+  const user = userStats[deviceId];
   if (!user) {
     // Initialize new user stats
     const newUser = {
@@ -273,115 +313,127 @@ function getUserStatsFromServer(socketId) {
       dailyFurniturePlacements: {},
       gachaponWins: 0
     };
-    userStats[socketId] = newUser;
+    userStats[deviceId] = newUser;
     return newUser;
   }
   return user;
 }
 
-// Update AFK time with server-side validation
-function updateAFKTimeOnServer(socketId, seconds) {
-  // Validate input
-  if (typeof seconds !== 'number' || seconds <= 0 || seconds > 86400) {
-    return { success: false, error: 'Invalid AFK time value' };
-  }
-
-  const user = getUserStatsFromServer(socketId);
-  user.totalAFKTime += seconds;
-  user.afkBalance += seconds;
-  user.lastSeen = Date.now();
-  
-  // Save to persistent storage
-  addToBatch('userStats', { socketId, stats: user });
-  
-  return { success: true };
-}
-
-// Deduct AFK balance with server-side validation
-function deductAFKBalanceOnServer(socketId, seconds) {
-  // Validate input
-  if (typeof seconds !== 'number' || seconds <= 0) {
-    return { success: false, error: 'Invalid deduction amount' };
-  }
-
-  const user = getUserStatsFromServer(socketId);
-  
-  // Check if user has enough balance
-  if (user.afkBalance < seconds) {
-    return { success: false, error: 'Insufficient AFK balance' };
-  }
-
-  user.afkBalance -= seconds;
-  user.lastSeen = Date.now();
-  
-  // Save to persistent storage
-  addToBatch('userStats', { socketId, stats: user });
-  
-  return { success: true };
-}
-
-// Record furniture placement with server-side validation
-function recordFurniturePlacementOnServer(socketId, type) {
-  // Validate input
-  if (typeof type !== 'string' || !type.trim()) {
-    return { success: false, error: 'Invalid furniture type' };
-  }
-
-  const user = getUserStatsFromServer(socketId);
-  const today = new Date().toISOString().split('T')[0];
-  const dailyPlacements = user.dailyFurniturePlacements[today] || 0;
-  
-  // Check daily limit
-  if (dailyPlacements >= DAILY_FURNITURE_LIMIT) {
-    return { success: false, error: 'Daily furniture placement limit reached' };
-  }
-
-  // Update stats
-  user.dailyFurniturePlacements[today] = dailyPlacements + 1;
-  user.furniturePlaced += 1;
-  user.furnitureByType[type] = (user.furnitureByType[type] || 0) + 1;
-  user.lastSeen = Date.now();
-  
-  // Save to persistent storage
-  addToBatch('userStats', { socketId, stats: user });
-  
-  return { success: true };
-}
-
-// Track AFK time for users
-function startAFKTracking(socketId) {
-  if (!userAFKTracking[socketId]) {
-    userAFKTracking[socketId] = {
+// Start AFK tracking for a user
+function startAFKTracking(deviceId) {
+  if (!userAFKTracking[deviceId]) {
+    userAFKTracking[deviceId] = {
       startTime: null,
-      lastUpdate: null
+      lastUpdate: Date.now()
     };
   }
 }
 
-function updateAFKTracking(socketId, isAFK) {
-  const tracking = userAFKTracking[socketId];
-  if (!tracking) return;
-
-  const now = Date.now();
-  
-  if (isAFK && !tracking.startTime) {
-    // Start AFK tracking
-    tracking.startTime = now;
-    tracking.lastUpdate = now;
-  } else if (!isAFK && tracking.startTime) {
-    // End AFK tracking and add time
-    const afkDuration = Math.floor((now - tracking.lastUpdate) / 1000);
-    if (afkDuration > 0) {
-      const result = updateAFKTimeOnServer(socketId, afkDuration);
-      if (!result.success) {
-        console.warn('Failed to update AFK time:', result.error);
-      }
+// Update AFK time on server (validated)
+function updateAFKTimeOnServer(socketId, seconds) {
+  try {
+    const deviceId = socketToDeviceMap[socketId] || socketId;
+    const user = userStats[deviceId];
+    
+    if (user) {
+      user.totalAFKTime += seconds;
+      user.afkBalance += seconds;
+      user.lastSeen = Date.now();
+      
+      // Add to batch for persistence
+      addToBatch('userStats', { socketId: deviceId, stats: user });
+      
+      console.log(`Updated AFK time for ${user.username}: +${seconds}s (Total: ${user.totalAFKTime}s, Balance: ${user.afkBalance}s)`);
+      return { success: true };
+    } else {
+      console.error('User not found for AFK time update:', socketId);
+      return { success: false, error: 'User not found' };
     }
-    tracking.startTime = null;
-    tracking.lastUpdate = null;
-  } else if (isAFK && tracking.startTime) {
-    // Update AFK tracking
-    tracking.lastUpdate = now;
+  } catch (error) {
+    console.error('Error updating AFK time:', error);
+    return { success: false, error: 'Server error' };
+  }
+}
+
+// Deduct AFK balance on server (validated)
+function deductAFKBalanceOnServer(socketId, seconds) {
+  try {
+    const deviceId = socketToDeviceMap[socketId] || socketId;
+    const user = userStats[deviceId];
+    
+    if (user && user.afkBalance >= seconds) {
+      user.afkBalance -= seconds;
+      user.lastSeen = Date.now();
+      
+      // Add to batch for persistence
+      addToBatch('userStats', { socketId: deviceId, stats: user });
+      
+      console.log(`Deducted AFK balance for ${user.username}: -${seconds}s (Remaining: ${user.afkBalance}s)`);
+      return { success: true };
+    } else if (user) {
+      console.log(`Insufficient AFK balance for ${user.username}: ${user.afkBalance}s < ${seconds}s`);
+      return { success: false, error: 'Insufficient AFK balance' };
+    } else {
+      console.error('User not found for AFK balance deduction:', socketId);
+      return { success: false, error: 'User not found' };
+    }
+  } catch (error) {
+    console.error('Error deducting AFK balance:', error);
+    return { success: false, error: 'Server error' };
+  }
+}
+
+// Record furniture placement on server (validated)
+function recordFurniturePlacementOnServer(socketId, type) {
+  try {
+    const deviceId = socketToDeviceMap[socketId] || socketId;
+    const user = userStats[deviceId];
+    
+    if (!user) {
+      return { success: false, error: 'User not found' };
+    }
+    
+    const today = new Date().toISOString().split('T')[0];
+    const dailyCount = user.dailyFurniturePlacements[today] || 0;
+    
+    if (dailyCount >= DAILY_FURNITURE_LIMIT) {
+      return { success: false, error: 'Daily furniture placement limit reached' };
+    }
+    
+    // Update user stats
+    user.furniturePlaced += 1;
+    user.furnitureByType[type] = (user.furnitureByType[type] || 0) + 1;
+    user.dailyFurniturePlacements[today] = dailyCount + 1;
+    user.lastSeen = Date.now();
+    
+    // Add to batch for persistence
+    addToBatch('userStats', { socketId: deviceId, stats: user });
+    
+    console.log(`Recorded furniture placement for ${user.username}: ${type} (Daily: ${dailyCount + 1}/${DAILY_FURNITURE_LIMIT}, Total: ${user.furniturePlaced})`);
+    return { success: true };
+  } catch (error) {
+    console.error('Error recording furniture placement:', error);
+    return { success: false, error: 'Server error' };
+  }
+}
+
+// Track AFK time for users
+function updateAFKTracking(socketId, isAFK) {
+  const deviceId = socketToDeviceMap[socketId] || socketId;
+  const tracking = userAFKTracking[deviceId];
+  
+  if (tracking) {
+    if (isAFK && !tracking.startTime) {
+      tracking.startTime = Date.now();
+    } else if (!isAFK && tracking.startTime) {
+      // Calculate AFK time and update user stats
+      const afkTime = Math.floor((Date.now() - tracking.startTime) / 1000);
+      if (afkTime > 0) {
+        updateAFKTimeOnServer(socketId, afkTime);
+      }
+      tracking.startTime = null;
+    }
+    tracking.lastUpdate = Date.now();
   }
 }
 
@@ -389,8 +441,13 @@ function updateAFKTracking(socketId, isAFK) {
 function cleanupUserStats(socketId) {
   // Only remove from memory if user is not in cursors (completely disconnected)
   if (!cursors[socketId]) {
-    delete userStats[socketId];
-    delete userAFKTracking[socketId];
+    const deviceId = socketToDeviceMap[socketId];
+    if (deviceId) {
+      delete userAFKTracking[deviceId];
+      delete socketToDeviceMap[socketId];
+      delete deviceToSocketMap[deviceId];
+    }
+    // Don't delete userStats - keep them persistent by device ID
   }
 }
 
@@ -437,10 +494,14 @@ function saveAllTimeRecord() {
 }
 
 function updateAllTimeRecord(socketId, username, stillTime) {
+  // Get device ID for this socket, fallback to socket ID if no device ID
+  const deviceId = socketToDeviceMap[socketId] || socketId;
+  
   if (stillTime > allTimeRecord.time) {
     allTimeRecord.name = username;
     allTimeRecord.time = stillTime;
     allTimeRecord.lastUpdated = Date.now();
+    allTimeRecord.deviceId = deviceId; // Track by device ID
     
     // Add to batch instead of immediate save
     addToBatch('allTimeRecord', allTimeRecord);
@@ -475,18 +536,23 @@ function saveJackpotRecord() {
 }
 
 function updateJackpotRecord(socketId, username) {
-  // Get current user wins (including this new win)
-  const currentUserWins = (userStats[socketId]?.gachaponWins || 0) + 1;
+  // Get device ID for this socket, fallback to socket ID if no device ID
+  const deviceId = socketToDeviceMap[socketId] || socketId;
   
-  // Check if this user already has the record
-  if (jackpotRecord.name === username) {
-    // Increment existing record
+  // Get current user wins (including this new win) using device ID
+  const currentUserWins = (userStats[deviceId]?.gachaponWins || 0) + 1;
+  
+  // Check if this device already has the record
+  if (jackpotRecord.deviceId === deviceId) {
+    // Increment existing record and update display name
     jackpotRecord.wins = currentUserWins;
+    jackpotRecord.name = username; // Update to current username
   } else {
-    // Check if this user has more wins than current record
+    // Check if this device has more wins than current record
     if (currentUserWins > jackpotRecord.wins) {
       jackpotRecord.name = username;
       jackpotRecord.wins = currentUserWins;
+      jackpotRecord.deviceId = deviceId; // Track by device ID
     }
   }
   
@@ -611,7 +677,7 @@ io.on('connection', (socket) => {
     cursor: cursors[socket.id] 
   });
 
-  socket.on('setName', async ({ name }) => {
+  socket.on('setName', async ({ name, deviceId }) => {
     if (cursors[socket.id]) {
       // Validate username before setting it
       const validation = await validateUsername(name);
@@ -625,12 +691,25 @@ io.on('connection', (socket) => {
       }
       
       const username = name?.trim() || 'Anonymous';
+      const oldUsername = cursors[socket.id].name;
       cursors[socket.id].name = username;
+      
+      // Store device ID mapping for persistent user stats
+      if (deviceId) {
+        deviceToSocketMap[deviceId] = socket.id;
+        socketToDeviceMap[socket.id] = deviceId;
+        
+        // Update statue display names if username changed
+        if (oldUsername !== username) {
+          updateStatueDisplayNames(deviceId, username);
+        }
+      }
+      
       // Update user activity with the username
       updateUserActivity(socket.id, username);
       
-      // Initialize user stats for server-side validation
-      startAFKTracking(socket.id);
+      // Initialize user stats for server-side validation using device ID
+      startAFKTracking(deviceId || socket.id);
       
       // Send success response to client
       socket.emit('usernameAccepted', { username });
@@ -962,11 +1041,12 @@ io.on('connection', (socket) => {
   socket.on('gachaponWin', ({ winnerId, winnerName }) => {
     console.log('Server received gachaponWin:', { winnerId, winnerName });
     
-    // Update user stats with gachapon win
-    if (userStats[winnerId]) {
-      userStats[winnerId].gachaponWins = (userStats[winnerId].gachaponWins || 0) + 1;
-      userStats[winnerId].lastSeen = Date.now();
-      addToBatch('userStats', { socketId: winnerId, stats: userStats[winnerId] });
+    // Update user stats with gachapon win using device ID
+    const deviceId = socketToDeviceMap[winnerId] || winnerId;
+    if (userStats[deviceId]) {
+      userStats[deviceId].gachaponWins = (userStats[deviceId].gachaponWins || 0) + 1;
+      userStats[deviceId].lastSeen = Date.now();
+      addToBatch('userStats', { socketId: deviceId, stats: userStats[deviceId] });
     }
     
     // Update jackpot record
@@ -987,7 +1067,7 @@ io.on('connection', (socket) => {
     // Save any pending changes immediately when user disconnects
     saveBatch();
     
-    // Clean up user stats
+    // Clean up user stats (but preserve persistent data)
     cleanupUserStats(socket.id);
     
     // Remove cursor
@@ -1018,7 +1098,18 @@ setInterval(() => {
   if (updated) {
     io.emit('cursors', getValidCursors());
   }
-}, 1000);
+}, 2000);
+
+// Track AFK time for all users
+setInterval(() => {
+  Object.keys(cursors).forEach(socketId => {
+    const cursor = cursors[socketId];
+    if (cursor) {
+      const isAFK = cursor.stillTime >= 30 || cursor.isFrozen;
+      updateAFKTracking(socketId, isAFK);
+    }
+  });
+}, 1000); // Check every second
 
 // Graceful shutdown handlers
 process.on('SIGINT', () => {
@@ -1036,4 +1127,23 @@ process.on('SIGTERM', () => {
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-}); 
+});
+
+// Update statue display names when user changes username
+function updateStatueDisplayNames(deviceId, newUsername) {
+  // Update jackpot record display name if this device holds the record
+  if (jackpotRecord.deviceId === deviceId) {
+    jackpotRecord.name = newUsername;
+    jackpotRecord.lastUpdated = Date.now();
+    addToBatch('jackpotRecord', jackpotRecord);
+    io.emit('jackpotRecordUpdated', jackpotRecord);
+  }
+  
+  // Update all-time record display name if this device holds the record
+  if (allTimeRecord.deviceId === deviceId) {
+    allTimeRecord.name = newUsername;
+    allTimeRecord.lastUpdated = Date.now();
+    addToBatch('allTimeRecord', allTimeRecord);
+    io.emit('allTimeRecordUpdated', allTimeRecord);
+  }
+} 

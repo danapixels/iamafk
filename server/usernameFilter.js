@@ -85,12 +85,9 @@ async function validateUsername(username) {
     };
   }
   
-  // Try API first, fallback to pattern matching
-  try {
-    return await checkUsernameWithAPI(trimmedUsername);
-  } catch (error) {
-    return checkUsernameFallback(trimmedUsername);
-  }
+  // Use only local validation for faster connections
+  // Skip the slow external API call
+  return checkUsernameFallback(trimmedUsername);
 }
 
 module.exports = {

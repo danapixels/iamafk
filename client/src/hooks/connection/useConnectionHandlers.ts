@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { Socket } from 'socket.io-client';
+import { getDeviceId } from '../../utils/localStorage';
 
 interface UseConnectionHandlersProps {
   socket: Socket | null;
@@ -20,10 +21,14 @@ export const useConnectionHandlers = ({
     if (socket?.connected) {
       // Use the username the user typed, not the stored one
       const userTypedUsername = username.trim();
+      const deviceId = getDeviceId();
       
-      // Send username to server for validation
+      // Send username and device ID to server for validation
       // Don't set hasConnected yet - wait for server response
-      socket.emit('setName', { name: userTypedUsername });
+      socket.emit('setName', { 
+        name: userTypedUsername,
+        deviceId: deviceId
+      });
       
       // The server will respond with either:
       // - 'usernameError' if validation fails (connectionModal will stay open)

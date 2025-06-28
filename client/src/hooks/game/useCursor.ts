@@ -55,19 +55,52 @@ export const useCursor = (
   useEffect(() => {
     if (!hasConnected || !socketRef.current) return;
 
-    const interval = setInterval(() => {
-      const socket = socketRef.current;
-      const myCursor = cursors[socket?.id || ''];
-      if (socket && myCursor) {
-        // Send current position to server for stillTime calculation
-        socket.emit('cursorMove', {
-          x: myCursor.x,
-          y: myCursor.y,
-          name: username
-        });
-      }
-    }, 1000); // Send update every second
+    let isPageVisible = !document.hidden;
+    let interval: ReturnType<typeof setInterval> | null = null;
 
-    return () => clearInterval(interval);
+    const startInterval = () => {
+      if (interval) clearInterval(interval);
+      
+      interval = setInterval(() => {
+        // Only send updates if page is visible
+        if (!isPageVisible) return;
+        
+        const socket = socketRef.current;
+        const myCursor = cursors[socket?.id || ''];
+        if (socket && myCursor) {
+          // Send current position to server for stillTime calculation
+          socket.emit('cursorMove', {
+            x: myCursor.x,
+            y: myCursor.y,
+            name: username
+          });
+        }
+      }, 2000); // Increased from 1000ms to 2000ms to reduce server load
+    };
+
+    const handleVisibilityChange = () => {
+      isPageVisible = !document.hidden;
+      
+      if (isPageVisible) {
+        // Resume interval when page becomes visible
+        startInterval();
+      } else {
+        // Clear interval when page becomes hidden
+        if (interval) {
+          clearInterval(interval);
+          interval = null;
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Start the interval initially
+    startInterval();
+
+    return () => {
+      if (interval) clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [hasConnected, cursors, username, socketRef]);
 }; 
