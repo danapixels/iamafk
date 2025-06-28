@@ -71,11 +71,11 @@ const hearts = [];
 const circles = [];
 const emotes = [];
 let userActivity = {};
-const userStats = {};
-const userAFKTracking = {};
+let userStats = {};
+let userAFKTracking = {};
 const allTimeRecord = { name: 'Anonymous', time: 0, lastUpdated: Date.now() };
 const jackpotRecord = { name: 'Anonymous', wins: 0, lastUpdated: Date.now() };
-const pendingChanges = [];
+let pendingChanges = [];
 let batchTimer = null;
 const BATCH_INTERVAL = 5000; // 5 seconds
 
@@ -644,7 +644,7 @@ function saveBatch() {
     saveJackpotRecord();
     
     // Clear batch
-    pendingChanges = [];
+    pendingChanges.length = 0;
   }
 }
 

@@ -69,8 +69,8 @@ const USER_ACTIVITY_FILE = path.join(__dirname, 'data', 'user_activity.json');
 let nextZIndex = 5000; // Base z-index for furniture
 
 // Server-side user stats storage and validation
-const userStats = {}; // In-memory storage for user stats
-const userAFKTracking = {}; // Track AFK time for each user
+let userStats = {}; // In-memory storage for user stats
+let userAFKTracking = {}; // Track AFK time for each user
 const DAILY_FURNITURE_LIMIT = 1000;
 
 // All-time AFK record tracking
@@ -308,7 +308,7 @@ function saveBatch() {
     saveJackpotRecord();
     
     // Clear batch
-    pendingChanges = [];
+    pendingChanges.length = 0;
   }
 }
 
