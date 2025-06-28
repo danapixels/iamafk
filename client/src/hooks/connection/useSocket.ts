@@ -3,7 +3,8 @@ import { Socket, io  from 'socket.io-client';
 import { SERVER_CONFIG  from '../../constants';
 import { 
 getSavedCursorType, 
-saveUsername 
+saveUsername,
+getDeviceId
  from '../../utils/localStorage';
 
 interface CursorData {
@@ -75,6 +76,12 @@ socketRef.current = socket;
 
 socket.on('connect', () => {
 console.log('✅ Connected to server successfully');
+
+// Send device ID immediately for user stats persistence
+const deviceId = getDeviceId();
+socket.emit('setDeviceId', { deviceId );
+console.log('📱 Device ID sent:', deviceId);
+
 // Don't set hasConnected to true here - wait for user to enter name
 );
 
