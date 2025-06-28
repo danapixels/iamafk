@@ -73,13 +73,13 @@ const emotes = [];
 let userActivity = {;
 const userStats = {;
 const userAFKTracking = {;
-const allTimeRecord = { name: 'Anonymous', time: 0, lastUpdated: Date.now(), deviceId: null ;
-const jackpotRecord = { name: 'Anonymous', wins: 0, lastUpdated: Date.now(), deviceId: null ;
+const allTimeRecord = { name: 'Anonymous', time: 0, lastUpdated: Date.now() ;
+const jackpotRecord = { name: 'Anonymous', wins: 0, lastUpdated: Date.now() ;
 const pendingChanges = [];
 let batchTimer = null;
 const BATCH_INTERVAL = 5000; // 5 seconds
 
-// Device ID to socket ID mapping
+// Device ID to socket ID mapping for persistence
 const deviceToSocketMap = {;
 const socketToDeviceMap = {;
 
@@ -264,20 +264,20 @@ let cleanedCount = 0;
 
 // Only remove user stats older than 7 days AND not currently connected
 // This preserves AFK users' data for a reasonable time
-for (const deviceId in userStats) {
-const lastSeen = userStats[deviceId]?.lastSeen || 0;
-const isCurrentlyConnected = deviceToSocketMap[deviceId] && cursors[deviceToSocketMap[deviceId]];
+for (const socketId in userStats) {
+const lastSeen = userStats[socketId]?.lastSeen || 0;
+const isCurrentlyConnected = cursors[socketId] !== undefined;
 
 if (now - lastSeen > SEVEN_DAYS && !isCurrentlyConnected) {
-delete userStats[deviceId];
+delete userStats[socketId];
 cleanedCount++;
 
 
 
 // Clean up AFK tracking only for users who are completely disconnected
-for (const deviceId in userAFKTracking) {
-if (!deviceToSocketMap[deviceId] || !cursors[deviceToSocketMap[deviceId]]) {
-delete userAFKTracking[deviceId];
+for (const socketId in userAFKTracking) {
+if (!cursors[socketId]) {
+delete userAFKTracking[socketId];
 
 
 
@@ -508,14 +508,10 @@ console.error('Error saving all-time record:', error);
 
 
 function updateAllTimeRecord(socketId, username, stillTime) {
-// Get device ID for this socket, fallback to socket ID if no device ID
-const deviceId = socketToDeviceMap[socketId] || socketId;
-
 if (stillTime > allTimeRecord.time) {
 allTimeRecord.name = username;
 allTimeRecord.time = stillTime;
 allTimeRecord.lastUpdated = Date.now();
-allTimeRecord.deviceId = deviceId; // by device ID
 
 // Add to batch instead of immediate save
 addToBatch('allTimeRecord', allTimeRecord);
@@ -553,20 +549,18 @@ function updateJackpotRecord(socketId, username) {
 // Get device ID for this socket, fallback to socket ID if no device ID
 const deviceId = socketToDeviceMap[socketId] || socketId;
 
-// Get current user wins (including this new win) using device ID
+// Get current user wins (including this new win)
 const currentUserWins = (userStats[deviceId]?.gachaponWins || 0) + 1;
 
-// Check if this device already has the record
-if (jackpotRecord.deviceId === deviceId) {
-// Increment existing record and update display name
+// Check if this user already has the record
+if (jackpotRecord.name === username) {
+// Increment existing record
 jackpotRecord.wins = currentUserWins;
-jackpotRecord.name = username; // Update to current username
  else {
-// Check if this device has more wins than current record
+// Check if this user has more wins than current record
 if (currentUserWins > jackpotRecord.wins) {
 jackpotRecord.name = username;
 jackpotRecord.wins = currentUserWins;
-jackpotRecord.deviceId = deviceId; // by device ID
 
 
 
@@ -705,24 +699,18 @@ return;
 
 
 const username = name?.trim() || 'Anonymous';
-const oldUsername = cursors[socket.id].name;
 cursors[socket.id].name = username;
 
-// Store device ID mapping for persistent user stats
+// Set up device ID mapping for persistence
 if (deviceId) {
 deviceToSocketMap[deviceId] = socket.id;
 socketToDeviceMap[socket.id] = deviceId;
-
-// Update statue display names if username changed
-if (oldUsername !== username) {
-updateStatueDisplayNames(deviceId, username);
-
 
 
 // Update user activity with the username
 updateUserActivity(socket.id, username);
 
-// Initialize user stats for server-side validation using device ID
+// Initialize user stats for server-side validation
 startAFKTracking(deviceId || socket.id);
 
 // Send success response to client
@@ -1055,12 +1043,11 @@ io.emit('cursors', getValidCursors());
 socket.on('gachaponWin', ({ winnerId, winnerName ) => {
 console.log('Server received gachaponWin:', { winnerId, winnerName );
 
-// Update user stats with gachapon win using device ID
-const deviceId = socketToDeviceMap[winnerId] || winnerId;
-if (userStats[deviceId]) {
-userStats[deviceId].gachaponWins = (userStats[deviceId].gachaponWins || 0) + 1;
-userStats[deviceId].lastSeen = Date.now();
-addToBatch('userStats', { socketId: deviceId, stats: userStats[deviceId] );
+// Update user stats with gachapon win
+if (userStats[winnerId]) {
+userStats[winnerId].gachaponWins = (userStats[winnerId].gachaponWins || 0) + 1;
+userStats[winnerId].lastSeen = Date.now();
+addToBatch('userStats', { socketId: winnerId, stats: userStats[winnerId] );
 
 
 // Update jackpot record
@@ -1141,23 +1128,4 @@ process.exit(0);
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
 console.log(`Server running on port ${PORT`);
-);
-
-// Update statue display names when user changes username
-function updateStatueDisplayNames(deviceId, newUsername) {
-// Update jackpot record display name if this device holds the record
-if (jackpotRecord.deviceId === deviceId) {
-jackpotRecord.name = newUsername;
-jackpotRecord.lastUpdated = Date.now();
-addToBatch('jackpotRecord', jackpotRecord);
-io.emit('jackpotRecordUpdated', jackpotRecord);
-
-
-// Update all-time record display name if this device holds the record
-if (allTimeRecord.deviceId === deviceId) {
-allTimeRecord.name = newUsername;
-allTimeRecord.lastUpdated = Date.now();
-addToBatch('allTimeRecord', allTimeRecord);
-io.emit('allTimeRecordUpdated', allTimeRecord);
-
- 
+); 
