@@ -50,6 +50,8 @@ const lastSentPositionRef = useRef<{ x: number; y: number  | null>(null);
 const lastSentCursorRef = useRef<{ x: number; y: number  | null>(null);
 const lastSentViewportRef = useRef<{ x: number; y: number  | null>(null);
 const DOUBLE_CLICK_COOLDOWN_MS = 1000; // 1 second cooldown between double-clicks
+const DRAG_THRESHOLD_PX = 5; // Minimum pixels to move before starting drag
+const pendingFurnitureId = useRef<string | null>(null);
 
 // Mouse state ref for optimized handling
 const mouseStateRef = useRef({
@@ -90,8 +92,6 @@ afkStartTimeRef.current = null;
 
 // Main mouse interaction handler
 useEffect(() => {
-const dragStart = dragStartPos;
-const viewportDrag = viewportDragStart;
 let lastFrame = 0;
 
 // Animation loop for smooth updates
@@ -133,9 +133,9 @@ lastSentPositionRef.current = { x: clampedCoords.x, y: clampedCoords.y ;
 
 
 
-if (mouseStateRef.current.isDraggingViewport && viewportDrag.current && mouseStateRef.current.lastEvent) {
-const dx = mouseStateRef.current.lastX - viewportDrag.current.x;
-const dy = mouseStateRef.current.lastY - viewportDrag.current.y;
+if (mouseStateRef.current.isDraggingViewport && viewportDragStart.current && mouseStateRef.current.lastEvent) {
+const dx = mouseStateRef.current.lastX - viewportDragStart.current.x;
+const dy = mouseStateRef.current.lastY - viewportDragStart.current.y;
 
 // Only update if mouse actually moved
 if (dx !== 0 || dy !== 0) {
@@ -158,7 +158,7 @@ return { x: clampedX, y: clampedY ;
 
 return prev;
 );
-viewportDrag.current = { x: mouseStateRef.current.lastX, y: mouseStateRef.current.lastY ;
+viewportDragStart.current = { x: mouseStateRef.current.lastX, y: mouseStateRef.current.lastY ;
 
 
 
@@ -190,6 +190,20 @@ mouseStateRef.current.lastX = e.clientX;
 mouseStateRef.current.lastY = e.clientY;
 mouseStateRef.current.lastEvent = e;
 
+// Check if we should start dragging furniture based on movement distance
+if (pendingFurnitureId.current && dragStartPos.current && !mouseStateRef.current.isDraggingFurniture) {
+const dx = e.clientX - dragStartPos.current.x;
+const dy = e.clientY - dragStartPos.current.y;
+const distance = Math.sqrt(dx * dx + dy * dy);
+
+if (distance > DRAG_THRESHOLD_PX) {
+// Start dragging
+mouseStateRef.current.isDraggingFurniture = true;
+draggedFurnitureId.current = pendingFurnitureId.current;
+lastSentPositionRef.current = null;
+
+
+
 
 function onMouseDown(e: MouseEvent) {
 const target = e.target as HTMLElement;
@@ -212,16 +226,16 @@ y: e.clientY
 );
 
 
-mouseStateRef.current.isDraggingFurniture = true;
-draggedFurnitureId.current = furnitureId;
-dragStart.current = { x: e.clientX, y: e.clientY ;
-lastSentPositionRef.current = null;
-
+// Immediately handle furniture selection
 if (selectedFurnitureId === furnitureId) {
 setSelectedFurnitureId(null);
  else {
 setSelectedFurnitureId(furnitureId);
 
+
+// Store the furniture ID and start position for potential dragging
+dragStartPos.current = { x: e.clientX, y: e.clientY ;
+pendingFurnitureId.current = furnitureId;
 
 return;
 
@@ -231,12 +245,13 @@ if (target.id === 'app-root' || target.closest('#app-root') === target) {
 setSelectedFurnitureId(null);
 mouseStateRef.current.isDraggingFurniture = false;
 draggedFurnitureId.current = null;
-dragStart.current = null;
+dragStartPos.current = null;
+pendingFurnitureId.current = null;
 
 
 if (e.button === 0 && (target.id === 'app-root' || target.classList.contains('canvas-container'))) {
 mouseStateRef.current.isDraggingViewport = true;
-viewportDrag.current = { x: e.clientX, y: e.clientY ;
+viewportDragStart.current = { x: e.clientX, y: e.clientY ;
 lastSentCursorRef.current = null; // Reset to ensure first cursor update happens
 
 
@@ -244,15 +259,18 @@ lastSentCursorRef.current = null; // Reset to ensure first cursor update happens
 function onMouseUp() {
 if (mouseStateRef.current.isDraggingViewport) {
 mouseStateRef.current.isDraggingViewport = false;
-viewportDrag.current = null;
+viewportDragStart.current = null;
 lastSentCursorRef.current = null; // Reset when viewport dragging ends
 
 if (mouseStateRef.current.isDraggingFurniture) {
 mouseStateRef.current.isDraggingFurniture = false;
 draggedFurnitureId.current = null;
-dragStart.current = null;
+dragStartPos.current = null;
 lastSentPositionRef.current = null;
 
+// Clear pending furniture drag
+pendingFurnitureId.current = null;
+dragStartPos.current = null;
 
 
 function onClick(e: MouseEvent) {
@@ -315,6 +333,11 @@ const furnitureId = furnitureElement.getAttribute('data-furniture-id');
 if (furnitureId) {
 e.preventDefault();
 e.stopPropagation();
+
+// Cancel any pending furniture drag
+pendingFurnitureId.current = null;
+dragStartPos.current = null;
+
 const item = furniture[furnitureId];
 if (item && (item.type === 'bed' || item.type === 'chair')) {
 setSelectedFurnitureId(null);
