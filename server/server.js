@@ -943,7 +943,7 @@ setInterval(() => {
       updateAFKTracking(socketId, isAFK);
     }
   });
-}, 1000); // Check every second
+}, 30000); // Check every 30 seconds to match internal update logic
 
 function loadAllTimeRecord() {
   try {
