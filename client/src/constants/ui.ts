@@ -21,6 +21,15 @@ LOGO: '/UI/logo.png',
 GITHUB_LOGO: '/UI/github.png',
 LEADERBOARD: '/UI/leaderboard.png',
 TUTORIAL: '/UI/tutorial.png',
+STATUE: '/UI/statue.png',
+DAILY: '/UI/daily.png',
+ALLTIME: '/UI/alltime.png',
+JACKPOTS: '/UI/jackpots.png',
+
+// Badges for statue achievements
+DAILY_BADGE: '/UI/dailybadge.png',
+CROWN_BADGE: '/UI/crownbadge.png',
+GACHA_BADGE: '/UI/gachabadge.png',
 
 // Effects
 SMILE_GIF: '/UI/smile.gif',
@@ -66,6 +75,42 @@ Z_INDEX: 99
 ,
 STYLE: {
 transform: 'scaleX(-1)',
+position: 'absolute' as const
+
+ as const;
+
+// Statue constants
+export const STATUE_CONFIG = {
+POSITION: {
+LEFT: 20,
+TOP: 380,
+Z_INDEX: 99
+,
+STYLE: {
+position: 'absolute' as const
+
+ as const;
+
+// All-time statue constants
+export const ALLTIME_STATUE_CONFIG = {
+POSITION: {
+LEFT: 120,
+TOP: 380,
+Z_INDEX: 99
+,
+STYLE: {
+position: 'absolute' as const
+
+ as const;
+
+// Jackpot statue constants
+export const JACKPOT_STATUE_CONFIG = {
+POSITION: {
+LEFT: 220,
+TOP: 380,
+Z_INDEX: 99
+,
+STYLE: {
 position: 'absolute' as const
 
  as const; 

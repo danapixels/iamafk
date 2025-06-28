@@ -6,6 +6,11 @@ const fs = require('fs');
 const path = require('path');
 const { validateUsername  = require('./usernameFilter');
 
+// Server configuration constants
+const SERVER_CONFIG = {
+ANONYMOUS_NAME: 'Anonymous'
+;
+
 const app = express();
 
 // More explicit CORS configuration
@@ -67,6 +72,22 @@ let nextZIndex = 5000; // Base z-index for furniture
 const userStats = {; // In-memory storage for user stats
 const userAFKTracking = {; // AFK time for each user
 const DAILY_FURNITURE_LIMIT = 1000;
+
+// All-time AFK record tracking
+const allTimeRecord = {
+name: '',
+time: 0,
+lastUpdated: null
+;
+const ALL_TIME_RECORD_FILE = path.join(__dirname, 'data', 'all_time_record.json');
+
+// Jackpot wins tracking
+const jackpotRecord = {
+name: '',
+wins: 0,
+lastUpdated: null
+;
+const JACKPOT_RECORD_FILE = path.join(__dirname, 'data', 'jackpot_record.json');
 
 function getNextZIndex() {
 return nextZIndex++;
@@ -183,8 +204,41 @@ delete userActivity[socketId];
 addToBatch('userActivity', null);
 
 
+function cleanupOldUserStats() {
+const now = Date.now();
+const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+let cleanedCount = 0;
+
+// Only remove user stats older than 7 days AND not currently connected
+// This preserves AFK users' data for a reasonable time
+for (const socketId in userStats) {
+const lastSeen = userStats[socketId]?.lastSeen || 0;
+const isCurrentlyConnected = cursors[socketId] !== undefined;
+
+if (now - lastSeen > SEVEN_DAYS && !isCurrentlyConnected) {
+delete userStats[socketId];
+cleanedCount++;
+
+
+
+// Clean up AFK tracking only for users who are completely disconnected
+for (const socketId in userAFKTracking) {
+if (!cursors[socketId]) {
+delete userAFKTracking[socketId];
+
+
+
+if (cleanedCount > 0) {
+console.log(`Cleaned up ${cleanedCount old user stats entries (7+ days inactive)`);
+addToBatch('cleanup', { cleanedCount, type: 'userStats' );
+
+
+
 // Load data on startup
 loadPersistentData();
+loadUserStats();
+loadAllTimeRecord();
+loadJackpotRecord();
 
 // Start batch timer
 startBatchTimer();
@@ -197,6 +251,9 @@ cleanupExpiredFurniture();
 
 // Run cleanup every 1 hr
 setInterval(cleanupOldUserActivity, 60 * 60 * 1000);
+
+// Run user stats cleanup every 24 hours
+setInterval(cleanupOldUserStats, 24 * 60 * 60 * 1000);
 
 // Add change to batch instead of immediate save
 function addToBatch(changeType, data) {
@@ -212,7 +269,7 @@ function saveBatch() {
 if (pendingChanges.length > 0) {
 console.log(`Saving batch of ${pendingChanges.length changes`);
 
-// Apply all pending changes to memory
+// Process each change
 pendingChanges.forEach(change => {
 switch (change.type) {
 case 'userActivity':
@@ -231,11 +288,24 @@ break;
 case 'cleanup':
 // Cleanup changes are already applied to memory
 break;
+case 'userStats':
+const { socketId, stats  = change.data;
+userStats[socketId] = stats;
+break;
+case 'allTimeRecord':
+// All-time record changes are already applied to memory
+break;
+case 'jackpotRecord':
+// Jackpot record changes are already applied to memory
+break;
 
 );
 
 // Save to files
 savePersistentData();
+saveUserStats();
+saveAllTimeRecord();
+saveJackpotRecord();
 
 // Clear batch
 pendingChanges = [];
@@ -326,6 +396,11 @@ lastMoveTimestamps[socket.id] = now;
  else {
 const diffSeconds = Math.floor((now - lastMoveTimestamps[socket.id]) / 1000);
 cursors[socket.id].stillTime = diffSeconds;
+
+// Check for new all-time record
+if (cursors[socket.id].name && cursors[socket.id].name !== SERVER_CONFIG.ANONYMOUS_NAME) {
+updateAllTimeRecord(socket.id, cursors[socket.id].name, diffSeconds);
+
 
 
 if (name && name.trim() !== '') {
@@ -581,6 +656,17 @@ io.emit('cursors', getValidCursors());
 
 socket.on('gachaponWin', ({ winnerId, winnerName ) => {
 console.log('Server received gachaponWin:', { winnerId, winnerName );
+
+// Update user stats with gachapon win
+if (userStats[winnerId]) {
+userStats[winnerId].gachaponWins = (userStats[winnerId].gachaponWins || 0) + 1;
+userStats[winnerId].lastSeen = Date.now();
+addToBatch('userStats', { socketId: winnerId, stats: userStats[winnerId] );
+
+
+// Update jackpot record
+updateJackpotRecord(winnerId, winnerName);
+
 // Broadcast to ALL currently online clients
 io.emit('gachaponWin', { winnerId, winnerName );
 io.emit('showDialogBanner');
@@ -596,6 +682,14 @@ socket.broadcast.emit('gachaponAnimation', { userId, hasEnoughTime );
 socket.on('requestUserStats', () => {
 const userStats = getUserStatsFromServer(socket.id);
 socket.emit('userStats', userStats);
+);
+
+socket.on('requestAllTimeRecord', () => {
+socket.emit('allTimeRecord', allTimeRecord);
+);
+
+socket.on('requestJackpotRecord', () => {
+socket.emit('jackpotRecord', jackpotRecord);
 );
 
 socket.on('updateAFKTime', ({ seconds , callback) => {
@@ -618,7 +712,7 @@ socket.on('disconnect', () => {
 saveBatch();
 
 // Clean up user stats
-cleanupUserStats(socket.id);
+cleanupOldUserStats();
 
 // Remove cursor
 delete cursors[socket.id];
@@ -808,11 +902,13 @@ tracking.lastUpdate = now;
 
 // Clean up user stats when user disconnects
 function cleanupUserStats(socketId) {
+// Only remove from memory if user is not in cursors (completely disconnected)
+if (!cursors[socketId]) {
 delete userStats[socketId];
 delete userAFKTracking[socketId];
 
 
-// Load user stats from persistent storage
+
 function loadUserStats() {
 
 const data = fs.readFileSync('userStats.json', 'utf8');
@@ -823,12 +919,12 @@ console.log('No existing user stats found, starting fresh');
 
 
 
-// Save user stats to persistent storage
 function saveUserStats() {
 
-fs.writeFileSync('userStats.json', JSON.stringify(userStats, null, 2));
+const userStatsFile = path.join(__dirname, 'data', 'user_stats.json');
+fs.writeFileSync(userStatsFile, JSON.stringify(userStats, null, 2));
 
-console.error('Error saving user stats:', error);
+console.error('Error saving user stats data:', error);
 
 
 
@@ -848,3 +944,89 @@ updateAFKTracking(socketId, isAFK);
 
 );
 , 1000); // Check every second
+
+function loadAllTimeRecord() {
+
+if (fs.existsSync(ALL_TIME_RECORD_FILE)) {
+const data = JSON.parse(fs.readFileSync(ALL_TIME_RECORD_FILE, 'utf8'));
+Object.assign(allTimeRecord, data);
+console.log('Loaded all-time record:', allTimeRecord.name, 'with', allTimeRecord.time, 'seconds');
+
+
+console.error('Error loading all-time record:', error);
+
+
+
+function saveAllTimeRecord() {
+
+fs.writeFileSync(ALL_TIME_RECORD_FILE, JSON.stringify(allTimeRecord, null, 2));
+
+console.error('Error saving all-time record:', error);
+
+
+
+function updateAllTimeRecord(socketId, username, stillTime) {
+if (stillTime > allTimeRecord.time) {
+allTimeRecord.name = username;
+allTimeRecord.time = stillTime;
+allTimeRecord.lastUpdated = Date.now();
+
+// Add to batch instead of immediate save
+addToBatch('allTimeRecord', allTimeRecord);
+
+// Broadcast to all clients
+io.emit('allTimeRecordUpdated', allTimeRecord);
+
+console.log('New all-time record set by', username, 'with', stillTime, 'seconds');
+return true;
+
+return false;
+
+
+function loadJackpotRecord() {
+
+if (fs.existsSync(JACKPOT_RECORD_FILE)) {
+const data = JSON.parse(fs.readFileSync(JACKPOT_RECORD_FILE, 'utf8'));
+Object.assign(jackpotRecord, data);
+console.log('Loaded jackpot record:', jackpotRecord.name, 'with', jackpotRecord.wins, 'wins');
+
+
+console.error('Error loading jackpot record:', error);
+
+
+
+function saveJackpotRecord() {
+
+fs.writeFileSync(JACKPOT_RECORD_FILE, JSON.stringify(jackpotRecord, null, 2));
+
+console.error('Error saving jackpot record:', error);
+
+
+
+function updateJackpotRecord(socketId, username) {
+// Get current user wins (including this new win)
+const currentUserWins = (userStats[socketId]?.gachaponWins || 0) + 1;
+
+// Check if this user already has the record
+if (jackpotRecord.name === username) {
+// Increment existing record
+jackpotRecord.wins = currentUserWins;
+ else {
+// Check if this user has more wins than current record
+if (currentUserWins > jackpotRecord.wins) {
+jackpotRecord.name = username;
+jackpotRecord.wins = currentUserWins;
+
+
+
+jackpotRecord.lastUpdated = Date.now();
+
+// Add to batch instead of immediate save
+addToBatch('jackpotRecord', jackpotRecord);
+
+// Broadcast to all clients
+io.emit('jackpotRecordUpdated', jackpotRecord);
+
+console.log('Jackpot record updated:', jackpotRecord.name, 'now has', jackpotRecord.wins, 'wins');
+return true;
+
