@@ -4,22 +4,12 @@ import { useUserStats } from '../contexts/UserStatsContext';
 const Testing: React.FC = () => {
   const { 
     userStats, 
-    updateAFKTime, 
     deductAFKBalance, 
     recordFurniturePlacement,
     canPlaceFurniture,
     getRemainingDailyPlacements,
     refreshStats
   } = useUserStats();
-
-  const handleTestAFKTime = async () => {
-    console.log('Testing AFK time update...');
-    const success = await updateAFKTime(60); // Add 60 seconds
-    console.log('AFK time update result:', success);
-    if (success) {
-      refreshStats(); // Refresh to see updated stats
-    }
-  };
 
   const handleTestDeductBalance = async () => {
     console.log('Testing AFK balance deduction...');
@@ -64,9 +54,6 @@ const Testing: React.FC = () => {
       </div>
 
       <div style={{ marginTop: '10px' }}>
-        <button onClick={handleTestAFKTime} style={{ margin: '2px' }}>
-          Test AFK Time (+60s)
-        </button>
         <button onClick={handleTestDeductBalance} style={{ margin: '2px' }}>
           Test Deduct Balance (-30s)
         </button>

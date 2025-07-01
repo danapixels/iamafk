@@ -14,6 +14,9 @@ COPY . .
 # Create directory for persistent data
 RUN mkdir -p /app/data
 
+# Copy environment file if it exists (for development)
+COPY env.example .env
+
 # Expose port 3001
 EXPOSE 3001
 

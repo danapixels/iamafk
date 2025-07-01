@@ -14,8 +14,8 @@ COPY . .
 # Create data directory
 RUN mkdir -p data
 
-# Use production server file
-RUN cp server.prod.js server.js
+# Copy environment file if it exists (for production)
+COPY env.example .env
 
 # Expose port
 EXPOSE 3001

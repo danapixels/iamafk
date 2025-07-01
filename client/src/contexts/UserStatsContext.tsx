@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { Socket } from 'socket.io-client';
 
+console.log("👀 UserStatsContext loaded");
+
 interface UserStats {
   username: string;
   totalAFKTime: number;
@@ -19,7 +21,6 @@ interface UserStatsContextType {
   isLoading: boolean;
   error: string | null;
   refreshStats: () => void;
-  updateAFKTime: (seconds: number) => Promise<boolean>;
   deductAFKBalance: (seconds: number) => Promise<boolean>;
   recordFurniturePlacement: (type: string) => Promise<boolean>;
   canPlaceFurniture: () => boolean;
@@ -52,23 +53,6 @@ export const UserStatsProvider: React.FC<UserStatsProviderProps> = ({
       setError(null);
       socket.emit('requestUserStats');
     }
-  };
-
-  // Update AFK time (server-validated)
-  const updateAFKTime = async (seconds: number): Promise<boolean> => {
-    if (!socket?.connected || !hasConnected) return false;
-    
-    return new Promise((resolve) => {
-      socket.emit('updateAFKTime', { seconds }, (response: { success: boolean; error?: string }) => {
-        if (response.success) {
-          refreshStats(); // Refresh stats after successful update
-          resolve(true);
-        } else {
-          setError(response.error || 'Failed to update AFK time');
-          resolve(false);
-        }
-      });
-    });
   };
 
   // Deduct AFK balance (server-validated)
@@ -159,7 +143,6 @@ export const UserStatsProvider: React.FC<UserStatsProviderProps> = ({
     isLoading,
     error,
     refreshStats,
-    updateAFKTime,
     deductAFKBalance,
     recordFurniturePlacement,
     canPlaceFurniture,
