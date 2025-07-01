@@ -6,16 +6,43 @@ const fs = require('fs');
 const path = require('path');
 const { validateUsername  = require('./usernameFilter');
 
-// Server configuration constants
+// Load environment variables
+require('dotenv').config();
+
+// Server configuration from environment variables
 const SERVER_CONFIG = {
-ANONYMOUS_NAME: 'Anonymous'
+NODE_ENV: process.env.NODE_ENV || 'development',
+PORT: parseInt(process.env.PORT) || 3001,
+ANONYMOUS_NAME: process.env.ANONYMOUS_NAME || 'Anonymous',
+DATA_DIR: process.env.DATA_DIR || '/app/data',
+FURNITURE_EXPIRY_HOURS: parseInt(process.env.FURNITURE_EXPIRY_HOURS) || 48,
+DAILY_FURNITURE_LIMIT: parseInt(process.env.DAILY_FURNITURE_LIMIT) || 1000,
+BATCH_INTERVAL: parseInt(process.env.BATCH_INTERVAL) || 5 * 60 * 1000,
+PING_TIMEOUT: parseInt(process.env.PING_TIMEOUT) || 60000,
+PING_INTERVAL: parseInt(process.env.PING_INTERVAL) || 25000,
+LOG_LEVEL: process.env.LOG_LEVEL || 'info',
+ENABLE_DEV_TOOLS: process.env.ENABLE_DEV_TOOLS === 'true'
 ;
+
+// CORS configuration from environment
+const allowedOrigins = process.env.CORS_ORIGIN 
+? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
+: ['http://localhost:3000', 'http://localhost:5173'];
 
 const app = express();
 
-// More explicit CORS configuration
+// Environment-based CORS configuration
 app.use(cors({
-origin: true, // Allow all origins
+origin: function (origin, callback) {
+// Allow requests with no origin (like mobile apps or curl requests)
+if (!origin) return callback(null, true);
+
+if (allowedOrigins.indexOf(origin) !== -1) {
+callback(null, true);
+ else {
+callback(new Error('Not allowed by CORS'));
+
+,
 methods: ['GET', 'POST', 'OPTIONS'],
 allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 credentials: false
@@ -23,7 +50,10 @@ credentials: false
 
 // Add CORS headers manually for Socket.IO
 app.use((req, res, next) => {
-res.header('Access-Control-Allow-Origin', '*');
+const origin = req.headers.origin;
+if (allowedOrigins.includes(origin)) {
+res.header('Access-Control-Allow-Origin', origin);
+
 res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
 res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
 if (req.method === 'OPTIONS') {
@@ -36,13 +66,13 @@ next();
 const server = http.createServer(app);
 const io = new Server(server, {
 cors: {
-origin: true,
+origin: allowedOrigins,
 methods: ['GET', 'POST', 'OPTIONS'],
 allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 credentials: false
 ,
-pingTimeout: 60000, // 60 seconds
-pingInterval: 25000, // 25 seconds
+pingTimeout: SERVER_CONFIG.PING_TIMEOUT,
+pingInterval: SERVER_CONFIG.PING_INTERVAL,
 transports: ['websocket', 'polling'],
 allowEIO3: true
 );
@@ -56,32 +86,117 @@ let batchTimer = null;
 let userActivity = {;
 let userStats = {;
 let allTimeRecord = { name: '', time: 0, lastUpdated: 0 ;
-let jackpotRecord = { name: '', wins: 0, lastUpdated: 0 ;
+let jackpotRecord = { name: '', wins: 0, lastUpdated: 0, deviceId: '' ;
+
+// Device ID to socket ID mapping for persistence
 let deviceToSocketMap = {;
 let socketToDeviceMap = {;
 
-// Batch save system
-const BATCH_INTERVAL = 5 * 60 * 1000; // 5 minutes
+// AFK time tracking variables
+let userAFKStartTimes = {; // when each user started being AFK
+let lastAFKUpdateTimes = {; // last AFK time update for each user
 
-// Server-side AFK validation (without accumulation)
-let userAFKValidation = {; // for validation only
+// Simplified AFK time tracking - server handles everything
+function updateUserAFKTime(socketId) {
+const deviceId = socketToDeviceMap[socketId] || socketId;
+const cursor = cursors[socketId];
+const now = Date.now();
+
+if (!cursor) return;
+
+const isAFK = (cursor.stillTime >= 30 || cursor.isFrozen);
+const wasAFK = userAFKStartTimes[deviceId] !== undefined;
+
+// User just became AFK
+if (isAFK && !wasAFK) {
+userAFKStartTimes[deviceId] = now;
+lastAFKUpdateTimes[deviceId] = now;
+
+
+// User is no longer AFK
+if (!isAFK && wasAFK) {
+const afkDuration = Math.floor((now - userAFKStartTimes[deviceId]) / 1000);
+if (afkDuration > 0) {
+addAFKTimeToUser(deviceId, afkDuration);
+
+delete userAFKStartTimes[deviceId];
+delete lastAFKUpdateTimes[deviceId];
+
+
+// Update AFK time every 60 seconds while AFK
+if (isAFK && wasAFK) {
+const timeSinceLastUpdate = now - lastAFKUpdateTimes[deviceId];
+if (timeSinceLastUpdate >= 60000) { // 60 seconds
+const incrementalTime = Math.floor(timeSinceLastUpdate / 1000);
+addAFKTimeToUser(deviceId, incrementalTime);
+lastAFKUpdateTimes[deviceId] = now;
+
+
+
+
+// Add AFK time to user stats
+function addAFKTimeToUser(deviceId, seconds) {
+const user = userStats[deviceId];
+if (user) {
+const oldTotal = user.totalAFKTime;
+const oldBalance = user.afkBalance;
+
+user.totalAFKTime += seconds;
+user.afkBalance += seconds;
+user.lastSeen = Date.now();
+
+// Add to batch for persistence
+addToBatch('userStats', { socketId: deviceId, stats: user );
+
+// Check for new all-time record
+if (user.username && user.username !== SERVER_CONFIG.ANONYMOUS_NAME) {
+updateAllTimeRecord(deviceId, user.username, 0);
+
+ else {
+console.error(`❌ User not found for AFK time update: deviceId=${deviceId`);
+
+
+
+// Record files
+const ALL_TIME_RECORD_FILE = path.join(SERVER_CONFIG.DATA_DIR, 'all_time_record.json');
+const JACKPOT_RECORD_FILE = path.join(SERVER_CONFIG.DATA_DIR, 'jackpot_record.json');
+
+// Cache for badge calculations to reduce computational overhead
+let badgeCache = {;
+let lastBadgeCalculation = 0;
+const BADGE_CACHE_DURATION = 5000; // 5 seconds
+
+// Batch save system
+const BATCH_INTERVAL = SERVER_CONFIG.BATCH_INTERVAL;
 
 // Persistent furniture storage with expiration
-const FURNITURE_FILE = path.join(__dirname, 'data', 'furniture.json');
-const FURNITURE_EXPIRY_HOURS = 48;
-const USER_ACTIVITY_FILE = path.join(__dirname, 'data', 'user_activity.json');
+const FURNITURE_FILE = path.join(SERVER_CONFIG.DATA_DIR, 'furniture.json');
+const FURNITURE_EXPIRY_HOURS = SERVER_CONFIG.FURNITURE_EXPIRY_HOURS;
+const USER_ACTIVITY_FILE = path.join(SERVER_CONFIG.DATA_DIR, 'user_activity.json');
 
 // Z-index management
 let nextZIndex = 5000; // Base z-index for furniture
 
 // Server-side user stats storage and validation
-const DAILY_FURNITURE_LIMIT = 1000;
+const DAILY_FURNITURE_LIMIT = SERVER_CONFIG.DAILY_FURNITURE_LIMIT;
 
-// All-time AFK record tracking
-const ALL_TIME_RECORD_FILE = path.join(__dirname, 'data', 'all_time_record.json');
+// Ensure data directory exists (only if it's a writable path)
+if (SERVER_CONFIG.DATA_DIR !== '/app/data' || process.env.NODE_ENV === 'production') {
+if (!fs.existsSync(SERVER_CONFIG.DATA_DIR)) {
 
-// Jackpot wins tracking
-const JACKPOT_RECORD_FILE = path.join(__dirname, 'data', 'jackpot_record.json');
+fs.mkdirSync(SERVER_CONFIG.DATA_DIR, { recursive: true );
+
+console.warn(`Could not create data directory ${SERVER_CONFIG.DATA_DIR:`, error.message);
+// Fallback to local directory for development
+if (process.env.NODE_ENV === 'development') {
+SERVER_CONFIG.DATA_DIR = './data';
+if (!fs.existsSync(SERVER_CONFIG.DATA_DIR)) {
+fs.mkdirSync(SERVER_CONFIG.DATA_DIR, { recursive: true );
+
+
+
+
+
 
 function getNextZIndex() {
 return nextZIndex++;
@@ -140,7 +255,7 @@ function updateUserActivity(socketId, username) {
 const now = Date.now();
 userActivity[socketId] = {
 lastSeen: now,
-username: username || 'Anonymous',
+username: username || SERVER_CONFIG.ANONYMOUS_NAME,
 socketId: socketId
 ;
 addToBatch('userActivity', { socketId, username );
@@ -148,13 +263,13 @@ addToBatch('userActivity', { socketId, username );
 
 function cleanupExpiredFurniture() {
 const now = Date.now();
-const expiryTime = FURNITURE_EXPIRY_HOURS * 60 * 60 * 1000; // 48 hours in milliseconds
+const expiryTime = FURNITURE_EXPIRY_HOURS * 60 * 60 * 1000; // Convert hours to milliseconds
 let cleanedCount = 0;
 
 Object.keys(furniture).forEach(furnitureId => {
 const item = furniture[furnitureId];
 if (item.timestamp && (now - item.timestamp) > expiryTime) {
-// Check if the user who placed this furniture has been inactive for 48 hours
+// Check if the user who placed this furniture has been inactive for the expiry time
 const userId = furnitureId.split('-')[0];
 const userLastSeen = userActivity[userId]?.lastSeen || 0;
 
@@ -176,9 +291,48 @@ io.emit('furnitureCleanup', { cleanedCount );
 
 function getValidCursors() {
 const filtered = {;
+const now = Date.now();
+
+// Only recalculate badges if cache is expired
+const shouldRecalculateBadges = (now - lastBadgeCalculation) > BADGE_CACHE_DURATION;
+
+if (shouldRecalculateBadges) {
+badgeCache = {;
+lastBadgeCalculation = now;
+
+// Calculate daily badge once for all users
+let dailyBest = { name: '', time: 0 ;
+Object.values(cursors).forEach((c) => {
+if (!c || !c.name || c.name === SERVER_CONFIG.ANONYMOUS_NAME) return;
+const stillTime = c.stillTime || 0;
+if (stillTime > dailyBest.time) {
+dailyBest = { name: c.name, time: stillTime ;
+
+);
+
+// Cache badge calculations
 Object.entries(cursors).forEach(([id, cursor]) => {
-if (cursor.name && cursor.name.trim() !== '' && cursor.name !== 'Anonymous') {
-filtered[id] = cursor;
+if (cursor.name && cursor.name.trim() !== '' && cursor.name !== SERVER_CONFIG.ANONYMOUS_NAME) {
+const userBadges = {
+dailyBadge: dailyBest.name === cursor.name && dailyBest.time > 0,
+crownBadge: allTimeRecord.name === cursor.name,
+gachaBadge: jackpotRecord.name === cursor.name
+;
+badgeCache[id] = userBadges;
+
+);
+
+
+Object.entries(cursors).forEach(([id, cursor]) => {
+if (cursor.name && cursor.name.trim() !== '' && cursor.name !== SERVER_CONFIG.ANONYMOUS_NAME) {
+filtered[id] = {
+...cursor,
+badges: badgeCache[id] || {
+dailyBadge: false,
+crownBadge: false,
+gachaBadge: false
+
+;
 
 );
 return filtered;
@@ -200,25 +354,16 @@ addToBatch('userActivity', null);
 
 function cleanupOldUserStats() {
 const now = Date.now();
-const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
-let cleanedCount = 0;
+const ONE_DAY = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
-// Only remove user stats older than 7 days AND not currently connected
-// This preserves AFK users' data for a reasonable time
-for (const socketId in userStats) {
-const lastSeen = userStats[socketId]?.lastSeen || 0;
-const isCurrentlyConnected = cursors[socketId] !== undefined;
+// Clean up AFK tracking data older than 1 day
+Object.keys(userAFKStartTimes).forEach(deviceId => {
+const lastUpdate = lastAFKUpdateTimes[deviceId];
+if (lastUpdate && (now - lastUpdate) > ONE_DAY) {
+delete userAFKStartTimes[deviceId];
+delete lastAFKUpdateTimes[deviceId];
 
-if (now - lastSeen > SEVEN_DAYS && !isCurrentlyConnected) {
-delete userStats[socketId];
-cleanedCount++;
-
-
-
-if (cleanedCount > 0) {
-console.log(`Cleaned up ${cleanedCount old user stats entries (7+ days inactive)`);
-addToBatch('cleanup', { cleanedCount, type: 'userStats' );
-
+);
 
 
 // Load data on startup
@@ -226,6 +371,9 @@ loadPersistentData();
 loadUserStats();
 loadAllTimeRecord();
 loadJackpotRecord();
+
+// Recalculate jackpot record to ensure it's correct after loading user stats
+recalculateJackpotRecord();
 
 // Start batch timer
 startBatchTimer();
@@ -264,7 +412,7 @@ if (change.data) {
 const { socketId, username  = change.data;
 userActivity[socketId] = {
 lastSeen: change.timestamp,
-username: username || 'Anonymous',
+username: username || SERVER_CONFIG.ANONYMOUS_NAME,
 socketId: socketId
 ;
 
@@ -317,12 +465,14 @@ saveBatch(); // Save any pending changes
 
 
 io.on('connection', (socket) => {
+console.log(`🔌 New socket connection: ${socket.id`);
+
 // Initialize cursor for new user
 cursors[socket.id] = { x: 0, y: 0, username: '', cursorType: 'default' ;
 lastMoveTimestamps[socket.id] = Date.now();
 
 // Update user activity on connection
-updateUserActivity(socket.id, 'Anonymous');
+updateUserActivity(socket.id, SERVER_CONFIG.ANONYMOUS_NAME);
 
 // Send current state to new user
 socket.emit('initialState', {
@@ -337,11 +487,14 @@ cursor: cursors[socket.id]
 );
 
 socket.on('setName', async ({ name ) => {
+console.log(`👤 setName received for socket ${socket.id: "${name"`);
+
 if (cursors[socket.id]) {
 // Validate username before setting it
 const validation = await validateUsername(name);
 
 if (!validation.isAppropriate) {
+console.log(`❌ Username validation failed for "${name": ${validation.reason`);
 // Send error message to client
 socket.emit('usernameError', { 
 message: validation.reason || 'Username is not allowed' 
@@ -349,13 +502,24 @@ message: validation.reason || 'Username is not allowed'
 return;
 
 
-const username = name?.trim() || 'Anonymous';
+const username = name?.trim() || SERVER_CONFIG.ANONYMOUS_NAME;
 cursors[socket.id].name = username;
+
+// Update username in user stats for persistence
+const deviceId = socketToDeviceMap[socket.id] || socket.id;
+if (userStats[deviceId]) {
+userStats[deviceId].username = username;
+userStats[deviceId].lastSeen = Date.now();
+addToBatch('userStats', { socketId: deviceId, stats: userStats[deviceId] );
+
+
 // Update user activity with the username
 updateUserActivity(socket.id, username);
 
 // Send success response to client
 socket.emit('usernameAccepted', { username );
+
+console.log(`✅ Username accepted for socket ${socket.id: "${username"`);
 
 // Broadcast updated cursors to all clients
 io.emit('cursors', getValidCursors());
@@ -438,7 +602,7 @@ y: data.y || 0,
 isFlipped: false,
 timestamp: now,
 ownerId: socket.id,
-ownerName: cursors[socket.id]?.name || 'Anonymous',
+ownerName: cursors[socket.id]?.name || SERVER_CONFIG.ANONYMOUS_NAME,
 zIndex: getNextZIndex() // Assign z-index from server
 ;
 
@@ -641,14 +805,17 @@ io.emit('cursors', getValidCursors());
 socket.on('gachaponWin', ({ winnerId, winnerName ) => {
 console.log('Server received gachaponWin:', { winnerId, winnerName );
 
-// Update user stats with gachapon win
-if (userStats[winnerId]) {
-userStats[winnerId].gachaponWins = (userStats[winnerId].gachaponWins || 0) + 1;
-userStats[winnerId].lastSeen = Date.now();
-addToBatch('userStats', { socketId: winnerId, stats: userStats[winnerId] );
+// Get device ID for the winner
+const deviceId = socketToDeviceMap[winnerId] || winnerId;
+
+// Update user stats with gachapon win using device ID
+if (userStats[deviceId]) {
+userStats[deviceId].gachaponWins = (userStats[deviceId].gachaponWins || 0) + 1;
+userStats[deviceId].lastSeen = Date.now();
+addToBatch('userStats', { socketId: deviceId, stats: userStats[deviceId] );
 
 
-// Update jackpot record
+// Update jackpot record using device ID
 updateJackpotRecord(winnerId, winnerName);
 
 // Broadcast to ALL currently online clients
@@ -662,7 +829,7 @@ socket.on('gachaponAnimation', ({ userId, hasEnoughTime ) => {
 socket.broadcast.emit('gachaponAnimation', { userId, hasEnoughTime );
 );
 
-// Server-side user stats validation handlers
+// Server-side user stats handlers (simplified)
 socket.on('requestUserStats', () => {
 const userStats = getUserStatsFromServer(socket.id);
 socket.emit('userStats', userStats);
@@ -674,11 +841,6 @@ socket.emit('allTimeRecord', allTimeRecord);
 
 socket.on('requestJackpotRecord', () => {
 socket.emit('jackpotRecord', jackpotRecord);
-);
-
-socket.on('updateAFKTime', ({ seconds , callback) => {
-const result = updateAFKTimeOnServer(socket.id, seconds);
-callback(result);
 );
 
 socket.on('deductAFKBalance', ({ seconds , callback) => {
@@ -731,6 +893,9 @@ cursor.stillTime = diffSeconds;
 updated = true;
 
 
+// Update AFK time for this user
+updateUserAFKTime(id);
+
 );
 
 if (updated) {
@@ -751,18 +916,19 @@ stopBatchTimer();
 process.exit(0);
 );
 
-const PORT = process.env.PORT || 3001;
+const PORT = SERVER_CONFIG.PORT;
 server.listen(PORT, () => {
 console.log(`Server running on port ${PORT`);
 );
 
 // Get user stats from server storage
 function getUserStatsFromServer(socketId) {
-const user = userStats[socketId];
+const deviceId = socketToDeviceMap[socketId] || socketId;
+const user = userStats[deviceId];
 if (!user) {
 // Initialize new user stats
 const newUser = {
-username: cursors[socketId]?.name || 'Anonymous',
+username: cursors[socketId]?.name || SERVER_CONFIG.ANONYMOUS_NAME,
 totalAFKTime: 0,
 afkBalance: 0,
 furniturePlaced: 0,
@@ -772,48 +938,10 @@ firstSeen: Date.now(),
 sessions: 1,
 dailyFurniturePlacements: {
 ;
-userStats[socketId] = newUser;
+userStats[deviceId] = newUser;
 return newUser;
 
 return user;
-
-
-// Update AFK time on server (validated)
-function updateAFKTimeOnServer(socketId, seconds) {
-
-// Validate the AFK time report
-const validation = validateAFKTimeReport(socketId, seconds);
-if (!validation.valid) {
-console.error(`AFK time validation failed: ${validation.reason`);
-return { success: false, error: `Validation failed: ${validation.reason` ;
-
-
-const deviceId = socketToDeviceMap[socketId] || socketId;
-const user = userStats[deviceId];
-
-if (user) {
-user.totalAFKTime += seconds;
-user.afkBalance += seconds;
-user.lastSeen = Date.now();
-
-// Add to batch for persistence
-addToBatch('userStats', { socketId: deviceId, stats: user );
-
-// Check for new all-time record based on total AFK time
-if (user.username && user.username !== SERVER_CONFIG.ANONYMOUS_NAME) {
-updateAllTimeRecord(socketId, user.username, 0); // stillTime parameter not used anymore
-
-
-console.log(`Updated AFK time for ${user.username: +${secondss (Total: ${user.totalAFKTimes, Balance: ${user.afkBalances)`);
-return { success: true ;
- else {
-console.error('User not found for AFK time update:', socketId);
-return { success: false, error: 'User not found' ;
-
-
-console.error('Error updating AFK time:', error);
-return { success: false, error: 'Server error' ;
-
 
 
 // Deduct AFK balance on server (validated)
@@ -852,7 +980,8 @@ const deviceId = socketToDeviceMap[socketId];
 if (deviceId) {
 delete socketToDeviceMap[socketId];
 delete deviceToSocketMap[deviceId];
-delete userAFKValidation[deviceId]; // Clean up validation data
+delete userAFKStartTimes[deviceId];
+delete lastAFKUpdateTimes[deviceId];
 
 // Don't delete userStats - keep them persistent by device ID
 
@@ -865,6 +994,7 @@ if (typeof type !== 'string' || !type.trim()) {
 return { success: false, error: 'Invalid furniture type' ;
 
 
+const deviceId = socketToDeviceMap[socketId] || socketId;
 const user = getUserStatsFromServer(socketId);
 const today = new Date().toISOString().split('T')[0];
 const dailyPlacements = user.dailyFurniturePlacements[today] || 0;
@@ -881,7 +1011,7 @@ user.furnitureByType[type] = (user.furnitureByType[type] || 0) + 1;
 user.lastSeen = Date.now();
 
 // Save to persistent storage
-addToBatch('userStats', { socketId, stats: user );
+addToBatch('userStats', { socketId: deviceId, stats: user );
 
 return { success: true ;
 
@@ -976,16 +1106,21 @@ console.error('Error saving jackpot record:', error);
 
 
 function updateJackpotRecord(socketId, username) {
-// Get current user wins (including this new win)
-const currentUserWins = (userStats[socketId]?.gachaponWins || 0) + 1;
+// Get device ID for this socket, fallback to socket ID if no device ID
+const deviceId = socketToDeviceMap[socketId] || socketId;
 
-// Check if this user already has the record
-if (jackpotRecord.name === username) {
+// Get current user wins (including this new win) using device ID
+const currentUserWins = (userStats[deviceId]?.gachaponWins || 0) + 1;
+
+// Check if this device already has the record
+if (jackpotRecord.deviceId === deviceId) {
 // Increment existing record
 jackpotRecord.wins = currentUserWins;
+jackpotRecord.name = username; // Update username in case it changed
  else {
-// Check if this user has more wins than current record
+// Check if this device has more wins than current record
 if (currentUserWins > jackpotRecord.wins) {
+jackpotRecord.deviceId = deviceId;
 jackpotRecord.name = username;
 jackpotRecord.wins = currentUserWins;
 
@@ -1003,49 +1138,26 @@ console.log('Jackpot record updated:', jackpotRecord.name, 'now has', jackpotRec
 return true;
 
 
-// Validate AFK time reports from client
-function validateAFKTimeReport(socketId, reportedSeconds) {
-const deviceId = socketToDeviceMap[socketId] || socketId;
-const validation = userAFKValidation[deviceId];
-const now = Date.now();
+function recalculateJackpotRecord() {
+// Find the device with the most gachapon wins
+let maxWins = 0;
+let topDevice = null;
+let topUsername = '';
 
-// Initialize validation tracking if needed
-if (!validation) {
-userAFKValidation[deviceId] = {
-lastReport: now,
-totalReported: 0,
-sessionStart: now
-;
-return { valid: true, reason: 'First report' ;
+Object.entries(userStats).forEach(([deviceId, stats]) => {
+const wins = stats.gachaponWins || 0;
+if (wins > maxWins) {
+maxWins = wins;
+topDevice = deviceId;
+topUsername = stats.username || SERVER_CONFIG.ANONYMOUS_NAME;
 
+);
 
-// Check for unreasonable time jumps
-const timeSinceLastReport = Math.floor((now - validation.lastReport) / 1000);
-const maxReasonableJump = timeSinceLastReport + 10; // Allow 10 second buffer
+if (topDevice && maxWins > 0) {
+jackpotRecord.deviceId = topDevice;
+jackpotRecord.name = topUsername;
+jackpotRecord.wins = maxWins;
+jackpotRecord.lastUpdated = Date.now();
+console.log('Recalculated jackpot record:', topUsername, 'with', maxWins, 'wins');
 
-if (reportedSeconds > maxReasonableJump) {
-console.warn(`Suspicious AFK time report: ${reportedSecondss reported, max reasonable: ${maxReasonableJumps`);
-return { 
-valid: false, 
-reason: `Reported time (${reportedSecondss) exceeds reasonable limit (${maxReasonableJumps)` 
-;
-
-
-// Check for excessive total AFK time in one session
-validation.totalReported += reportedSeconds;
-const sessionDuration = Math.floor((now - validation.sessionStart) / 1000);
-const maxReasonableSession = sessionDuration + 60; // Allow 1 minute buffer
-
-if (validation.totalReported > maxReasonableSession) {
-console.warn(`Suspicious total AFK time: ${validation.totalReporteds in ${sessionDurations session`);
-return { 
-valid: false, 
-reason: `Total AFK time (${validation.totalReporteds) exceeds session duration (${sessionDurations)` 
-;
-
-
-// Update validation tracking
-validation.lastReport = now;
-
-return { valid: true, reason: 'Valid report' ;
 

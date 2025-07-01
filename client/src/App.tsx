@@ -60,7 +60,6 @@ showDialogBanner
 // Use Context API for user stats
 const { 
 userStats, 
-updateAFKTime, 
 deductAFKBalance, 
 recordFurniturePlacement,
 canPlaceFurniture
@@ -89,8 +88,8 @@ const usernameRef = useRef(username);
 
 // ===== CUSTOM HOOKS =====
 // Game state management
-const { afkStartTimeRef  = useStats(socketRef, hasConnected, cursors, userStats, updateAFKTime);
-useCursor(socketRef, hasConnected, cursors, username, isCursorFrozen, setIsCursorFrozen, setFrozenCursorPosition);
+const { afkStartTimeRef  = useStats(socketRef, hasConnected);
+useCursor(socketRef, isCursorFrozen, setIsCursorFrozen, setFrozenCursorPosition);
 const { clickEnabledTimeRef, mouseStateRef, draggedFurnitureId  = useMouseInteractions({
 socketRef,
 hasConnected,

@@ -54,4 +54,13 @@ return localStorage.getItem('iamafk_cursorType') || 'default';
 console.error('Error reading cursor type from preferences:', error);
 return 'default';
 
+;
+
+// Save cursor type
+export const saveCursorType = (cursorType: string): void => {
+
+localStorage.setItem('iamafk_cursorType', cursorType);
+
+console.error('Error saving cursor type to localStorage:', error);
+
 ; 

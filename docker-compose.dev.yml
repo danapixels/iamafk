@@ -26,7 +26,15 @@ volumes:
 environment:
 - NODE_ENV=development
 - PORT=3001
-- CORS_ORIGIN=http://localhost
+- CORS_ORIGIN=http://localhost,http://localhost:3000,http://localhost:5173
+- DATA_DIR=/app/data
+- FURNITURE_EXPIRY_HOURS=48
+- DAILY_FURNITURE_LIMIT=1000
+- BATCH_INTERVAL=300000
+- PING_TIMEOUT=60000
+- PING_INTERVAL=25000
+- LOG_LEVEL=debug
+- ENABLE_DEV_TOOLS=true
 networks:
 - iamafk-network
 restart: unless-stopped
