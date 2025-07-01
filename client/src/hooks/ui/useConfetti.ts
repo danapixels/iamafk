@@ -39,10 +39,9 @@ export const useConfetti = (
         confettiTimeoutRef.current = null;
       }, 3000); // Assuming confetti.gif is 3 seconds
       
-      // Set localStorage for ALL users online at the time of win (not just the winner)
+      // Set localStorage for gachapon button state
       localStorage.setItem('gachaponWin', 'true');
       localStorage.setItem('gachaponWinner', data.winnerId);
-      localStorage.setItem('gachaponWinnerName', data.winnerName);
       localStorage.setItem('gachaponButtonChanged', 'true');
     };
 

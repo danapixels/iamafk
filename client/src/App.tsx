@@ -55,7 +55,8 @@ function AppContent({
   setEmotes,
   furniture,
   setFurniture,
-  showDialogBanner
+  showDialogBanner,
+  lastWinner
 }: AppContentProps) {
   // Use Context API for user stats
   const { 
@@ -234,6 +235,7 @@ function AppContent({
         viewportOffset={viewportOffset}
         gachaponWinner={gachaponWinner}
         username={username}
+        lastWinner={lastWinner}
         style={{ zIndex: Z_INDEX_LAYERS.PANEL }}
       />
       
@@ -263,7 +265,7 @@ function AppContent({
 
       {/* Overlays */}
       <ConfettiOverlay showConfetti={showConfetti} confettiTimestamp={confettiTimestamp} />
-      <DialogBanner showDialogBanner={showDialogBanner} />
+      <DialogBanner showDialogBanner={showDialogBanner} lastWinner={lastWinner} />
       
       {/* Development Testing Component */}
       {import.meta.env.DEV && <Testing />}
@@ -289,6 +291,7 @@ interface AppContentProps {
   furniture: { [key: string]: any };
   setFurniture: React.Dispatch<React.SetStateAction<{ [key: string]: any }>>;
   showDialogBanner: boolean;
+  lastWinner: string;
 }
 
 function App() {
@@ -309,7 +312,8 @@ function App() {
     setEmotes,
     furniture,
     setFurniture,
-    showDialogBanner
+    showDialogBanner,
+    lastWinner
   } = useSocket();
 
   return (
@@ -336,6 +340,7 @@ function App() {
         furniture={furniture}
         setFurniture={setFurniture}
         showDialogBanner={showDialogBanner}
+        lastWinner={lastWinner}
       />
     </UserStatsProvider>
   );

@@ -2,9 +2,10 @@ import React from 'react';
 
 interface DialogBannerProps {
   showDialogBanner: boolean;
+  lastWinner?: string;
 }
 
-export const DialogBanner: React.FC<DialogBannerProps> = ({ showDialogBanner }) => {
+export const DialogBanner: React.FC<DialogBannerProps> = ({ showDialogBanner, lastWinner }) => {
   if (!showDialogBanner) return null;
 
   return (
@@ -30,7 +31,7 @@ export const DialogBanner: React.FC<DialogBannerProps> = ({ showDialogBanner }) 
           pointerEvents: 'none'
         }}
       />
-      {localStorage.getItem('gachaponWinnerName') && (
+      {lastWinner && (
         <div
           style={{
             position: 'absolute',
@@ -57,7 +58,7 @@ export const DialogBanner: React.FC<DialogBannerProps> = ({ showDialogBanner }) 
               animation: 'marquee-slide 8s linear infinite',
             }}
           >
-            {`wooooooo, party for the gacha winner, ${localStorage.getItem('gachaponWinnerName')}.`}
+            {`wooooooo, party for the gacha winner, ${lastWinner}.`}
           </div>
           <style>{`
             @keyframes marquee-slide {

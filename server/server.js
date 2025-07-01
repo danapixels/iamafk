@@ -86,7 +86,7 @@ let batchTimer = null;
 let userActivity = {};
 let userStats = {};
 let allTimeRecord = { name: '', time: 0, lastUpdated: 0 };
-let jackpotRecord = { name: '', wins: 0, lastUpdated: 0, deviceId: '' };
+let jackpotRecord = { name: '', wins: 0, lastUpdated: 0, deviceId: '', lastWinner: '' };
 
 // Device ID to socket ID mapping for persistence
 let deviceToSocketMap = {};
@@ -818,9 +818,13 @@ io.on('connection', (socket) => {
     // Update jackpot record using device ID
     updateJackpotRecord(winnerId, winnerName);
     
+    // Store the last winner in the jackpot record
+    jackpotRecord.lastWinner = winnerName;
+    addToBatch('jackpotRecord', jackpotRecord);
+    
     // Broadcast to ALL currently online clients
     io.emit('gachaponWin', { winnerId, winnerName });
-    io.emit('showDialogBanner');
+    io.emit('showDialogBanner', { winnerName });
     console.log('Server broadcasted gachaponWin to all clients');
   });
 

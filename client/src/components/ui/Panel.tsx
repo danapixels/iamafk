@@ -14,6 +14,7 @@ interface PanelProps {
   gachaponWinner?: string | null;
   style?: React.CSSProperties;
   username?: string;
+  lastWinner?: string;
 }
 
 const Panel: React.FC<PanelProps> = ({
@@ -23,7 +24,8 @@ const Panel: React.FC<PanelProps> = ({
   viewportOffset,
   gachaponWinner,
   style,
-  username
+  username,
+  lastWinner
 }) => {
   const [gachaponWin, setGachaponWin] = useState(false);
   const [localGachaponWinner, setLocalGachaponWinner] = useState<string | null>(null);
@@ -34,17 +36,16 @@ const Panel: React.FC<PanelProps> = ({
     
     if (hasWon && buttonChanged) {
       setGachaponWin(true);
-      setLocalGachaponWinner(localStorage.getItem('gachaponWinnerName'));
+      setLocalGachaponWinner(lastWinner || null);
     }
-  }, []);
+  }, [lastWinner]);
 
   useEffect(() => {
     if (gachaponWinner) {
       setGachaponWin(true);
-      const winnerName = localStorage.getItem('gachaponWinnerName');
-      setLocalGachaponWinner(winnerName);
+      setLocalGachaponWinner(lastWinner || null);
     }
-  }, [gachaponWinner]);
+  }, [gachaponWinner, lastWinner]);
 
   const handleHatClick = (hatType: string) => {
     if (socket) {
