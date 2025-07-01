@@ -2,6 +2,7 @@ import { useEffect, useRef, useState  from 'react';
 import { Socket  from 'socket.io-client';
 import './App.css';
 import Panel from './components/ui/Panel';
+import FurniturePanel from './components/ui/FurniturePanel';
 import GachaponMachine from './components/game/GachaponMachine';
 import { AFKTimeDisplay  from './components/ui/AFKTimeDisplay';
 import { Logo  from './components/ui/Logo';
@@ -227,12 +228,17 @@ gachaNotificationText={gachaNotificationText
 />
 
 {/* UI Elements */
+<FurniturePanel 
+socket={socketRef.current 
+onFurnitureSpawn={handleFurnitureSpawn
+viewportOffset={viewportOffset
+style={{ zIndex: Z_INDEX_LAYERS.PANEL 
+/>
+
 <Panel 
 socket={socketRef.current 
 onCursorChange={handleCursorChange 
-onFurnitureSpawn={handleFurnitureSpawn
 cursorPosition={cursors[socketRef.current?.id || '']
-viewportOffset={viewportOffset
 gachaponWinner={gachaponWinner
 username={username
 lastWinner={lastWinner
