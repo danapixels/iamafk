@@ -1,0 +1,61 @@
+.furniture-panel-container {
+  position: fixed;
+  right: 160px; /* Position closer to the main panel */
+  top: 0;
+  transform: none;
+  pointer-events: none;
+  animation: fadeInFromRight 0.5s ease-out;
+}
+
+.furniture-panel-background {
+  width: auto;
+  height: auto;
+  pointer-events: none;
+}
+
+.furniture-panel-content {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px 20px 20px 20px;
+  padding-top: 42px; /* 20px + 22px extra top padding */
+  box-sizing: border-box;
+  pointer-events: all;
+}
+
+.furniture-panel-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+}
+
+/* gaps for furniture buttons */
+.furniture-panel-section:last-child {
+  gap: 2px;
+}
+
+.furniture-panel-section:last-child .button-grid {
+  gap: 8px;
+}
+
+.furniture-panel-section:last-child .button-row {
+  gap: 2px;
+}
+
+@keyframes fadeInFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+} 

@@ -153,7 +153,7 @@ export const useSocket = () => {
       }
     });
 
-    socket.on('showDialogBanner', (data: { winnerName: string }) => {
+    socket.on('showDialogBanner', () => {
       setShowDialogBanner(true);
       setTimeout(() => setShowDialogBanner(false), 60000); // 1 minute
     });
