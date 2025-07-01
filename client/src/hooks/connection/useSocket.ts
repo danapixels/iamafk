@@ -61,6 +61,7 @@ const [circles, setCircles] = useState<Circle[]>([]);
 const [emotes, setEmotes] = useState<Emote[]>([]);
 const [furniture, setFurniture] = useState<{ [key: string]: Furniture >({);
 const [showDialogBanner, setShowDialogBanner] = useState(false);
+const [lastWinner, setLastWinner] = useState<string>('');
 const socketRef = useRef<Socket | null>(null);
 
 useEffect(() => {
@@ -81,6 +82,9 @@ console.log('✅ Connected to server successfully');
 const deviceId = getDeviceId();
 socket.emit('setDeviceId', { deviceId );
 console.log('📱 Device ID sent:', deviceId);
+
+// Request jackpot record to get the last winner
+socket.emit('requestJackpotRecord');
 
 // Don't set hasConnected to true here - wait for user to enter name
 );
@@ -149,9 +153,16 @@ setCursors(prev => ({ ...prev, [data.socketId]: data.cursor ));
 
 );
 
-socket.on('showDialogBanner', () => {
+socket.on('showDialogBanner', (data: { winnerName: string ) => {
 setShowDialogBanner(true);
 setTimeout(() => setShowDialogBanner(false), 60000); // 1 minute
+);
+
+socket.on('jackpotRecord', (data: { name: string; wins: number; lastWinner?: string ) => {
+// Update last winner if provided
+if (data.lastWinner) {
+setLastWinner(data.lastWinner);
+
 );
 
 socket.on('usernameError', () => {
@@ -203,6 +214,8 @@ setEmotes,
 furniture,
 setFurniture,
 showDialogBanner,
-setShowDialogBanner
+setShowDialogBanner,
+lastWinner,
+setLastWinner
 ;
 ; 
