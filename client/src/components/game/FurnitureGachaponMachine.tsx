@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Socket } from 'socket.io-client';
 import { useUserStats } from '../../contexts/UserStatsContext';
 
-interface GachaponMachineProps {
+interface FurnitureGachaponMachineProps {
   src: string;
   alt: string;
   style?: React.CSSProperties;
@@ -15,7 +15,7 @@ interface GachaponMachineProps {
   onShowNotification?: (text: string) => void;
 }
 
-const GachaponMachine: React.FC<GachaponMachineProps> = ({
+const FurnitureGachaponMachine: React.FC<FurnitureGachaponMachineProps> = ({
   src,
   alt,
   style,
@@ -32,7 +32,7 @@ const GachaponMachine: React.FC<GachaponMachineProps> = ({
   const [showMessage, setShowMessage] = useState(false);
   const [messageType, setMessageType] = useState<'win' | 'tryAgain' | null>(null);
   const [gifTimestamp, setGifTimestamp] = useState(0);
-  const [currentImageSrc, setCurrentImageSrc] = useState('/UI/gachastill.png');
+  const [currentImageSrc, setCurrentImageSrc] = useState('/UI/furnituregacha.png');
   const messageRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const imgRef = useRef<HTMLImageElement>(null);
 
@@ -48,7 +48,7 @@ const GachaponMachine: React.FC<GachaponMachineProps> = ({
   useEffect(() => {
     if (socket) {
       // Listen for animation events from other users
-      socket.on('gachaponAnimation', (data: { userId: string, hasEnoughTime: boolean }) => {
+      socket.on('furnitureGachaponAnimation', (data: { userId: string, hasEnoughTime: boolean }) => {
         if (data.userId !== socket.id) {  // Only play if it's not our own animation
           setIsPlaying(true);
           setCurrentImageSrc(src);
@@ -59,12 +59,12 @@ const GachaponMachine: React.FC<GachaponMachineProps> = ({
             // Let the full GIF play for 3 seconds
             setTimeout(() => {
               setIsPlaying(false);
-              setCurrentImageSrc('/UI/gachastill.png');
+              setCurrentImageSrc('/UI/furnituregacha.png');
             }, 3000);
           } else {
             // Switch to static image after 0.5 seconds
             setTimeout(() => {
-              setCurrentImageSrc('/UI/gachastill.png');
+              setCurrentImageSrc('/UI/furnituregacha.png');
               setIsPlaying(false);
             }, 500);
           }
@@ -72,7 +72,7 @@ const GachaponMachine: React.FC<GachaponMachineProps> = ({
       });
 
       return () => {
-        socket.off('gachaponAnimation');
+        socket.off('furnitureGachaponAnimation');
       };
     }
   }, [socket, src]);
@@ -108,7 +108,7 @@ const GachaponMachine: React.FC<GachaponMachineProps> = ({
 
     // Emit animation event to other users with enoughTime flag
     if (socket) {
-      socket.emit('gachaponAnimation', { 
+      socket.emit('furnitureGachaponAnimation', { 
         userId: socket.id,
         hasEnoughTime: enoughTime 
       });
@@ -121,7 +121,7 @@ const GachaponMachine: React.FC<GachaponMachineProps> = ({
         // If deduction failed, reset the playing state and show error
         console.log('Failed to deduct AFK balance - insufficient funds');
         setIsPlaying(false);
-        setCurrentImageSrc('/UI/gachastill.png');
+        setCurrentImageSrc('/UI/furnituregacha.png');
         onShowNotification?.('insufficient funds');
         return;
       }
@@ -136,7 +136,7 @@ const GachaponMachine: React.FC<GachaponMachineProps> = ({
     } else {
       // For users without enough currency, play GIF for only 0.5 seconds then back to still
       setTimeout(() => {
-        setCurrentImageSrc('/UI/gachastill.png');
+        setCurrentImageSrc('/UI/furnituregacha.png');
         setIsPlaying(false);
       }, 500);
     }
@@ -151,13 +151,13 @@ const GachaponMachine: React.FC<GachaponMachineProps> = ({
       setShowMessage(true);
       
       // Pause the GIF by switching to static image while message shows
-      setCurrentImageSrc('/UI/gachastill.png');
+      setCurrentImageSrc('/UI/furnituregacha.png');
       
       // Emit win event to server (this will trigger confetti for ALL users via socket)
-      console.log('Emitting gachaponWin event to server');
+      console.log('Emitting furnitureGachaponWin event to server');
       console.log('Socket connected:', socket?.connected);
       console.log('Socket id:', socket?.id);
-      socket?.emit('gachaponWin', { winnerId: socket?.id, winnerName: username });
+      socket?.emit('furnitureGachaponWin', { winnerId: socket?.id, winnerName: username });
       
       // Hide message after 3 seconds
       messageRef.current = setTimeout(() => {
@@ -165,14 +165,14 @@ const GachaponMachine: React.FC<GachaponMachineProps> = ({
         setMessageType(null);
         setIsPlaying(false); // Re-enable clicking after message disappears
         // Stay on still image (default state)
-        setCurrentImageSrc('/UI/gachastill.png');
+        setCurrentImageSrc('/UI/furnituregacha.png');
       }, 3000);
     } else {
       setMessageType('tryAgain');
       setShowMessage(true);
       
       // Pause the GIF by switching to static image while message shows
-      setCurrentImageSrc('/UI/gachastill.png');
+      setCurrentImageSrc('/UI/furnituregacha.png');
       
       // Hide message after 2 seconds
       messageRef.current = setTimeout(() => {
@@ -180,7 +180,7 @@ const GachaponMachine: React.FC<GachaponMachineProps> = ({
         setMessageType(null);
         setIsPlaying(false); // Re-enable clicking after message disappears
         // Stay on still image (default state)
-        setCurrentImageSrc('/UI/gachastill.png');
+        setCurrentImageSrc('/UI/furnituregacha.png');
       }, 2000);
     }
   };
@@ -216,7 +216,7 @@ const GachaponMachine: React.FC<GachaponMachineProps> = ({
         onLoad={() => {
         }}
         onError={() => {
-          console.error('Gachapon image failed to load:', gifUrl);
+          console.error('Furniture Gachapon image failed to load:', gifUrl);
         }}
       />
       
@@ -308,4 +308,4 @@ const GachaponMachine: React.FC<GachaponMachineProps> = ({
   );
 };
 
-export default GachaponMachine; 
+export default FurnitureGachaponMachine; 

@@ -52,6 +52,7 @@ export interface Furniture {
   y: number;
   zIndex?: number;
   isFlipped?: boolean;
+  isOn?: boolean;
 }
 
 // Panel props

@@ -62,6 +62,7 @@ export const useSocket = () => {
   const [furniture, setFurniture] = useState<{ [key: string]: Furniture }>({});
   const [showDialogBanner, setShowDialogBanner] = useState(false);
   const [lastWinner, setLastWinner] = useState<string>('');
+  const [lastUnlockedItem, setLastUnlockedItem] = useState<string>('');
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
@@ -153,7 +154,9 @@ export const useSocket = () => {
       }
     });
 
-    socket.on('showDialogBanner', () => {
+    socket.on('showDialogBanner', (data: { winnerName: string; unlockedItem: string; type: string }) => {
+      setLastWinner(data.winnerName);
+      setLastUnlockedItem(data.unlockedItem);
       setShowDialogBanner(true);
       setTimeout(() => setShowDialogBanner(false), 60000); // 1 minute
     });
@@ -199,23 +202,25 @@ export const useSocket = () => {
     };
   }, []);
 
-  return {
-    socketRef,
-    hasConnected,
-    setHasConnected,
-    cursors,
-    setCursors,
-    hearts,
-    setHearts,
-    circles,
-    setCircles,
-    emotes,
-    setEmotes,
-    furniture,
-    setFurniture,
-    showDialogBanner,
-    setShowDialogBanner,
-    lastWinner,
-    setLastWinner
-  };
+      return {
+      socketRef,
+      hasConnected,
+      setHasConnected,
+      cursors,
+      setCursors,
+      hearts,
+      setHearts,
+      circles,
+      setCircles,
+      emotes,
+      setEmotes,
+      furniture,
+      setFurniture,
+      showDialogBanner,
+      setShowDialogBanner,
+      lastWinner,
+      setLastWinner,
+      lastUnlockedItem,
+      setLastUnlockedItem
+    };
 }; 

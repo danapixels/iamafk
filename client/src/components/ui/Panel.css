@@ -22,7 +22,8 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 20px;
+  padding: 20px 20px 20px 20px;
+  padding-top: 40px; /* 20px + 20px extra top padding */
   box-sizing: border-box;
   pointer-events: all;
 }
@@ -51,7 +52,7 @@
 
 /* gaps between hats buttons */
 .panel-section:last-child {
-  gap: 2px;
+  gap: 8px;
 }
 
 .panel-section:last-child .button-grid {
@@ -62,11 +63,6 @@
   display: flex;
   justify-content: center;
   gap: 8px;
-}
-
-/* gaps for furniture buttons */
-.panel-section:last-child .button-row {
-  gap: 2px;
 }
 
 .button {
@@ -158,48 +154,7 @@
   content: url('/UI/whitecatbuttonhover.png');
 }
 
-/* hats to replace cursor */
-.cursor-bunny {
-  background-image: url('/UI/bunny.png') !important;
-}
 
-.cursor-cap {
-  background-image: url('/UI/cap.png') !important;
-}
-
-.cursor-slime {
-  background-image: url('/UI/slime.png') !important;
-}
-
-.cursor-astronaut {
-  background-image: url('/UI/astronaut.png') !important;
-}
-
-.cursor-beanie {
-  background-image: url('/UI/beanie.png') !important;
-}
-
-.cursor-headphones {
-  background-image: url('/UI/headphones.png') !important;
-}
-
-.cursor-sprout {
-  background-image: url('/UI/sprout.png') !important;
-}
-
-.cursor-cathat {
-  background-image: url('/UI/cathat.png') !important;
-}
-
-.cursor-easteregg1 {
-  width: 32px;
-  height: 34px;
-  background-image: url('/UI/easteregg1.gif') !important;
-}
-
-.cursor-default {
-  background-image: url('/UI/cursor.png') !important;
-}
 
 /* tooltip for locked button */
 .locked-button-container:hover .tooltip,

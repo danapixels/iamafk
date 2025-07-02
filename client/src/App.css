@@ -122,10 +122,35 @@ html, body {
   background-image: url('/UI/cathat.png') !important;
 }
 
+/* Gacha hat cursor styles */
 .cursor-easteregg1 {
   width: 32px;
   height: 34px;
   background-image: url('/UI/easteregg1.gif') !important;
+}
+
+.cursor-balloon {
+  width: 42px;
+  height: 50px;
+  background-image: url('/UI/balloon.gif') !important;
+}
+
+.cursor-ffr {
+  width: 54px;
+  height: 44px;
+  background-image: url('/UI/ffr.gif') !important;
+}
+
+.cursor-ghost {
+  width: 24px;
+  height: 24px;
+  background-image: url('/UI/ghost.png') !important;
+}
+
+.cursor-loading {
+  width: 44px;
+  height: 34px;
+  background-image: url('/UI/loading.gif') !important;
 }
 
 .cursor-labels {

@@ -110,6 +110,16 @@ export const useFurniture = (
       }));
     });
 
+    socket.on('furnitureStateToggled', (data: { id: string, isOn: boolean }) => {
+      setFurniture(prev => ({
+        ...prev,
+        [data.id]: {
+          ...prev[data.id],
+          isOn: data.isOn
+        }
+      }));
+    });
+
     socket.on('furnitureCleanup', (data: { cleanedCount: number }) => {
       // Optionally show a notification to users about cleanup
       if (data.cleanedCount > 0) {
@@ -123,6 +133,7 @@ export const useFurniture = (
       socket.off('furnitureDeleted');
       socket.off('furnitureZIndexChanged');
       socket.off('furnitureFlipped');
+      socket.off('furnitureStateToggled');
       socket.off('furnitureCleanup');
     };
   }, [socketRef, setFurniture, setSelectedFurnitureId, hasConnected, draggedFurnitureId, mouseStateRef]);

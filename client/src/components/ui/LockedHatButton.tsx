@@ -1,38 +1,59 @@
 import React, { useState } from 'react';
+import { useUserStats } from '../../contexts/UserStatsContext';
 
 interface LockedHatButtonProps {
-  gachaponWin: boolean;
-  localGachaponWinner: string | null;
-  username?: string;
+  hatType: string;
   onClick: (hatType: string) => void;
 }
 
-const LockedHatButton: React.FC<LockedHatButtonProps> = ({ gachaponWin, localGachaponWinner, username, onClick }) => {
+const LockedHatButton: React.FC<LockedHatButtonProps> = ({ hatType, onClick }) => {
+  const { userStats } = useUserStats();
   const [showTooltip, setShowTooltip] = useState(false);
+
+  // Check if user has this specific hat unlocked
+  const hasUnlocked = userStats?.unlockedGachaHats?.includes(hatType) || false;
+
+  const getButtonSrc = (isHovered: boolean) => {
+    if (!hasUnlocked) {
+      return isHovered ? '/UI/lockedbuttonhover.png' : '/UI/lockedbutton.png';
+    }
+
+    switch (hatType) {
+      case 'easteregg1':
+        return isHovered ? '/UI/easteregg1buttonhover.png' : '/UI/easteregg1button.png';
+      case 'balloon':
+        return isHovered ? '/UI/balloonbuttonhover.png' : '/UI/balloonbutton.png';
+      case 'ffr':
+        return isHovered ? '/UI/ffrbuttonhover.png' : '/UI/ffrbutton.png';
+      case 'ghost':
+        return isHovered ? '/UI/ghostbuttonhover.png' : '/UI/ghostbutton.png';
+      case 'loading':
+        return isHovered ? '/UI/loadingbuttonhover.png' : '/UI/loadingbutton.png';
+      default:
+        return isHovered ? '/UI/lockedbuttonhover.png' : '/UI/lockedbutton.png';
+    }
+  };
+
+  const [isHovered, setIsHovered] = useState(false);
+
   return (
     <div className="locked-button-container" style={{ position: 'relative', display: 'flex' }}>
       <img
-        src={gachaponWin ? '/UI/easteregg1button.png' : '/UI/lockedbutton.png'}
-        alt={gachaponWin ? "Easter Egg Hat" : "Locked Hat"}
-        onMouseOver={(e) => {
-          e.currentTarget.src = gachaponWin ? '/UI/easteregg1buttonhover.png' : '/UI/lockedbuttonhover.png';
-        }}
-        onMouseOut={(e) => {
-          e.currentTarget.src = gachaponWin ? '/UI/easteregg1button.png' : '/UI/lockedbutton.png';
-        }}
+        src={getButtonSrc(isHovered)}
+        alt={hasUnlocked ? `${hatType} Hat` : "Locked Hat"}
         className="button"
         style={{ cursor: 'pointer' }}
-        onMouseEnter={({ currentTarget }) => {
-          currentTarget.src = gachaponWin ? '/UI/easteregg1buttonhover.png' : '/UI/lockedbuttonhover.png';
+        onMouseEnter={() => {
+          setIsHovered(true);
           setShowTooltip(true);
         }}
-        onMouseLeave={(e) => {
-          e.currentTarget.src = gachaponWin ? '/UI/easteregg1button.png' : '/UI/lockedbutton.png';
+        onMouseLeave={() => {
+          setIsHovered(false);
           setShowTooltip(false);
         }}
         onClick={() => {
-          if (gachaponWin) {
-            onClick('easteregg1');
+          if (hasUnlocked) {
+            onClick(hatType);
           }
         }}
       />
@@ -56,11 +77,7 @@ const LockedHatButton: React.FC<LockedHatButtonProps> = ({ gachaponWin, localGac
           zIndex: 99999,
         }}
       >
-        {gachaponWin && localGachaponWinner ?
-          (username && username === localGachaponWinner ?
-            'you did it!'
-            : `${localGachaponWinner} won the 1%!`)
-          : '30m = 1 gacha play'}
+        {hasUnlocked ? 'you unlocked this!' : '30m = 1 gacha play'}
       </div>
     </div>
   );

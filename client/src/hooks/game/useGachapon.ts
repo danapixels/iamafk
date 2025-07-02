@@ -3,25 +3,20 @@ import { Socket } from 'socket.io-client';
 
 interface UseGachaponProps {
   socket: Socket | null;
-  deductAFKBalance: (seconds: number) => Promise<boolean>;
   setFrozenCursorPosition: (position: { x: number; y: number } | null) => void;
   setIsCursorFrozen: (frozen: boolean) => void;
 }
 
 export const useGachapon = ({
   socket,
-  deductAFKBalance,
   setFrozenCursorPosition,
   setIsCursorFrozen
 }: UseGachaponProps) => {
   
-  const handleGachaponUse = useCallback(async () => {
-    // Deduct 30 seconds from AFK balance for gachapon use
-    const success = await deductAFKBalance(30);
-    if (!success) {
-      console.warn('Insufficient AFK balance for gachapon use');
-    }
-  }, [deductAFKBalance]);
+  const handleGachaponUse = useCallback(() => {
+    // This function is called after AFK balance has already been deducted by the gacha machine
+    // No additional deduction needed here
+  }, []);
 
   const handleGachaponUnfreeze = useCallback(() => {
     setFrozenCursorPosition(null);

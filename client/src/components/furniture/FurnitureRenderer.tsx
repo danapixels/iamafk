@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import type { Furniture } from '../../types';
-import { FURNITURE_IMAGES, Z_INDEX_LAYERS } from '../../constants';
+import { FURNITURE_IMAGES, FURNITURE_TOGGLE_IMAGES, Z_INDEX_LAYERS } from '../../constants';
 import { FurnitureControlButtons } from './FurnitureControlButtons';
 
 interface FurnitureRendererProps {
@@ -22,9 +22,24 @@ const FurnitureRenderer: React.FC<FurnitureRendererProps> = memo(({
   onMoveDown,
   onDelete
 }) => {
+  const getFurnitureImage = (item: Furniture) => {
+    // Check if this furniture type has toggle states
+    if (FURNITURE_TOGGLE_IMAGES[item.type]) {
+      return item.isOn ? FURNITURE_TOGGLE_IMAGES[item.type].on : FURNITURE_TOGGLE_IMAGES[item.type].off;
+    }
+    // Default to regular furniture image
+    return FURNITURE_IMAGES[item.type];
+  };
+
   const handleFlip = (furnitureId: string) => {
     if (socketRef.current) {
       socketRef.current.emit('flipFurniture', { furnitureId });
+    }
+  };
+
+  const handleToggle = (furnitureId: string) => {
+    if (socketRef.current) {
+      socketRef.current.emit('toggleFurnitureState', { furnitureId });
     }
   };
 
@@ -44,9 +59,19 @@ const FurnitureRenderer: React.FC<FurnitureRendererProps> = memo(({
             ref={(el) => {
               furnitureRefs.current[item.id] = el;
             }}
-            src={FURNITURE_IMAGES[item.type]}
+            src={getFurnitureImage(item)}
             alt={item.type}
             data-furniture-id={item.id}
+            data-furniture-type={item.type}
+            onDoubleClick={(e) => {
+              // Only handle double-click for toggleable furniture
+              if (FURNITURE_TOGGLE_IMAGES[item.type]) {
+                e.preventDefault();
+                e.stopPropagation();
+                handleToggle(item.id);
+              }
+              // For non-toggleable furniture (like toilet), let the global double-click handler handle it
+            }}
             style={{
               position: 'absolute',
               left: item.x,

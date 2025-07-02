@@ -66,10 +66,23 @@ export const UI_STATE = {
   INITIAL_COUNTERS: 0
 };
 
-// Gachapon machine constants
+// Hat gachapon machine constants
 export const GACHAPON_CONFIG = {
   POSITION: {
-    LEFT: 160,
+    LEFT: 200,
+    TOP: 280,
+    Z_INDEX: 99
+  },
+  STYLE: {
+    transform: 'scaleX(-1)',
+    position: 'absolute' as const
+  }
+} as const;
+
+// Furniture Gachapon machine constants
+export const FURNITURE_GACHAPON_CONFIG = {
+  POSITION: {
+    LEFT: 100,
     TOP: 280,
     Z_INDEX: 99
   },

@@ -365,7 +365,8 @@ export const useMouseInteractions = ({
           dragStartPos.current = null;
           
           const item = furniture[furnitureId];
-          if (item && (item.type === 'bed' || item.type === 'chair')) {
+          // Check for furniture that can freeze the cursor
+          if (item && (item.type === 'bed' || item.type === 'chair' || item.type === 'toilet')) {
             setSelectedFurnitureId(null);
             const canvasCoords = convertScreenToCanvas(e.clientX, e.clientY);
             if (!isCursorFrozen) {
@@ -391,6 +392,12 @@ export const useMouseInteractions = ({
               }
             }
             setIsCursorFrozen(!isCursorFrozen);
+            return;
+          }
+          
+          // Check for furniture that can be toggled (computer, tv, washingmachine)
+          if (item && (item.type === 'computer' || item.type === 'tv' || item.type === 'washingmachine')) {
+            // Let the furniture's own double-click handler handle the toggle
             return;
           }
         }

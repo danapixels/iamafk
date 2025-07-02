@@ -2,6 +2,7 @@ import React from 'react';
 import { Socket } from 'socket.io-client';
 import './FurniturePanel.css';
 import FurnitureButton from './FurnitureButton';
+import LockedFurnitureButton from './LockedFurnitureButton';
 
 interface FurniturePanelProps {
   socket: Socket | null;
@@ -55,6 +56,15 @@ const FurniturePanel: React.FC<FurniturePanelProps> = ({
               <FurnitureButton src="/UI/blackcatbutton.png" hoverSrc="/UI/blackcatbuttonhover.png" alt="Black Cat" type="blackcat" onClick={handleFurnitureClick} />
               <FurnitureButton src="/UI/whitecatbutton.png" hoverSrc="/UI/whitecatbuttonhover.png" alt="White Cat" type="whitecat" onClick={handleFurnitureClick} />
               <FurnitureButton src="/UI/tablebutton.png" hoverSrc="/UI/tablebuttonhover.png" alt="Table" type="table" onClick={handleFurnitureClick} />
+            </div>
+            <div className="button-row">
+              <LockedFurnitureButton type="computer" onClick={handleFurnitureClick} />
+              <LockedFurnitureButton type="tv" onClick={handleFurnitureClick} />
+              <LockedFurnitureButton type="toilet" onClick={handleFurnitureClick} />
+            </div>
+            <div className="button-row">
+              <LockedFurnitureButton type="washingmachine" onClick={handleFurnitureClick} />
+              <LockedFurnitureButton type="zuzu" onClick={handleFurnitureClick} />
             </div>
           </div>
         </div>
