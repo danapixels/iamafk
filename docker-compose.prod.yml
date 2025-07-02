@@ -30,7 +30,7 @@ services:
       - PORT=3001
       - CORS_ORIGIN=https://iamafk.dev,https://www.iamafk.dev,http://iamafk.dev,http://www.iamafk.dev
       - DATA_DIR=/app/data
-      - FURNITURE_EXPIRY_HOURS=48
+      - FURNITURE_EXPIRY_HOURS=168
       - DAILY_FURNITURE_LIMIT=1000
       - BATCH_INTERVAL=300000
       - PING_TIMEOUT=60000
