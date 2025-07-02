@@ -96,6 +96,37 @@ const GACHA_FURNITURE = ['computer', 'tv', 'toilet', 'washingmachine', 'zuzu'];
 let deviceToSocketMap = {;
 let socketToDeviceMap = {;
 
+// Load socket-to-device mapping from persistent storage
+function loadSocketDeviceMapping() {
+
+const mappingFile = path.join(SERVER_CONFIG.DATA_DIR, 'socket_device_mapping.json');
+if (fs.existsSync(mappingFile)) {
+const data = fs.readFileSync(mappingFile, 'utf8');
+const parsed = JSON.parse(data);
+socketToDeviceMap = parsed.socketToDeviceMap || {;
+deviceToSocketMap = parsed.deviceToSocketMap || {;
+console.log('Loaded socket-to-device mapping:', Object.keys(socketToDeviceMap).length, 'mappings');
+
+
+console.log('No existing socket-to-device mapping found, starting fresh');
+
+
+
+// Save socket-to-device mapping to persistent storage
+function saveSocketDeviceMapping() {
+
+const mappingFile = path.join(SERVER_CONFIG.DATA_DIR, 'socket_device_mapping.json');
+const mappingData = {
+socketToDeviceMap,
+deviceToSocketMap,
+lastUpdated: Date.now()
+;
+fs.writeFileSync(mappingFile, JSON.stringify(mappingData, null, 2));
+
+console.error('Error saving socket-to-device mapping:', error);
+
+
+
 // AFK time tracking variables
 let userAFKStartTimes = {; // when each user started being AFK
 let lastAFKUpdateTimes = {; // last AFK time update for each user
@@ -422,6 +453,7 @@ loadPersistentData();
 loadUserStats();
 loadAllTimeRecord();
 loadJackpotRecord();
+loadSocketDeviceMapping();
 
 // Recalculate jackpot record to ensure it's correct after loading user stats
 recalculateJackpotRecord();
@@ -492,6 +524,7 @@ savePersistentData();
 saveUserStats();
 saveAllTimeRecord();
 saveJackpotRecord();
+saveSocketDeviceMapping();
 
 // Clear batch
 pendingChanges.length = 0;
@@ -984,6 +1017,9 @@ if (deviceId) {
 deviceToSocketMap[deviceId] = socket.id;
 socketToDeviceMap[socket.id] = deviceId;
 
+// Save the mapping to persistent storage
+saveSocketDeviceMapping();
+
 console.log('Device ID mapped:', deviceId, '->', socket.id);
 
 );
@@ -1120,6 +1156,9 @@ delete socketToDeviceMap[socketId];
 delete deviceToSocketMap[deviceId];
 delete userAFKStartTimes[deviceId];
 delete lastAFKUpdateTimes[deviceId];
+
+// Save the updated mapping to persistent storage
+saveSocketDeviceMapping();
 
 // Don't delete userStats - keep them persistent by device ID
 
