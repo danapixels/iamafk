@@ -52,6 +52,7 @@ x: number;
 y: number;
 zIndex?: number;
 isFlipped?: boolean;
+isOn?: boolean;
 
 
 // Panel props

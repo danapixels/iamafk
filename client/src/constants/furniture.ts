@@ -9,6 +9,18 @@ plant2: '/UI/plant2.png',
 blackcat: '/UI/blackcat.png',
 whitecat: '/UI/whitecat.png',
 table: '/UI/table.png',
+computer: '/UI/computeroff.png',
+tv: '/UI/tvoff.png',
+toilet: '/UI/toilet.png',
+washingmachine: '/UI/washingmachineoff.png',
+zuzu: '/UI/zuzu.png',
+ as const;
+
+// furniture toggle states (on/off images)
+export const FURNITURE_TOGGLE_IMAGES: { [key: string]: { off: string; on: string   = {
+computer: { off: '/UI/computeroff.png', on: '/UI/computeron.gif' ,
+tv: { off: '/UI/tvoff.png', on: '/UI/tvon.gif' ,
+washingmachine: { off: '/UI/washingmachineoff.png', on: '/UI/washingmachineon.gif' ,
  as const;
 
 // furniture wxh for bounding box button positioning
@@ -23,6 +35,11 @@ export const FURNITURE_DIMENSIONS: { [key: string]: { width: number; height: num
 'walls1': { width: 64, height: 48 ,
 'walls2': { width: 64, height: 48 ,
 'table': { width: 68, height: 58 ,
+'computer': { width: 60, height: 40 ,
+'tv': { width: 80, height: 50 ,
+'toilet': { width: 40, height: 60 ,
+'washingmachine': { width: 50, height: 70 ,
+'zuzu': { width: 30, height: 30 ,
  as const;
 
 // furniture types for type safety
@@ -36,6 +53,11 @@ PLANT2: 'plant2',
 BLACKCAT: 'blackcat',
 WHITECAT: 'whitecat',
 TABLE: 'table',
+COMPUTER: 'computer',
+TV: 'tv',
+TOILET: 'toilet',
+WASHINGMACHINE: 'washingmachine',
+ZUZU: 'zuzu',
  as const;
 
 export type FurnitureType = typeof FURNITURE_TYPES[keyof typeof FURNITURE_TYPES]; 

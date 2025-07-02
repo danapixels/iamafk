@@ -3,10 +3,40 @@ import React from 'react';
 interface DialogBannerProps {
 showDialogBanner: boolean;
 lastWinner?: string;
+lastUnlockedItem?: string;
 
 
-export const DialogBanner: React.FC<DialogBannerProps> = ({ showDialogBanner, lastWinner ) => {
+export const DialogBanner: React.FC<DialogBannerProps> = ({ showDialogBanner, lastWinner, lastUnlockedItem ) => {
 if (!showDialogBanner) return null;
+
+const getDisplayName = (item: string) => {
+switch (item) {
+// Hat items
+case 'easteregg1':
+return 'crown hat';
+case 'balloon':
+return 'balloon hat';
+case 'ffr':
+return 'flashflashrevolution hat';
+case 'ghost':
+return 'ghost hat';
+case 'loading':
+return 'loading hat';
+// Furniture items
+case 'zuzu':
+return 'zuzu';
+case 'tv':
+return 'tv';
+case 'computer':
+return 'computer';
+case 'washingmachine':
+return 'washing machine';
+case 'toilet':
+return 'toilet';
+default:
+return item;
+
+;
 
 return (
 <div
@@ -58,7 +88,10 @@ whiteSpace: 'nowrap',
 animation: 'marquee-slide 8s linear infinite',
 
 >
-{`wooooooo, party for the gacha winner, ${lastWinner.`
+{lastUnlockedItem 
+? `wooooooo, party for the gacha winner, ${lastWinner, they won the ${getDisplayName(lastUnlockedItem)!`
+: `wooooooo, party for the gacha winner, ${lastWinner.`
+
 </div>
 <style>{`
 @keyframes marquee-slide {

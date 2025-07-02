@@ -5,9 +5,7 @@ const Testing: React.FC = () => {
 const { 
 userStats, 
 deductAFKBalance, 
-recordFurniturePlacement,
-canPlaceFurniture,
-getRemainingDailyPlacements,
+addAFKTime,
 refreshStats
  = useUserStats();
 
@@ -20,69 +18,62 @@ refreshStats(); // Refresh to see updated stats
 
 ;
 
-const handleTestFurniturePlacement = async () => {
-console.log('Testing furniture placement...');
-const success = await recordFurniturePlacement('test-furniture');
-console.log('Furniture placement result:', success);
+const handleAddAFKTime = async (minutes: number) => {
+console.log(`Adding ${minutes minutes of AFK time...`);
+const seconds = minutes * 60;
+const success = await addAFKTime(seconds);
+console.log('AFK time addition result:', success);
 if (success) {
 refreshStats(); // Refresh to see updated stats
 
-;
-
-const handleTestDailyLimit = () => {
-console.log('Can place furniture:', canPlaceFurniture());
-console.log('Remaining daily placements:', getRemainingDailyPlacements());
 ;
 
 return (
 <div style={{ 
 position: 'fixed', 
 top: '10px', 
-right: '10px', 
+left: '50%', 
+transform: 'translateX(-50%)',
 background: 'rgba(0,0,0,0.8)', 
 color: 'white', 
-padding: '10px', 
+padding: '8px', 
 borderRadius: '5px',
 zIndex: 10000,
-fontSize: '12px'
+fontSize: '10px',
+maxWidth: '200px'
 >
-<h3>Server-Side Validation Testing</h3>
+<h4 style={{ margin: '0 0 8px 0', fontSize: '11px' >Testing Panel</h4>
 
-<div>
-<strong>Current Stats:</strong>
-<pre>{JSON.stringify(userStats, null, 2)</pre>
+<div style={{ marginBottom: '8px' >
+<strong>AFK Balance:</strong> {userStats?.afkBalance ? Math.floor(userStats.afkBalance / 60) + 'm' : '0m'
 </div>
 
-<div style={{ marginTop: '10px' >
-<button onClick={handleTestDeductBalance style={{ margin: '2px' >
-Test Deduct Balance (-30s)
+<div style={{ marginBottom: '8px' >
+<button onClick={() => handleAddAFKTime(1) style={{ margin: '1px', fontSize: '9px', padding: '2px 4px' >
++1m
 </button>
-<button onClick={handleTestFurniturePlacement style={{ margin: '2px' >
-Test Furniture Placement
+<button onClick={() => handleAddAFKTime(5) style={{ margin: '1px', fontSize: '9px', padding: '2px 4px' >
++5m
 </button>
-<button onClick={handleTestDailyLimit style={{ margin: '2px' >
-Test Daily Limit
+<button onClick={() => handleAddAFKTime(30) style={{ margin: '1px', fontSize: '9px', padding: '2px 4px' >
++30m
 </button>
-<button onClick={refreshStats style={{ margin: '2px' >
-Refresh Stats
+<button onClick={() => handleAddAFKTime(60) style={{ margin: '1px', fontSize: '9px', padding: '2px 4px' >
++1h
 </button>
 </div>
 
-<div style={{ marginTop: '10px', fontSize: '10px' >
-<strong>Security Features:</strong>
-<ul>
-<li>✅ AFK time validated server-side</li>
-<li>✅ Balance deductions validated server-side</li>
-<li>✅ Furniture placement limits enforced server-side</li>
-<li>✅ No localStorage manipulation possible</li>
-<li>✅ Real-time stats updates via Context API</li>
-</ul>
+<div style={{ marginBottom: '8px' >
+<button onClick={handleTestDeductBalance style={{ margin: '1px', fontSize: '9px', padding: '2px 4px' >
+-30s
+</button>
+<button onClick={refreshStats style={{ margin: '1px', fontSize: '9px', padding: '2px 4px' >
+Refresh
+</button>
+</div>
 
-<strong>Connection Status:</strong>
-<ul>
-<li>Context API: {userStats ? '✅ Connected' : '❌ Not Connected'</li>
-<li>Stats Loading: {userStats ? '✅ Loaded' : '⏳ Loading...'</li>
-</ul>
+<div style={{ fontSize: '8px', opacity: 0.8 >
+Status: {userStats ? '✅ Connected' : '❌ Loading...'
 </div>
 </div>
 );

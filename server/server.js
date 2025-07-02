@@ -88,6 +88,10 @@ let userStats = {;
 let allTimeRecord = { name: '', time: 0, lastUpdated: 0 ;
 let jackpotRecord = { name: '', wins: 0, lastUpdated: 0, deviceId: '', lastWinner: '' ;
 
+// Gacha item pools
+const GACHA_HATS = ['easteregg1', 'balloon', 'ffr', 'ghost', 'loading'];
+const GACHA_FURNITURE = ['computer', 'tv', 'toilet', 'washingmachine', 'zuzu'];
+
 // Device ID to socket ID mapping for persistence
 let deviceToSocketMap = {;
 let socketToDeviceMap = {;
@@ -364,6 +368,53 @@ delete userAFKStartTimes[deviceId];
 delete lastAFKUpdateTimes[deviceId];
 
 );
+
+
+// Gacha unlock helper functions
+function unlockRandomGachaHat(deviceId) {
+const user = userStats[deviceId];
+if (!user) return null;
+
+// Initialize unlocked hats array if it doesn't exist
+if (!user.unlockedGachaHats) {
+user.unlockedGachaHats = [];
+
+
+// Select random hat from pool
+const randomHat = GACHA_HATS[Math.floor(Math.random() * GACHA_HATS.length)];
+
+// Add to unlocked hats (allows duplicates)
+user.unlockedGachaHats.push(randomHat);
+user.lastSeen = Date.now();
+
+// Add to batch for persistence
+addToBatch('userStats', { socketId: deviceId, stats: user );
+
+console.log(`Unlocked gacha hat for ${user.username: ${randomHat`);
+return randomHat;
+
+
+function unlockRandomGachaFurniture(deviceId) {
+const user = userStats[deviceId];
+if (!user) return null;
+
+// Initialize unlocked furniture array if it doesn't exist
+if (!user.unlockedGachaFurniture) {
+user.unlockedGachaFurniture = [];
+
+
+// Select random furniture from pool
+const randomFurniture = GACHA_FURNITURE[Math.floor(Math.random() * GACHA_FURNITURE.length)];
+
+// Add to unlocked furniture (allows duplicates)
+user.unlockedGachaFurniture.push(randomFurniture);
+user.lastSeen = Date.now();
+
+// Add to batch for persistence
+addToBatch('userStats', { socketId: deviceId, stats: user );
+
+console.log(`Unlocked gacha furniture for ${user.username: ${randomFurniture`);
+return randomFurniture;
 
 
 // Load data on startup
@@ -659,6 +710,26 @@ isFlipped: furniture[furnitureId].isFlipped
 
 );
 
+socket.on('toggleFurnitureState', (data) => {
+const { furnitureId  = data;
+if (furniture[furnitureId]) {
+// Toggle the on/off state
+furniture[furnitureId].isOn = !furniture[furnitureId].isOn;
+
+// Update timestamp when furniture state is toggled
+furniture[furnitureId].timestamp = Date.now();
+
+// Save to persistent storage
+addToBatch('furniture', furniture[furnitureId]);
+
+// Broadcast to ALL clients including sender
+io.emit('furnitureStateToggled', { 
+id: furnitureId, 
+isOn: furniture[furnitureId].isOn 
+);
+
+);
+
 socket.on('updateFurnitureZIndex', (data) => {
 const { furnitureId, zIndex  = data;
 if (furniture[furnitureId]) {
@@ -803,7 +874,7 @@ io.emit('cursors', getValidCursors());
 );
 
 socket.on('gachaponWin', ({ winnerId, winnerName ) => {
-console.log('Server received gachaponWin:', { winnerId, winnerName );
+console.log('Server received gachaponWin (hat):', { winnerId, winnerName );
 
 // Get device ID for the winner
 const deviceId = socketToDeviceMap[winnerId] || winnerId;
@@ -815,6 +886,9 @@ userStats[deviceId].lastSeen = Date.now();
 addToBatch('userStats', { socketId: deviceId, stats: userStats[deviceId] );
 
 
+// Unlock random gacha hat
+const unlockedHat = unlockRandomGachaHat(deviceId);
+
 // Update jackpot record using device ID
 updateJackpotRecord(winnerId, winnerName);
 
@@ -823,14 +897,41 @@ jackpotRecord.lastWinner = winnerName;
 addToBatch('jackpotRecord', jackpotRecord);
 
 // Broadcast to ALL currently online clients
-io.emit('gachaponWin', { winnerId, winnerName );
-io.emit('showDialogBanner', { winnerName );
-console.log('Server broadcasted gachaponWin to all clients');
+io.emit('gachaponWin', { winnerId, winnerName, unlockedItem: unlockedHat, type: 'hat' );
+io.emit('showDialogBanner', { winnerName, unlockedItem: unlockedHat, type: 'hat' );
+console.log('Server broadcasted gachaponWin (hat) to all clients');
+);
+
+socket.on('furnitureGachaponWin', ({ winnerId, winnerName ) => {
+console.log('Server received furnitureGachaponWin:', { winnerId, winnerName );
+
+// Get device ID for the winner
+const deviceId = socketToDeviceMap[winnerId] || winnerId;
+
+// Update user stats with furniture gachapon win using device ID
+if (userStats[deviceId]) {
+userStats[deviceId].furnitureGachaponWins = (userStats[deviceId].furnitureGachaponWins || 0) + 1;
+userStats[deviceId].lastSeen = Date.now();
+addToBatch('userStats', { socketId: deviceId, stats: userStats[deviceId] );
+
+
+// Unlock random gacha furniture
+const unlockedFurniture = unlockRandomGachaFurniture(deviceId);
+
+// Broadcast to ALL currently online clients
+io.emit('furnitureGachaponWin', { winnerId, winnerName, unlockedItem: unlockedFurniture, type: 'furniture' );
+io.emit('showDialogBanner', { winnerName, unlockedItem: unlockedFurniture, type: 'furniture' );
+console.log('Server broadcasted furnitureGachaponWin to all clients');
 );
 
 socket.on('gachaponAnimation', ({ userId, hasEnoughTime ) => {
 // Broadcast the animation event to all clients except the sender
 socket.broadcast.emit('gachaponAnimation', { userId, hasEnoughTime );
+);
+
+socket.on('furnitureGachaponAnimation', ({ userId, hasEnoughTime ) => {
+// Broadcast the furniture animation event to all clients except the sender
+socket.broadcast.emit('furnitureGachaponAnimation', { userId, hasEnoughTime );
 );
 
 // Server-side user stats handlers (simplified)
@@ -849,6 +950,11 @@ socket.emit('jackpotRecord', jackpotRecord);
 
 socket.on('deductAFKBalance', ({ seconds , callback) => {
 const result = deductAFKBalanceOnServer(socket.id, seconds);
+callback(result);
+);
+
+socket.on('addAFKTime', ({ seconds , callback) => {
+const result = addAFKTimeOnServer(socket.id, seconds);
 callback(result);
 );
 
@@ -940,7 +1046,9 @@ furnitureByType: {,
 lastSeen: Date.now(),
 firstSeen: Date.now(),
 sessions: 1,
-dailyFurniturePlacements: {
+dailyFurniturePlacements: {,
+unlockedGachaHats: [],
+unlockedGachaFurniture: []
 ;
 userStats[deviceId] = newUser;
 return newUser;
@@ -972,6 +1080,32 @@ return { success: false, error: 'User not found' ;
 
 
 console.error('Error deducting AFK balance:', error);
+return { success: false, error: 'Server error' ;
+
+
+
+// Add AFK time on server (for testing)
+function addAFKTimeOnServer(socketId, seconds) {
+
+const deviceId = socketToDeviceMap[socketId] || socketId;
+const user = userStats[deviceId];
+
+if (user) {
+user.totalAFKTime += seconds;
+user.afkBalance += seconds;
+user.lastSeen = Date.now();
+
+// Add to batch for persistence
+addToBatch('userStats', { socketId: deviceId, stats: user );
+
+console.log(`Added AFK time for ${user.username: +${secondss (Total: ${user.totalAFKTimes, Balance: ${user.afkBalances)`);
+return { success: true ;
+ else {
+console.error('User not found for AFK time addition:', socketId);
+return { success: false, error: 'User not found' ;
+
+
+console.error('Error adding AFK time:', error);
 return { success: false, error: 'Server error' ;
 
 

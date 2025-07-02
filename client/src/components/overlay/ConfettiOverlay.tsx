@@ -34,7 +34,7 @@ height: 'auto',
 maxHeight: '60vh'
 
 onLoad={() => {
-// Confetti loaded successfully
+console.log('Left confetti GIF loaded successfully');
 
 onError={(e) => {
 console.error('Left confetti GIF failed to load:', e);

@@ -4,6 +4,7 @@ import './App.css';
 import Panel from './components/ui/Panel';
 import FurniturePanel from './components/ui/FurniturePanel';
 import GachaponMachine from './components/game/GachaponMachine';
+import FurnitureGachaponMachine from './components/game/FurnitureGachaponMachine';
 import { AFKTimeDisplay  from './components/ui/AFKTimeDisplay';
 import { Logo  from './components/ui/Logo';
 import { ConfettiOverlay  from './components/overlay/ConfettiOverlay';
@@ -11,7 +12,6 @@ import { DialogBanner  from './components/overlay/DialogBanner';
 import ConnectionModal from './components/ui/ConnectionModal';
 import CanvasContainer from './components/ui/CanvasContainer';
 import { UserStatsProvider, useUserStats  from './contexts/UserStatsContext';
-import Testing from './test/Testing';
 
 // Custom hooks
 import { useSocket  from './hooks/connection/useSocket';
@@ -37,7 +37,7 @@ getSavedUsername,
 getSavedCursorType,
 saveUsername
  from './utils/localStorage';
-import { getGachaponStyle  from './utils/gachapon';
+import { getGachaponStyle, getFurnitureGachaponStyle  from './utils/gachapon';
 
 function AppContent({
 username,
@@ -57,12 +57,12 @@ setEmotes,
 furniture,
 setFurniture,
 showDialogBanner,
-lastWinner
+lastWinner,
+lastUnlockedItem
 : AppContentProps) {
 // Use Context API for user stats
 const { 
 userStats, 
-deductAFKBalance, 
 recordFurniturePlacement,
 canPlaceFurniture
  = useUserStats();
@@ -73,7 +73,6 @@ const [isCursorFrozen, setIsCursorFrozen] = useState(false);
 const [frozenCursorPosition, setFrozenCursorPosition] = useState<{ x: number; y: number  | null>(null);
 
 // ===== GAME STATE =====
-const [gachaponWinner, setGachaponWinner] = useState<string | null>(null);
 const [showConfetti, setShowConfetti] = useState(false);
 const [confettiTimestamp, setConfettiTimestamp] = useState<number | null>(null);
 
@@ -121,7 +120,7 @@ viewportOffset,
 mouseStateRef
 );
 useFurniture(socketRef, setFurniture, setSelectedFurnitureId, hasConnected, draggedFurnitureId, mouseStateRef);
-useConfetti(socketRef, setGachaponWinner, setShowConfetti, setConfettiTimestamp);
+useConfetti(socketRef, setShowConfetti, setConfettiTimestamp);
 
 // Animation and cleanup
 useAnimationCleanup({
@@ -133,7 +132,6 @@ setEmotes: setEmotes
 // Gachapon machine logic
 const { handleGachaponUse, handleGachaponUnfreeze  = useGachapon({
 socket: socketRef.current,
-deductAFKBalance,
 setFrozenCursorPosition,
 setIsCursorFrozen
 );
@@ -239,9 +237,6 @@ style={{ zIndex: Z_INDEX_LAYERS.PANEL
 socket={socketRef.current 
 onCursorChange={handleCursorChange 
 cursorPosition={cursors[socketRef.current?.id || '']
-gachaponWinner={gachaponWinner
-username={username
-lastWinner={lastWinner
 style={{ zIndex: Z_INDEX_LAYERS.PANEL 
 />
 
@@ -261,6 +256,19 @@ style={getGachaponStyle(viewportOffset)
 onShowNotification={handleShowGachaNotification
 />
 
+{/* Furniture Gachapon Machine */
+<FurnitureGachaponMachine
+src={'/UI/furnituregacha.gif'
+alt="Furniture Gacha"
+username={username
+socket={socketRef.current
+onUse={handleGachaponUse
+isCursorFrozen={isCursorFrozen
+onUnfreeze={handleGachaponUnfreeze
+style={getFurnitureGachaponStyle(viewportOffset)
+onShowNotification={handleShowGachaNotification
+/>
+
 {/* Connection Modal */
 <ConnectionModal
 username={username
@@ -271,10 +279,7 @@ hasConnected={hasConnected
 
 {/* Overlays */
 <ConfettiOverlay showConfetti={showConfetti confettiTimestamp={confettiTimestamp />
-<DialogBanner showDialogBanner={showDialogBanner lastWinner={lastWinner />
-
-{/* Development Testing Component */
-{import.meta.env.DEV && <Testing />
+<DialogBanner showDialogBanner={showDialogBanner lastWinner={lastWinner lastUnlockedItem={lastUnlockedItem />
 </div>
 );
 
@@ -298,6 +303,7 @@ furniture: { [key: string]: any ;
 setFurniture: React.Dispatch<React.SetStateAction<{ [key: string]: any >>;
 showDialogBanner: boolean;
 lastWinner: string;
+lastUnlockedItem: string;
 
 
 function App() {
@@ -319,7 +325,8 @@ setEmotes,
 furniture,
 setFurniture,
 showDialogBanner,
-lastWinner
+lastWinner,
+lastUnlockedItem
  = useSocket();
 
 return (
@@ -347,6 +354,7 @@ furniture={furniture
 setFurniture={setFurniture
 showDialogBanner={showDialogBanner
 lastWinner={lastWinner
+lastUnlockedItem={lastUnlockedItem
 />
 </UserStatsProvider>
 );

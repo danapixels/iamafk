@@ -14,6 +14,8 @@ lastSeen: number;
 firstSeen: number;
 sessions: number;
 dailyFurniturePlacements: { [date: string]: number ;
+unlockedGachaHats?: string[];
+unlockedGachaFurniture?: string[];
 
 
 interface UserStatsContextType {
@@ -22,6 +24,7 @@ isLoading: boolean;
 error: string | null;
 refreshStats: () => void;
 deductAFKBalance: (seconds: number) => Promise<boolean>;
+addAFKTime: (seconds: number) => Promise<boolean>;
 recordFurniturePlacement: (type: string) => Promise<boolean>;
 canPlaceFurniture: () => boolean;
 getRemainingDailyPlacements: () => number;
@@ -66,6 +69,23 @@ refreshStats(); // Refresh stats after successful deduction
 resolve(true);
  else {
 setError(response.error || 'Failed to deduct AFK balance');
+resolve(false);
+
+);
+);
+;
+
+// Add AFK time (for testing)
+const addAFKTime = async (seconds: number): Promise<boolean> => {
+if (!socket?.connected || !hasConnected) return false;
+
+return new Promise((resolve) => {
+socket.emit('addAFKTime', { seconds , (response: { success: boolean; error?: string ) => {
+if (response.success) {
+refreshStats(); // Refresh stats after successful addition
+resolve(true);
+ else {
+setError(response.error || 'Failed to add AFK time');
 resolve(false);
 
 );
@@ -144,6 +164,7 @@ isLoading,
 error,
 refreshStats,
 deductAFKBalance,
+addAFKTime,
 recordFurniturePlacement,
 canPlaceFurniture,
 getRemainingDailyPlacements

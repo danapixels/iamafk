@@ -62,6 +62,7 @@ const [emotes, setEmotes] = useState<Emote[]>([]);
 const [furniture, setFurniture] = useState<{ [key: string]: Furniture >({);
 const [showDialogBanner, setShowDialogBanner] = useState(false);
 const [lastWinner, setLastWinner] = useState<string>('');
+const [lastUnlockedItem, setLastUnlockedItem] = useState<string>('');
 const socketRef = useRef<Socket | null>(null);
 
 useEffect(() => {
@@ -153,7 +154,9 @@ setCursors(prev => ({ ...prev, [data.socketId]: data.cursor ));
 
 );
 
-socket.on('showDialogBanner', () => {
+socket.on('showDialogBanner', (data: { winnerName: string; unlockedItem: string; type: string ) => {
+setLastWinner(data.winnerName);
+setLastUnlockedItem(data.unlockedItem);
 setShowDialogBanner(true);
 setTimeout(() => setShowDialogBanner(false), 60000); // 1 minute
 );
@@ -216,6 +219,8 @@ setFurniture,
 showDialogBanner,
 setShowDialogBanner,
 lastWinner,
-setLastWinner
+setLastWinner,
+lastUnlockedItem,
+setLastUnlockedItem
 ;
 ; 
