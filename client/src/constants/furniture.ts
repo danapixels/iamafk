@@ -35,11 +35,11 @@ export const FURNITURE_DIMENSIONS: { [key: string]: { width: number; height: num
 'walls1': { width: 64, height: 48 ,
 'walls2': { width: 64, height: 48 ,
 'table': { width: 68, height: 58 ,
-'computer': { width: 60, height: 40 ,
-'tv': { width: 80, height: 50 ,
-'toilet': { width: 40, height: 60 ,
-'washingmachine': { width: 50, height: 70 ,
-'zuzu': { width: 30, height: 30 ,
+'computer': { width: 62, height: 74 ,
+'tv': { width: 54, height: 52 ,
+'toilet': { width: 48, height: 66 ,
+'washingmachine': { width: 54, height: 68 ,
+'zuzu': { width: 86, height: 44 ,
  as const;
 
 // furniture types for type safety
