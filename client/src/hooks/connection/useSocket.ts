@@ -168,6 +168,19 @@ export const useSocket = () => {
       }
     });
 
+    // Handle gachapon wins - refresh user stats to show newly unlocked items
+    socket.on('gachaponWin', (data: { winnerId: string; winnerName: string; unlockedItem: string; type: string }) => {
+      console.log('Gachapon win received:', data);
+      // Request updated user stats to refresh unlocked items
+      socket.emit('requestUserStats');
+    });
+
+    socket.on('furnitureGachaponWin', (data: { winnerId: string; winnerName: string; unlockedItem: string; type: string }) => {
+      console.log('Furniture gachapon win received:', data);
+      // Request updated user stats to refresh unlocked items
+      socket.emit('requestUserStats');
+    });
+
     socket.on('usernameError', () => {
       // Show a friendly error message to the user
       alert("nooo.. that's not a good name, try another..");
@@ -199,6 +212,8 @@ export const useSocket = () => {
       socket.off('cursors');
       socket.off('clientDisconnected');
       socket.off('cursorChanged');
+      socket.off('gachaponWin');
+      socket.off('furnitureGachaponWin');
     };
   }, []);
 
