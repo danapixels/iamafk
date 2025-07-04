@@ -114,7 +114,7 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = memo(({
             right: 0,
             width: '2000px',
             height: '2000px',
-            backgroundImage: 'url(/UI/winter.gif)',
+            backgroundImage: 'url(/UI/winter.webp)',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat',
