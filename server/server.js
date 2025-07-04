@@ -1263,11 +1263,18 @@ return { success: true ;
 
 function loadUserStats() {
 
-const data = fs.readFileSync('userStats.json', 'utf8');
+const userStatsFile = path.join(__dirname, 'data', 'user_stats.json');
+if (fs.existsSync(userStatsFile)) {
+const data = fs.readFileSync(userStatsFile, 'utf8');
 const parsed = JSON.parse(data);
 Object.assign(userStats, parsed);
-
+console.log('Loaded user stats data:', Object.keys(parsed).length, 'users');
+ else {
 console.log('No existing user stats found, starting fresh');
+
+
+console.error('Error loading user stats data:', error);
+console.log('Starting with fresh user stats');
 
 
 
