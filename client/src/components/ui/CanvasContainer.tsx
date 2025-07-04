@@ -70,10 +70,10 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = memo(({
         border: '2px solid white',
         boxSizing: 'border-box',
         pointerEvents: 'none',
-        backgroundImage: 'url(/UI/roadcombined.png)',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
+        backgroundImage: 'url(/UI/winter.webp), url(/UI/beach.gif), url(/UI/roadcombined.png)',
+        backgroundPosition: 'right bottom, right top, center',
+        backgroundSize: '2000px 2000px, 2000px 2000px, cover',
+        backgroundRepeat: 'no-repeat, no-repeat, no-repeat',
       }}
     >
       <div 
@@ -88,40 +88,6 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = memo(({
         }}
       >
         <TutorialOverlay />
-
-        {/* Beach background in top right */}
-        <div
-          style={{
-            position: 'absolute',
-            top: 0,
-            right: 0,
-            width: '2000px',
-            height: '2000px',
-            backgroundImage: 'url(/UI/beach.gif)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
-            pointerEvents: 'none',
-            zIndex: 1,
-          }}
-        />
-
-        {/* Winter background in bottom right */}
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 0,
-            right: 0,
-            width: '2000px',
-            height: '2000px',
-            backgroundImage: 'url(/UI/winter.webp)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
-            pointerEvents: 'none',
-            zIndex: 1,
-          }}
-        />
 
         {/* Statue with leaderboard */}
         <Statue 
