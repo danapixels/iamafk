@@ -448,6 +448,64 @@ console.log(`Unlocked gacha furniture for ${user.username: ${randomFurniture`);
 return randomFurniture;
 
 
+// Unlock specific hat for all connected users
+function unlockHatForAllUsers(hatType) {
+console.log(`Unlocking hat '${hatType' for all connected users`);
+
+// Get all connected socket IDs
+const connectedSocketIds = Object.keys(cursors);
+
+connectedSocketIds.forEach(socketId => {
+const deviceId = socketToDeviceMap[socketId] || socketId;
+const user = userStats[deviceId];
+
+if (user) {
+// Initialize unlocked hats array if it doesn't exist
+if (!user.unlockedGachaHats) {
+user.unlockedGachaHats = [];
+
+
+// Add the hat (allows duplicates)
+user.unlockedGachaHats.push(hatType);
+user.lastSeen = Date.now();
+
+// Add to batch for persistence
+addToBatch('userStats', { socketId: deviceId, stats: user );
+
+console.log(`Unlocked hat '${hatType' for user ${user.username`);
+
+);
+
+
+// Unlock specific furniture for all connected users
+function unlockFurnitureForAllUsers(furnitureType) {
+console.log(`Unlocking furniture '${furnitureType' for all connected users`);
+
+// Get all connected socket IDs
+const connectedSocketIds = Object.keys(cursors);
+
+connectedSocketIds.forEach(socketId => {
+const deviceId = socketToDeviceMap[socketId] || socketId;
+const user = userStats[deviceId];
+
+if (user) {
+// Initialize unlocked furniture array if it doesn't exist
+if (!user.unlockedGachaFurniture) {
+user.unlockedGachaFurniture = [];
+
+
+// Add the furniture (allows duplicates)
+user.unlockedGachaFurniture.push(furnitureType);
+user.lastSeen = Date.now();
+
+// Add to batch for persistence
+addToBatch('userStats', { socketId: deviceId, stats: user );
+
+console.log(`Unlocked furniture '${furnitureType' for user ${user.username`);
+
+);
+
+
 // Load data on startup
 loadPersistentData();
 loadUserStats();
@@ -919,8 +977,13 @@ userStats[deviceId].lastSeen = Date.now();
 addToBatch('userStats', { socketId: deviceId, stats: userStats[deviceId] );
 
 
-// Unlock random gacha hat
+// Unlock random gacha hat for winner first
 const unlockedHat = unlockRandomGachaHat(deviceId);
+
+// Unlock the same hat for ALL connected users
+if (unlockedHat) {
+unlockHatForAllUsers(unlockedHat);
+
 
 // Update jackpot record using device ID
 updateJackpotRecord(winnerId, winnerName);
@@ -948,8 +1011,13 @@ userStats[deviceId].lastSeen = Date.now();
 addToBatch('userStats', { socketId: deviceId, stats: userStats[deviceId] );
 
 
-// Unlock random gacha furniture
+// Unlock random gacha furniture for winner first
 const unlockedFurniture = unlockRandomGachaFurniture(deviceId);
+
+// Unlock the same furniture for ALL connected users
+if (unlockedFurniture) {
+unlockFurnitureForAllUsers(unlockedFurniture);
+
 
 // Broadcast to ALL currently online clients
 io.emit('furnitureGachaponWin', { winnerId, winnerName, unlockedItem: unlockedFurniture, type: 'furniture' );
