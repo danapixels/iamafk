@@ -80,6 +80,7 @@ web_modules/
 .env.production
 .env.development
 .env.staging
+env.example
 
 # OS files
 .DS_Store
