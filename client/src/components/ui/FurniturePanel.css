@@ -49,9 +49,10 @@ gap: 8px;
 gap: 2px;
 
 
-/* Reduce gap above the last row */
+/* Add top padding to the last row */
 .furniture-panel-section .button-grid .button-row:last-child {
-margin-top: -8px;
+margin-top: 0;
+padding-top: 1px;
 
 
 @keyframes fadeInFromRight {
