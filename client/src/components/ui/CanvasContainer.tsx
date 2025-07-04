@@ -70,10 +70,6 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = memo(({
         border: '2px solid white',
         boxSizing: 'border-box',
         pointerEvents: 'none',
-        backgroundImage: 'url(/UI/roadcombined.png)',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
       }}
     >
       <div 
@@ -102,11 +98,28 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = memo(({
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat',
             pointerEvents: 'none',
-            zIndex: -2,
+            zIndex: 1,
           }}
         />
 
-        {/* Beach background in top right - middle z-index */}
+        {/* Roads background - above winter */}
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            backgroundImage: 'url(/UI/roadcombined.png)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+            pointerEvents: 'none',
+            zIndex: 2,
+          }}
+        />
+
+        {/* Beach background in top right - above roads */}
         <div
           style={{
             position: 'absolute',
@@ -119,7 +132,7 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = memo(({
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat',
             pointerEvents: 'none',
-            zIndex: -1,
+            zIndex: 3,
           }}
         />
 
