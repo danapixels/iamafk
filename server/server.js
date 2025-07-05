@@ -414,8 +414,8 @@ function unlockRandomGachaHat(deviceId) {
   // Select random hat from pool
   const randomHat = GACHA_HATS[Math.floor(Math.random() * GACHA_HATS.length)];
   
-  // Add to unlocked hats (allows duplicates)
-  user.unlockedGachaHats.push(randomHat);
+  // Add to unlocked hats (allows duplicates) with unlocker info
+  user.unlockedGachaHats.push({ item: randomHat, unlockedBy: user.username });
   user.lastSeen = Date.now();
   
   // Add to batch for persistence
@@ -437,8 +437,8 @@ function unlockRandomGachaFurniture(deviceId) {
   // Select random furniture from pool
   const randomFurniture = GACHA_FURNITURE[Math.floor(Math.random() * GACHA_FURNITURE.length)];
   
-  // Add to unlocked furniture (allows duplicates)
-  user.unlockedGachaFurniture.push(randomFurniture);
+  // Add to unlocked furniture (allows duplicates) with unlocker info
+  user.unlockedGachaFurniture.push({ item: randomFurniture, unlockedBy: user.username });
   user.lastSeen = Date.now();
   
   // Add to batch for persistence
@@ -449,7 +449,7 @@ function unlockRandomGachaFurniture(deviceId) {
 }
 
 // Unlock specific hat for all connected users
-function unlockHatForAllUsers(hatType) {
+function unlockHatForAllUsers(hatType, unlockerName) {
   console.log(`Unlocking hat '${hatType}' for all connected users`);
   
   // Get all connected socket IDs
@@ -465,8 +465,8 @@ function unlockHatForAllUsers(hatType) {
         user.unlockedGachaHats = [];
       }
       
-      // Add the hat (allows duplicates)
-      user.unlockedGachaHats.push(hatType);
+      // Add the hat (allows duplicates) with unlocker info
+      user.unlockedGachaHats.push({ item: hatType, unlockedBy: unlockerName });
       user.lastSeen = Date.now();
       
       // Add to batch for persistence
@@ -478,7 +478,7 @@ function unlockHatForAllUsers(hatType) {
 }
 
 // Unlock specific furniture for all connected users
-function unlockFurnitureForAllUsers(furnitureType) {
+function unlockFurnitureForAllUsers(furnitureType, unlockerName) {
   console.log(`Unlocking furniture '${furnitureType}' for all connected users`);
   
   // Get all connected socket IDs
@@ -494,8 +494,8 @@ function unlockFurnitureForAllUsers(furnitureType) {
         user.unlockedGachaFurniture = [];
       }
       
-      // Add the furniture (allows duplicates)
-      user.unlockedGachaFurniture.push(furnitureType);
+      // Add the furniture (allows duplicates) with unlocker info
+      user.unlockedGachaFurniture.push({ item: furnitureType, unlockedBy: unlockerName });
       user.lastSeen = Date.now();
       
       // Add to batch for persistence
@@ -982,7 +982,7 @@ io.on('connection', (socket) => {
     
     // Unlock the same hat for ALL connected users
     if (unlockedHat) {
-      unlockHatForAllUsers(unlockedHat);
+      unlockHatForAllUsers(unlockedHat, winnerName);
     }
     
     // Update jackpot record using device ID
@@ -1016,7 +1016,7 @@ io.on('connection', (socket) => {
     
     // Unlock the same furniture for ALL connected users
     if (unlockedFurniture) {
-      unlockFurnitureForAllUsers(unlockedFurniture);
+      unlockFurnitureForAllUsers(unlockedFurniture, winnerName);
     }
     
     // Broadcast to ALL currently online clients
