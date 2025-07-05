@@ -10,8 +10,10 @@ const LockedHatButton: React.FC<LockedHatButtonProps> = ({ hatType, onClick ) =>
 const { userStats  = useUserStats();
 const [showTooltip, setShowTooltip] = useState(false);
 
-// Check if user has this specific hat unlocked
-const hasUnlocked = userStats?.unlockedGachaHats?.includes(hatType) || false;
+// Check if user has this specific hat unlocked and get unlocker info
+const unlockedHat = userStats?.unlockedGachaHats?.find(hat => hat.item === hatType);
+const hasUnlocked = !!unlockedHat;
+const unlockerName = unlockedHat?.unlockedBy;
 
 const getButtonSrc = (isHovered: boolean) => {
 if (!hasUnlocked) {
@@ -77,7 +79,7 @@ transition: 'opacity 0.3s, visibility 0.3s',
 zIndex: 99999,
 
 >
-{hasUnlocked ? 'you unlocked this!' : '30m = 1 gacha play'
+{hasUnlocked ? `${unlockerName unlocked this!` : '30m = 1 gacha play'
 </div>
 </div>
 );

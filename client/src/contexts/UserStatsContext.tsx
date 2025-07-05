@@ -14,8 +14,8 @@ lastSeen: number;
 firstSeen: number;
 sessions: number;
 dailyFurniturePlacements: { [date: string]: number ;
-unlockedGachaHats?: string[];
-unlockedGachaFurniture?: string[];
+unlockedGachaHats?: Array<{ item: string; unlockedBy: string >;
+unlockedGachaFurniture?: Array<{ item: string; unlockedBy: string >;
 
 
 interface UserStatsContextType {

@@ -11,8 +11,10 @@ const { userStats  = useUserStats();
 const [isHovered, setIsHovered] = useState(false);
 const [showTooltip, setShowTooltip] = useState(false);
 
-// Check if user has this specific furniture unlocked
-const hasUnlocked = userStats?.unlockedGachaFurniture?.includes(type) || false;
+// Check if user has this specific furniture unlocked and get unlocker info
+const unlockedFurniture = userStats?.unlockedGachaFurniture?.find(furniture => furniture.item === type);
+const hasUnlocked = !!unlockedFurniture;
+const unlockerName = unlockedFurniture?.unlockedBy;
 
 const getButtonSrc = (isHovered: boolean) => {
 if (!hasUnlocked) {
@@ -87,7 +89,7 @@ transition: 'opacity 0.3s, visibility 0.3s',
 zIndex: 99999,
 
 >
-{hasUnlocked ? 'you unlocked this!' : '30m = 1 gacha play'
+{hasUnlocked ? `${unlockerName unlocked this!` : '30m = 1 gacha play'
 </div>
 </div>
 );

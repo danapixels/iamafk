@@ -11,7 +11,7 @@ const { userStats  = useUserStats();
 const [isHovered, setIsHovered] = useState(false);
 
 // Check if user has this specific furniture unlocked
-const hasUnlocked = userStats?.unlockedGachaFurniture?.includes(type) || false;
+const hasUnlocked = userStats?.unlockedGachaFurniture?.some(furniture => furniture.item === type) || false;
 
 if (!hasUnlocked) {
 return null; // Don't show the button if this furniture is not unlocked
