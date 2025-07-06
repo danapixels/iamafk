@@ -85,40 +85,6 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = memo(({
       >
         <TutorialOverlay />
 
-        {/* Winter background in bottom right - lowest z-index */}
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 0,
-            right: 0,
-            width: '2000px',
-            height: '2000px',
-            backgroundImage: 'url(/UI/winter.webp)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
-            pointerEvents: 'none',
-            zIndex: 1,
-          }}
-        />
-
-        {/* Roads background - above winter */}
-        <div
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            backgroundImage: 'url(/UI/roadcombined.png)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
-            pointerEvents: 'none',
-            zIndex: 2,
-          }}
-        />
-
         {/* Beach background in top right - above roads */}
         <div
           style={{
