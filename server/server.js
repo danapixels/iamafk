@@ -390,6 +390,7 @@ function cleanupOldUserActivity() {
 function cleanupOldUserStats() {
   const now = Date.now();
   const ONE_DAY = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+  const TWO_WEEKS = 14 * 24 * 60 * 60 * 1000; // 14 days in milliseconds
   
   // Clean up AFK tracking data older than 1 day
   Object.keys(userAFKStartTimes).forEach(deviceId => {
@@ -399,7 +400,73 @@ function cleanupOldUserStats() {
       delete lastAFKUpdateTimes[deviceId];
     }
   });
+  
+  // Clean up deviceID mappings and user stats older than 2 weeks
+  const deviceIdsToRemove = [];
+  
+  // Check deviceID mappings for expiration
+  Object.entries(socketToDeviceMap).forEach(([socketId, deviceId]) => {
+    // If socket is not connected and device hasn't been seen in 2 weeks
+    if (!cursors[socketId] && userStats[deviceId]) {
+      const lastSeen = userStats[deviceId].lastSeen || 0;
+      if (now - lastSeen > TWO_WEEKS) {
+        deviceIdsToRemove.push(deviceId);
+        delete socketToDeviceMap[socketId];
+        delete deviceToSocketMap[deviceId];
+      }
+    }
+  });
+  
+  // Check user stats for expiration (deviceIDs not in mappings)
+  Object.keys(userStats).forEach(deviceId => {
+    const lastSeen = userStats[deviceId].lastSeen || 0;
+    if (now - lastSeen > TWO_WEEKS) {
+      deviceIdsToRemove.push(deviceId);
+      delete userStats[deviceId];
+    }
+  });
+  
+  // Remove duplicate deviceIDs
+  const uniqueDeviceIdsToRemove = [...new Set(deviceIdsToRemove)];
+  
+  if (uniqueDeviceIdsToRemove.length > 0) {
+    console.log(`🧹 Cleaned up ${uniqueDeviceIdsToRemove.length} expired deviceIDs and user stats after 2 weeks of inactivity`);
+    console.log(`📊 Removed deviceIDs: ${uniqueDeviceIdsToRemove.join(', ')}`);
+    
+    // Save the updated mappings to persistent storage
+    saveSocketDeviceMapping();
+    
+    // Add to batch for user stats persistence
+    addToBatch('cleanup', { type: 'deviceIdCleanup', count: uniqueDeviceIdsToRemove.length });
+  }
 }
+
+// Manual cleanup function for testing/admin purposes
+function manualCleanup() {
+  console.log('🧹 Manual cleanup triggered');
+  cleanupOldUserStats();
+  console.log('✅ Manual cleanup completed');
+}
+
+/*
+ * DeviceID Cleanup Strategy:
+ * 
+ * 1. AFK tracking data (userAFKStartTimes, lastAFKUpdateTimes) - cleaned up after 1 day
+ * 2. DeviceID mappings (socketToDeviceMap, deviceToSocketMap) - cleaned up after 2 weeks of inactivity
+ * 3. User stats (userStats) - cleaned up after 2 weeks of inactivity
+ * 
+ * Cleanup runs:
+ * - Every 24 hours automatically
+ * - On server startup
+ * - On user disconnect
+ * - Manually via socket event 'triggerCleanup'
+ * 
+ * This ensures that:
+ * - Active users are never affected
+ * - Inactive users have their data removed after 2 weeks
+ * - Memory usage is kept under control
+ * - Persistent storage doesn't grow indefinitely
+ */
 
 // Gacha unlock helper functions
 function unlockRandomGachaHat(deviceId) {
@@ -512,6 +579,9 @@ loadUserStats();
 loadAllTimeRecord();
 loadJackpotRecord();
 loadSocketDeviceMapping();
+
+// Run initial cleanup to remove any expired data on startup
+cleanupOldUserStats();
 
 // Recalculate jackpot record to ensure it's correct after loading user stats
 recalculateJackpotRecord();
@@ -1062,6 +1132,13 @@ io.on('connection', (socket) => {
   socket.on('recordFurniturePlacement', ({ type }, callback) => {
     const result = recordFurniturePlacementOnServer(socket.id, type);
     callback(result);
+  });
+
+  // Admin function to trigger manual cleanup
+  socket.on('triggerCleanup', () => {
+    console.log(`🧹 Manual cleanup triggered by socket ${socket.id}`);
+    manualCleanup();
+    socket.emit('cleanupCompleted', { message: 'Manual cleanup completed' });
   });
 
   socket.on('disconnect', () => {
