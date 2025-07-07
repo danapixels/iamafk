@@ -12,9 +12,17 @@ const [isHovered, setIsHovered] = useState(false);
 const [showTooltip, setShowTooltip] = useState(false);
 
 // Check if user has this specific furniture unlocked and get unlocker info
-const unlockedFurniture = userStats?.unlockedGachaFurniture?.find(furniture => furniture.item === type);
+const unlockedFurniture = userStats?.unlockedGachaFurniture?.find(furniture => {
+// Handle both string and object formats
+if (typeof furniture === 'string') {
+return furniture === type;
+ else if (typeof furniture === 'object' && furniture.item) {
+return furniture.item === type;
+
+return false;
+);
 const hasUnlocked = !!unlockedFurniture;
-const unlockerName = unlockedFurniture?.unlockedBy;
+const unlockerName = typeof unlockedFurniture === 'object' ? unlockedFurniture.unlockedBy : 'Unknown';
 
 const getButtonSrc = (isHovered: boolean) => {
 if (!hasUnlocked) {

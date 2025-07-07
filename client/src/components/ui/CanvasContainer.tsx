@@ -8,6 +8,7 @@ import { Statue  from './Statue';
 import { AllTimeStatue  from './AllTimeStatue';
 import { JackpotStatue  from './JackpotStatue';
 import { getStatueStyle, getAllTimeStatueStyle, getJackpotStatueStyle  from '../../utils/statue';
+import TempFurnitureRenderer from './TempFurnitureRenderer';
 // import { useStatueBadges  from '../../hooks/game/useStatueBadges';
 import type { Circle, Heart, Emote, Furniture  from '../../types';
 import { formatTime  from '../../utils/helpers';
@@ -30,6 +31,16 @@ onMoveDown: (furnitureId: string) => void;
 onDelete: (furnitureId: string) => void;
 showGachaNotification?: boolean;
 gachaNotificationText?: string;
+selectionBox?: {
+startX: number;
+startY: number;
+endX: number;
+endY: number;
+isActive: boolean;
+ | null;
+tempFurniture?: Array<{ id: string; type: string; x: number; y: number; zIndex?: number; isFlipped?: boolean; isOn?: boolean; isTemp?: boolean; presetId?: string >;
+onConfirmPreset?: (presetId: string) => void;
+onDeleteTempPreset?: (presetId: string) => void;
 // username?: string;
 
 
@@ -51,6 +62,10 @@ onMoveDown,
 onDelete,
 showGachaNotification,
 gachaNotificationText,
+selectionBox,
+tempFurniture,
+onConfirmPreset,
+onDeleteTempPreset,
 ) => {
 // Get user badges for statue achievements
 // const userBadges = useStatueBadges({
@@ -159,6 +174,32 @@ onMoveUp={onMoveUp
 onMoveDown={onMoveDown
 onDelete={onDelete
 />
+
+{/* Temporary Furniture Renderer */
+{tempFurniture && tempFurniture.length > 0 && (
+<TempFurnitureRenderer 
+tempFurniture={tempFurniture
+onConfirmPreset={onConfirmPreset
+onDeleteTempPreset={onDeleteTempPreset
+/>
+)
+
+{/* Selection Box */
+{selectionBox && selectionBox.isActive && (
+<div
+style={{
+position: 'absolute',
+left: Math.min(selectionBox.startX, selectionBox.endX),
+top: Math.min(selectionBox.startY, selectionBox.endY),
+width: Math.abs(selectionBox.endX - selectionBox.startX),
+height: Math.abs(selectionBox.endY - selectionBox.startY),
+border: '2px dashed white',
+backgroundColor: 'rgba(255, 255, 255, 0.1)',
+pointerEvents: 'none',
+zIndex: 9998,
+
+/>
+)
 
 <CursorRenderer
 visibleCursors={visibleCursors

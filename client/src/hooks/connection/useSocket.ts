@@ -66,7 +66,7 @@ const [lastUnlockedItem, setLastUnlockedItem] = useState<string>('');
 const socketRef = useRef<Socket | null>(null);
 
 useEffect(() => {
-console.log('Attempting to connect to:', SERVER_CONFIG.SOCKET_URL);
+
 
 const socket = io(SERVER_CONFIG.SOCKET_URL, {
 timeout: 60000, // 60 second timeout
@@ -83,6 +83,13 @@ console.log('✅ Connected to server successfully');
 const deviceId = getDeviceId();
 socket.emit('setDeviceId', { deviceId );
 console.log('📱 Device ID sent:', deviceId);
+
+// Request user stats immediately after device ID is sent
+// This ensures gacha unlocks are loaded as soon as possible
+setTimeout(() => {
+socket.emit('requestUserStats');
+console.log('📊 Requested user stats after device ID setup');
+, 100); // Small delay to ensure device ID is processed
 
 // Request jackpot record to get the last winner
 socket.emit('requestJackpotRecord');

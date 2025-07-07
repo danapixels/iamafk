@@ -27,6 +27,11 @@ return;
 
 const socket = socketRef.current;
 
+socket.on('furniture', (furnitureData: { [key: string]: Furniture ) => {
+// Update the entire furniture state
+setFurniture(furnitureData);
+);
+
 socket.on('furnitureSpawned', (data: any) => {
 if (data && data.id) {
 setFurniture(prev => ({ ...prev, [data.id]: data ));
@@ -128,6 +133,7 @@ if (data.cleanedCount > 0) {
 );
 
 return () => {
+socket.off('furniture');
 socket.off('furnitureSpawned');
 socket.off('furnitureMoved');
 socket.off('furnitureDeleted');

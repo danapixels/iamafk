@@ -3,6 +3,7 @@ import { Socket  from 'socket.io-client';
 import './App.css';
 import Panel from './components/ui/Panel';
 import FurniturePanel from './components/ui/FurniturePanel';
+import FurniturePresetPanel from './components/ui/FurniturePresetPanel';
 import GachaponMachine from './components/game/GachaponMachine';
 import FurnitureGachaponMachine from './components/game/FurnitureGachaponMachine';
 import { AFKTimeDisplay  from './components/ui/AFKTimeDisplay';
@@ -71,6 +72,15 @@ canPlaceFurniture
 const [selectedFurnitureId, setSelectedFurnitureId] = useState<string | null>(null);
 const [isCursorFrozen, setIsCursorFrozen] = useState(false);
 const [frozenCursorPosition, setFrozenCursorPosition] = useState<{ x: number; y: number  | null>(null);
+const [isFurnitureSelectionMode, setIsFurnitureSelectionMode] = useState(false);
+const [selectionBox, setSelectionBox] = useState<{
+startX: number;
+startY: number;
+endX: number;
+endY: number;
+isActive: boolean;
+ | null>(null);
+const [tempFurniture, setTempFurniture] = useState<Array<{ id: string; type: string; x: number; y: number; zIndex?: number; isFlipped?: boolean; isOn?: boolean; isTemp?: boolean; presetId?: string >>([]);
 
 // ===== GAME STATE =====
 const [showConfetti, setShowConfetti] = useState(false);
@@ -106,7 +116,12 @@ viewportOffset,
 setViewportOffset,
 username,
 recordFurniturePlacement,
-afkStartTimeRef
+afkStartTimeRef,
+isFurnitureSelectionMode,
+selectionBox,
+setSelectionBox,
+tempFurniture,
+setTempFurniture
 );
 useKeyboardInteractions({
 socketRef,
@@ -223,12 +238,74 @@ onMoveDown={handleMoveDown
 onDelete={(furnitureId) => setSelectedFurnitureId(prev => prev === furnitureId ? null : prev)
 showGachaNotification={showGachaNotification
 gachaNotificationText={gachaNotificationText
+selectionBox={selectionBox
+tempFurniture={tempFurniture
+onConfirmPreset={() => {
+// Convert temporary furniture to real furniture
+if (tempFurniture && tempFurniture.length > 0 && socketRef.current) {
+// Group furniture by preset ID
+const groupedFurniture = tempFurniture.reduce((groups, item) => {
+const groupId = item.presetId || 'default';
+if (!groups[groupId]) {
+groups[groupId] = [];
+
+groups[groupId].push(item);
+return groups;
+, { as { [key: string]: typeof tempFurniture );
+
+// Place each group of furniture
+Object.entries(groupedFurniture).forEach(([, items]) => {
+if (items.length > 0) {
+// Calculate the center of the group
+const groupCenterX = items.reduce((sum, item) => sum + item.x, 0) / items.length;
+const groupCenterY = items.reduce((sum, item) => sum + item.y, 0) / items.length;
+
+// Store each item's offset from the group center
+const preset = {
+furniture: items.map(item => ({
+type: item.type,
+x: item.x - groupCenterX, // Offset from group center
+y: item.y - groupCenterY, // Offset from group center
+zIndex: item.zIndex,
+isFlipped: item.isFlipped,
+isOn: item.isOn
+))
+;
+
+// Send to server: place group at group center
+if (socketRef.current) {
+socketRef.current.emit('placeFurniturePreset', {
+preset,
+x: groupCenterX,
+y: groupCenterY
+);
+
+
+);
+
+
+// Clear the temp furniture
+setTempFurniture([]);
+
+onDeleteTempPreset={() => {
+setTempFurniture([]);
+
 />
 
 {/* UI Elements */
 <FurniturePanel 
 socket={socketRef.current 
 onFurnitureSpawn={handleFurnitureSpawn
+viewportOffset={viewportOffset
+style={{ zIndex: Z_INDEX_LAYERS.PANEL 
+/>
+
+<FurniturePresetPanel 
+socket={socketRef.current 
+onSelectionToggle={setIsFurnitureSelectionMode
+furniture={furniture
+isFurnitureSelectionMode={isFurnitureSelectionMode
+setTempFurniture={setTempFurniture
 viewportOffset={viewportOffset
 style={{ zIndex: Z_INDEX_LAYERS.PANEL 
 />
@@ -276,6 +353,8 @@ onUsernameChange={setUsername
 onConnect={handleConnect
 hasConnected={hasConnected
 />
+
+
 
 {/* Overlays */
 <ConfettiOverlay showConfetti={showConfetti confettiTimestamp={confettiTimestamp />

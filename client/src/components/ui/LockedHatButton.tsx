@@ -11,9 +11,19 @@ const { userStats  = useUserStats();
 const [showTooltip, setShowTooltip] = useState(false);
 
 // Check if user has this specific hat unlocked and get unlocker info
-const unlockedHat = userStats?.unlockedGachaHats?.find(hat => hat.item === hatType);
+const unlockedHat = userStats?.unlockedGachaHats?.find(hat => {
+// Handle both string and object formats
+if (typeof hat === 'string') {
+return hat === hatType;
+ else if (typeof hat === 'object' && hat.item) {
+return hat.item === hatType;
+
+return false;
+);
 const hasUnlocked = !!unlockedHat;
-const unlockerName = unlockedHat?.unlockedBy;
+const unlockerName = typeof unlockedHat === 'object' ? unlockedHat.unlockedBy : 'Unknown';
+
+
 
 const getButtonSrc = (isHovered: boolean) => {
 if (!hasUnlocked) {
