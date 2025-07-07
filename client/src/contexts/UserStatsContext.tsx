@@ -16,6 +16,8 @@ interface UserStats {
   dailyFurniturePlacements: { [date: string]: number };
   unlockedGachaHats?: Array<{ item: string; unlockedBy: string }>;
   unlockedGachaFurniture?: Array<{ item: string; unlockedBy: string }>;
+  furniturePresets?: Array<any>;
+  presetUsageCount?: number;
 }
 
 interface UserStatsContextType {
@@ -51,7 +53,7 @@ export const UserStatsProvider: React.FC<UserStatsProviderProps> = ({
 
   // Request user stats from server
   const refreshStats = () => {
-    if (socket?.connected && hasConnected) {
+    if (socket?.connected) {
       setIsLoading(true);
       setError(null);
       socket.emit('requestUserStats');
@@ -133,7 +135,7 @@ export const UserStatsProvider: React.FC<UserStatsProviderProps> = ({
 
   // Socket event listeners
   useEffect(() => {
-    if (!socket || !hasConnected) return;
+    if (!socket) return;
 
     const handleUserStats = (stats: UserStats) => {
       setUserStats(stats);
@@ -148,13 +150,23 @@ export const UserStatsProvider: React.FC<UserStatsProviderProps> = ({
 
     socket.on('userStats', handleUserStats);
     socket.on('statsError', handleStatsError);
+    socket.on('presetPlaced', (data) => {
+      alert(data.message);
+    });
+    socket.on('presetUsageLimitReached', (data) => {
+      alert(data.message);
+    });
 
-    // Request initial stats
-    refreshStats();
+    // Request initial stats if connected
+    if (socket.connected) {
+      refreshStats();
+    }
 
     return () => {
       socket.off('userStats', handleUserStats);
       socket.off('statsError', handleStatsError);
+      socket.off('presetPlaced');
+      socket.off('presetUsageLimitReached');
     };
   }, [socket, hasConnected, username]);
 

@@ -105,10 +105,9 @@ function loadSocketDeviceMapping() {
       const parsed = JSON.parse(data);
       socketToDeviceMap = parsed.socketToDeviceMap || {};
       deviceToSocketMap = parsed.deviceToSocketMap || {};
-      console.log('Loaded socket-to-device mapping:', Object.keys(socketToDeviceMap).length, 'mappings');
     }
   } catch (error) {
-    console.log('No existing socket-to-device mapping found, starting fresh');
+    // Error handling for missing mapping file
   }
 }
 
@@ -150,9 +149,11 @@ function updateUserAFKTime(socketId) {
   
   // User is no longer AFK
   if (!isAFK && wasAFK) {
-    const afkDuration = Math.floor((now - userAFKStartTimes[deviceId]) / 1000);
-    if (afkDuration > 0) {
-      addAFKTimeToUser(deviceId, afkDuration);
+    // Only add the remaining time since the last update, not the entire duration
+    const timeSinceLastUpdate = now - lastAFKUpdateTimes[deviceId];
+    const remainingSeconds = Math.floor(timeSinceLastUpdate / 1000);
+    if (remainingSeconds > 0) {
+      addAFKTimeToUser(deviceId, remainingSeconds);
     }
     delete userAFKStartTimes[deviceId];
     delete lastAFKUpdateTimes[deviceId];
@@ -311,7 +312,7 @@ function cleanupExpiredFurniture() {
       if ((now - userLastSeen) > expiryTime) {
         delete furniture[furnitureId];
         cleanedCount++;
-        console.log('Cleaned up expired furniture:', furnitureId);
+        console.log(`Cleaned up ${cleanedCount} expired furniture items`);
       }
     }
   });
@@ -518,28 +519,29 @@ function unlockRandomGachaFurniture(deviceId) {
 // Unlock specific hat for all connected users
 function unlockHatForAllUsers(hatType, unlockerName) {
   console.log(`Unlocking hat '${hatType}' for all connected users`);
-  
   // Get all connected socket IDs
   const connectedSocketIds = Object.keys(cursors);
-  
   connectedSocketIds.forEach(socketId => {
     const deviceId = socketToDeviceMap[socketId] || socketId;
     const user = userStats[deviceId];
-    
     if (user) {
       // Initialize unlocked hats array if it doesn't exist
       if (!user.unlockedGachaHats) {
         user.unlockedGachaHats = [];
       }
-      
-      // Add the hat (allows duplicates) with unlocker info
-      user.unlockedGachaHats.push({ item: hatType, unlockedBy: unlockerName });
-      user.lastSeen = Date.now();
-      
-      // Add to batch for persistence
-      addToBatch('userStats', { socketId: deviceId, stats: user });
-      
-      console.log(`Unlocked hat '${hatType}' for user ${user.username}`);
+      // Only add if not already unlocked (handle both string and object formats)
+      const alreadyUnlocked = user.unlockedGachaHats.some(hat => {
+        if (typeof hat === 'string') return hat === hatType;
+        if (typeof hat === 'object' && hat.item) return hat.item === hatType;
+        return false;
+      });
+      if (!alreadyUnlocked) {
+        user.unlockedGachaHats.push({ item: hatType, unlockedBy: unlockerName });
+        user.lastSeen = Date.now();
+        // Add to batch for persistence
+        addToBatch('userStats', { socketId: deviceId, stats: user });
+        console.log(`Unlocked hat '${hatType}' for user ${user.username}`);
+      }
     }
   });
 }
@@ -547,28 +549,29 @@ function unlockHatForAllUsers(hatType, unlockerName) {
 // Unlock specific furniture for all connected users
 function unlockFurnitureForAllUsers(furnitureType, unlockerName) {
   console.log(`Unlocking furniture '${furnitureType}' for all connected users`);
-  
   // Get all connected socket IDs
   const connectedSocketIds = Object.keys(cursors);
-  
   connectedSocketIds.forEach(socketId => {
     const deviceId = socketToDeviceMap[socketId] || socketId;
     const user = userStats[deviceId];
-    
     if (user) {
       // Initialize unlocked furniture array if it doesn't exist
       if (!user.unlockedGachaFurniture) {
         user.unlockedGachaFurniture = [];
       }
-      
-      // Add the furniture (allows duplicates) with unlocker info
-      user.unlockedGachaFurniture.push({ item: furnitureType, unlockedBy: unlockerName });
-      user.lastSeen = Date.now();
-      
-      // Add to batch for persistence
-      addToBatch('userStats', { socketId: deviceId, stats: user });
-      
-      console.log(`Unlocked furniture '${furnitureType}' for user ${user.username}`);
+      // Only add if not already unlocked (handle both string and object formats)
+      const alreadyUnlocked = user.unlockedGachaFurniture.some(furniture => {
+        if (typeof furniture === 'string') return furniture === furnitureType;
+        if (typeof furniture === 'object' && furniture.item) return furniture.item === furnitureType;
+        return false;
+      });
+      if (!alreadyUnlocked) {
+        user.unlockedGachaFurniture.push({ item: furnitureType, unlockedBy: unlockerName });
+        user.lastSeen = Date.now();
+        // Add to batch for persistence
+        addToBatch('userStats', { socketId: deviceId, stats: user });
+        console.log(`Unlocked furniture '${furnitureType}' for user ${user.username}`);
+      }
     }
   });
 }
@@ -801,7 +804,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('spawnFurniture', (data) => {
-    console.log('Server received spawnFurniture:', data);
+    
     const furnitureId = `${socket.id}-${Date.now()}`;
     const now = Date.now();
     
@@ -822,12 +825,10 @@ io.on('connection', (socket) => {
     addToBatch('furniture', furniture[furnitureId]);
     
     // Broadcast to all clients including sender
-    console.log('Server broadcasting furnitureSpawned:', furniture[furnitureId]);
     io.emit('furnitureSpawned', furniture[furnitureId]);
   });
 
   socket.on('updateFurniturePosition', (data) => {
-    console.log('Server received updateFurniturePosition:', data);
     const { furnitureId, x, y, isFlipped } = data;
     if (furniture[furnitureId]) {
       furniture[furnitureId].x = x;
@@ -846,7 +847,6 @@ io.on('connection', (socket) => {
         y,
         isFlipped: furniture[furnitureId].isFlipped 
       };
-      console.log('Server broadcasting furnitureMoved:', broadcastData);
       io.emit('furnitureMoved', broadcastData);
     }
   });
@@ -1141,6 +1141,134 @@ io.on('connection', (socket) => {
     socket.emit('cleanupCompleted', { message: 'Manual cleanup completed' });
   });
 
+  // Furniture preset handlers
+  // Removed server-side furniture selection handlers - this is now client-side only
+
+  socket.on('furnitureSelected', (data) => {
+    // This event is handled by the client-side FurniturePresetPanel
+  });
+
+  // Removed server-side furniture selection handlers - this is now client-side only
+
+  socket.on('saveFurniturePreset', ({ slotIndex, preset }) => {
+    try {
+      const deviceId = socketToDeviceMap[socket.id] || socket.id;
+      const user = userStats[deviceId];
+      
+      if (user) {
+        // Initialize furniturePresets array if it doesn't exist
+        if (!user.furniturePresets) {
+          user.furniturePresets = [];
+        }
+        
+        // Update or add preset to the specified slot
+        preset.id = `slot_${slotIndex}_${Date.now()}`;
+        user.furniturePresets[slotIndex] = preset;
+        user.lastSeen = Date.now();
+        
+        // Add to batch for persistence
+        addToBatch('userStats', { socketId: deviceId, stats: user });
+        
+        console.log(`💾 Saved furniture preset for ${user.username} in slot ${slotIndex + 1}`);
+        socket.emit('furniturePresetSaved', { slotIndex, preset });
+      }
+    } catch (error) {
+      console.error('Error saving furniture preset:', error);
+      socket.emit('error', { message: 'Failed to save furniture preset' });
+    }
+  });
+
+  socket.on('deleteFurniturePreset', ({ slotIndex }) => {
+    try {
+      const deviceId = socketToDeviceMap[socket.id] || socket.id;
+      const user = userStats[deviceId];
+      
+      if (user && user.furniturePresets) {
+        delete user.furniturePresets[slotIndex];
+        // Reset preset usage count when preset is deleted
+        user.presetUsageCount = 0;
+        user.lastSeen = Date.now();
+        
+        // Add to batch for persistence
+        addToBatch('userStats', { socketId: deviceId, stats: user });
+        
+        console.log(`🗑️ Deleted furniture preset for ${user.username} from slot ${slotIndex + 1} and reset usage count`);
+        socket.emit('furniturePresetDeleted', { slotIndex });
+      }
+    } catch (error) {
+      console.error('Error deleting furniture preset:', error);
+      socket.emit('error', { message: 'Failed to delete furniture preset' });
+    }
+  });
+
+  socket.on('placeFurniturePreset', ({ preset, x, y }) => {
+    try {
+      const deviceId = socketToDeviceMap[socket.id] || socket.id;
+      const user = getUserStatsFromServer(socket.id);
+      
+      // Check preset usage limit
+      const presetUsageCount = user.presetUsageCount || 0;
+      const PRESET_USAGE_LIMIT = 10;
+      
+      if (presetUsageCount >= PRESET_USAGE_LIMIT) {
+        console.log(`🚫 Preset usage limit reached for ${user.username} (${presetUsageCount}/${PRESET_USAGE_LIMIT})`);
+        socket.emit('presetUsageLimitReached', { 
+          message: `You've reached the preset usage limit of ${PRESET_USAGE_LIMIT}. Delete and recreate your preset to continue.`,
+          currentCount: presetUsageCount,
+          limit: PRESET_USAGE_LIMIT
+        });
+        return;
+      }
+      
+      console.log(`🏠 Placing furniture preset at (${x}, ${y}) for ${user.username} (${presetUsageCount + 1}/${PRESET_USAGE_LIMIT})`);
+      
+      // Place each furniture item from the preset
+      preset.furniture.forEach((item, index) => {
+        const furnitureId = `preset_${socket.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}_${index}`;
+        const adjustedX = x + item.x;
+        const adjustedY = y + item.y;
+        
+        // Add furniture to the global furniture state
+        furniture[furnitureId] = {
+          id: furnitureId,
+          type: item.type,
+          x: adjustedX,
+          y: adjustedY,
+          zIndex: item.zIndex || getNextZIndex(),
+          isFlipped: item.isFlipped || false,
+          isOn: item.isOn || false,
+          placedBy: socketToDeviceMap[socket.id] || socket.id,
+          timestamp: Date.now()
+        };
+        
+        // Record furniture placement for the user
+        recordFurniturePlacementOnServer(socket.id, item.type);
+      });
+      
+      // Increment preset usage count
+      user.presetUsageCount = presetUsageCount + 1;
+      user.lastSeen = Date.now();
+      
+      // Save to persistent storage
+      addToBatch('userStats', { socketId: deviceId, stats: user });
+      
+      // Broadcast the new furniture to all clients
+      io.emit('furniture', furniture);
+      
+      // Notify the user of successful placement
+      socket.emit('presetPlaced', { 
+        message: `Preset placed! (${user.presetUsageCount}/${PRESET_USAGE_LIMIT} uses)`,
+        currentCount: user.presetUsageCount,
+        limit: PRESET_USAGE_LIMIT
+      });
+      
+      console.log(`✅ Placed furniture preset with ${preset.furniture.length} items for ${user.username}`);
+    } catch (error) {
+      console.error('Error placing furniture preset:', error);
+      socket.emit('error', { message: 'Failed to place furniture preset' });
+    }
+  });
+
   socket.on('disconnect', () => {
     // Save any pending changes immediately when user disconnects
     saveBatch();
@@ -1229,7 +1357,9 @@ function getUserStatsFromServer(socketId) {
       sessions: 1,
       dailyFurniturePlacements: {},
       unlockedGachaHats: [],
-      unlockedGachaFurniture: []
+      unlockedGachaFurniture: [],
+      furniturePresets: [], // Array of furniture presets
+      presetUsageCount: 0 // Added presetUsageCount
     };
     userStats[deviceId] = newUser;
     return newUser;

@@ -11,7 +11,15 @@ const GachaFurnitureButton: React.FC<GachaFurnitureButtonProps> = ({ type, onCli
   const [isHovered, setIsHovered] = useState(false);
 
   // Check if user has this specific furniture unlocked
-  const hasUnlocked = userStats?.unlockedGachaFurniture?.some(furniture => furniture.item === type) || false;
+  const hasUnlocked = userStats?.unlockedGachaFurniture?.some(furniture => {
+    // Handle both string and object formats
+    if (typeof furniture === 'string') {
+      return furniture === type;
+    } else if (typeof furniture === 'object' && furniture.item) {
+      return furniture.item === type;
+    }
+    return false;
+  }) || false;
 
   if (!hasUnlocked) {
     return null; // Don't show the button if this furniture is not unlocked

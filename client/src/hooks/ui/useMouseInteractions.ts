@@ -19,6 +19,23 @@ interface MouseInteractionsProps {
   username: string;
   recordFurniturePlacement: (type: string) => Promise<boolean>;
   afkStartTimeRef: React.RefObject<number | null>;
+  isFurnitureSelectionMode: boolean;
+  selectionBox: {
+    startX: number;
+    startY: number;
+    endX: number;
+    endY: number;
+    isActive: boolean;
+  } | null;
+  setSelectionBox: React.Dispatch<React.SetStateAction<{
+    startX: number;
+    startY: number;
+    endX: number;
+    endY: number;
+    isActive: boolean;
+  } | null>>;
+  tempFurniture?: Array<{ id: string; type: string; x: number; y: number; zIndex?: number; isFlipped?: boolean; isOn?: boolean; isTemp?: boolean; presetId?: string }>;
+  setTempFurniture?: React.Dispatch<React.SetStateAction<Array<{ id: string; type: string; x: number; y: number; zIndex?: number; isFlipped?: boolean; isOn?: boolean; isTemp?: boolean; presetId?: string }>>>;
 }
 
 export const useMouseInteractions = ({
@@ -36,13 +53,19 @@ export const useMouseInteractions = ({
   setViewportOffset,
   username,
   recordFurniturePlacement,
-  afkStartTimeRef
+  afkStartTimeRef,
+  isFurnitureSelectionMode,
+  selectionBox,
+  setSelectionBox,
+  tempFurniture,
+  setTempFurniture
 }: MouseInteractionsProps) => {
   const heartCounterRef = useRef(0);
   const circleCounterRef = useRef(0);
   const dragStartPos = useRef<{ x: number; y: number } | null>(null);
   const draggedFurnitureId = useRef<string | null>(null);
   const viewportDragStart = useRef<{ x: number; y: number } | null>(null);
+  const tempFurnitureDragStart = useRef<{ [key: string]: { x: number; y: number } } | null>(null);
   const clickEnabledTimeRef = useRef<number | null>(null);
   const confettiTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastDoubleClickTimeRef = useRef(0);
@@ -69,6 +92,18 @@ export const useMouseInteractions = ({
   // Helper function to convert screen coordinates to canvas coordinates
   const convertScreenToCanvas = (screenX: number, screenY: number) => {
     return screenToCanvas(screenX, screenY, viewportOffset);
+  };
+
+  // Helper function to check if furniture is within selection box
+  const isFurnitureInSelectionBox = (furnitureX: number, furnitureY: number) => {
+    if (!selectionBox || !selectionBox.isActive) return false;
+    
+    const left = Math.min(selectionBox.startX, selectionBox.endX);
+    const right = Math.max(selectionBox.startX, selectionBox.endX);
+    const top = Math.min(selectionBox.startY, selectionBox.endY);
+    const bottom = Math.max(selectionBox.startY, selectionBox.endY);
+    
+    return furnitureX >= left && furnitureX <= right && furnitureY >= top && furnitureY <= bottom;
   };
 
   // Helper function to handle AFK detection
@@ -110,39 +145,67 @@ export const useMouseInteractions = ({
         const canvasCoords = convertScreenToCanvas(mouseStateRef.current.lastX, mouseStateRef.current.lastY);
         const clampedCoords = clampToCanvas(canvasCoords.x, canvasCoords.y);
 
-        // Only update if position changed
-        if (
-          !lastSentPositionRef.current ||
-          lastSentPositionRef.current.x !== clampedCoords.x ||
-          lastSentPositionRef.current.y !== clampedCoords.y
-        ) {
-          setFurniture(prev => ({
-            ...prev,
-            [draggedFurnitureId.current!]: {
-              ...prev[draggedFurnitureId.current!],
-              x: clampedCoords.x,
-              y: clampedCoords.y
-            }
-          }));
+        // Check if we're dragging temporary furniture
+        const isDraggingTempFurniture = tempFurniture?.some(item => item.id === draggedFurnitureId.current);
 
-          // Throttled emit for furniture position updates
-          if (socketRef.current) {
-            const now = Date.now();
-            if (now - lastEmitTime > DRAG_THROTTLE_MS) {
-              socketRef.current.emit('updateFurniturePosition', {
-                furnitureId: draggedFurnitureId.current,
-                x: clampedCoords.x,
-                y: clampedCoords.y
-              });
-              lastEmitTime = now;
+        if (isDraggingTempFurniture && setTempFurniture && tempFurnitureDragStart.current) {
+          // Find the dragged item to get its preset ID
+          const draggedItem = tempFurniture?.find(item => item.id === draggedFurnitureId.current);
+          if (draggedItem && draggedItem.presetId) {
+            // Calculate the offset from the original position when drag started
+            const originalPos = tempFurnitureDragStart.current[draggedItem.id];
+            if (originalPos) {
+              const offsetX = clampedCoords.x - originalPos.x;
+              const offsetY = clampedCoords.y - originalPos.y;
+              
+              // Move all items in the same preset group by the same offset from their original positions
+              setTempFurniture(prev => prev.map(item => 
+                item.presetId === draggedItem.presetId
+                  ? { 
+                      ...item, 
+                      x: tempFurnitureDragStart.current![item.id].x + offsetX, 
+                      y: tempFurnitureDragStart.current![item.id].y + offsetY 
+                    }
+                  : item
+              ));
             }
           }
+        } else {
+          // Update regular furniture position
+          // Only update if position changed
+          if (
+            !lastSentPositionRef.current ||
+            lastSentPositionRef.current.x !== clampedCoords.x ||
+            lastSentPositionRef.current.y !== clampedCoords.y
+          ) {
+            setFurniture(prev => ({
+              ...prev,
+              [draggedFurnitureId.current!]: {
+                ...prev[draggedFurnitureId.current!],
+                x: clampedCoords.x,
+                y: clampedCoords.y
+              }
+            }));
 
-          lastSentPositionRef.current = { x: clampedCoords.x, y: clampedCoords.y };
+            // Throttled emit for furniture position updates
+            if (socketRef.current) {
+              const now = Date.now();
+              if (now - lastEmitTime > DRAG_THROTTLE_MS) {
+                socketRef.current.emit('updateFurniturePosition', {
+                  furnitureId: draggedFurnitureId.current,
+                  x: clampedCoords.x,
+                  y: clampedCoords.y
+                });
+                lastEmitTime = now;
+              }
+            }
+
+            lastSentPositionRef.current = { x: clampedCoords.x, y: clampedCoords.y };
+          }
         }
       }
 
-      if (mouseStateRef.current.isDraggingViewport && viewportDragStart.current && mouseStateRef.current.lastEvent) {
+      if (mouseStateRef.current.isDraggingViewport && viewportDragStart.current && mouseStateRef.current.lastEvent && !isFurnitureSelectionMode) {
         const dx = mouseStateRef.current.lastX - viewportDragStart.current.x;
         const dy = mouseStateRef.current.lastY - viewportDragStart.current.y;
         
@@ -215,8 +278,18 @@ export const useMouseInteractions = ({
       mouseStateRef.current.lastY = e.clientY;
       mouseStateRef.current.lastEvent = e;
       
+      // Update selection box if active
+      if (selectionBox && selectionBox.isActive) {
+        const canvasCoords = convertScreenToCanvas(e.clientX, e.clientY);
+        setSelectionBox(prev => prev ? {
+          ...prev,
+          endX: canvasCoords.x,
+          endY: canvasCoords.y
+        } : null);
+      }
+      
       // Check if we should start dragging furniture based on movement distance
-      if (pendingFurnitureId.current && dragStartPos.current && !mouseStateRef.current.isDraggingFurniture) {
+      if (pendingFurnitureId.current && dragStartPos.current && !mouseStateRef.current.isDraggingFurniture && !isFurnitureSelectionMode) {
         const dx = e.clientX - dragStartPos.current.x;
         const dy = e.clientY - dragStartPos.current.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
@@ -233,10 +306,12 @@ export const useMouseInteractions = ({
     function onMouseDown(e: MouseEvent) {
       const target = e.target as HTMLElement;
       
-      // Check if clicking on furniture
+      // Check if clicking on furniture (regular or temporary)
       const furnitureElement = target.closest('[data-furniture-id]');
       if (furnitureElement) {
         const furnitureId = furnitureElement.getAttribute('data-furniture-id');
+        const isTempFurniture = furnitureElement.hasAttribute('data-temp-furniture');
+        
         if (furnitureId) {
           e.preventDefault();
           e.stopPropagation();
@@ -251,16 +326,45 @@ export const useMouseInteractions = ({
             });
           }
           
-          // Immediately handle furniture selection
-          if (selectedFurnitureId === furnitureId) {
-            setSelectedFurnitureId(null);
-          } else {
-            setSelectedFurnitureId(furnitureId);
+          // Handle furniture selection mode - client-side only
+          if (isFurnitureSelectionMode) {
+            // Selection is now handled by the FurniturePresetPanel component
+            // which listens for clicks on furniture elements
+            return; // Don't do normal furniture selection or dragging
           }
           
-          // Store the furniture ID and start position for potential dragging
-          dragStartPos.current = { x: e.clientX, y: e.clientY };
-          pendingFurnitureId.current = furnitureId;
+          // Handle temporary furniture dragging
+          if (isTempFurniture) {
+            // Store the furniture ID and start position for potential dragging
+            dragStartPos.current = { x: e.clientX, y: e.clientY };
+            pendingFurnitureId.current = furnitureId;
+            
+            // Store original positions of all items in the same preset group
+            const draggedItem = tempFurniture?.find(item => item.id === furnitureId);
+            if (draggedItem && draggedItem.presetId) {
+              tempFurnitureDragStart.current = {};
+              tempFurniture?.forEach(item => {
+                if (item.presetId === draggedItem.presetId) {
+                  tempFurnitureDragStart.current![item.id] = { x: item.x, y: item.y };
+                }
+              });
+            }
+            return;
+          }
+          
+          // Only handle normal furniture selection if NOT in selection mode
+          if (!isFurnitureSelectionMode) {
+            // Immediately handle furniture selection
+            if (selectedFurnitureId === furnitureId) {
+              setSelectedFurnitureId(null);
+            } else {
+              setSelectedFurnitureId(furnitureId);
+            }
+            
+            // Store the furniture ID and start position for potential dragging
+            dragStartPos.current = { x: e.clientX, y: e.clientY };
+            pendingFurnitureId.current = furnitureId;
+          }
           
           return;
         }
@@ -274,7 +378,20 @@ export const useMouseInteractions = ({
         pendingFurnitureId.current = null;
       }
       
-      if (e.button === 0 && (target.id === 'app-root' || target.classList.contains('canvas-container'))) {
+      // Handle selection box creation in selection mode
+      if (e.button === 0 && isFurnitureSelectionMode && (target.id === 'app-root' || target.classList.contains('canvas-container'))) {
+        const canvasCoords = convertScreenToCanvas(e.clientX, e.clientY);
+        setSelectionBox({
+          startX: canvasCoords.x,
+          startY: canvasCoords.y,
+          endX: canvasCoords.x,
+          endY: canvasCoords.y,
+          isActive: true
+        });
+        return;
+      }
+      
+      if (e.button === 0 && (target.id === 'app-root' || target.classList.contains('canvas-container')) && !isFurnitureSelectionMode) {
         mouseStateRef.current.isDraggingViewport = true;
         viewportDragStart.current = { x: e.clientX, y: e.clientY };
         lastSentCursorRef.current = null; // Reset to ensure first cursor update happens
@@ -282,6 +399,38 @@ export const useMouseInteractions = ({
     }
 
     function onMouseUp() {
+      // Handle selection box completion
+      if (selectionBox && selectionBox.isActive && isFurnitureSelectionMode) {
+        // Select all furniture within the selection box
+        const selectedItems: Array<{ id: string; type: string; x: number; y: number; zIndex?: number; isFlipped?: boolean; isOn?: boolean }> = [];
+        Object.entries(furniture).forEach(([furnitureId, item]) => {
+          if (isFurnitureInSelectionBox(item.x, item.y)) {
+            selectedItems.push({
+              id: furnitureId,
+              type: item.type,
+              x: item.x,
+              y: item.y,
+              zIndex: item.zIndex,
+              isFlipped: item.isFlipped,
+              isOn: item.isOn
+            });
+          }
+        });
+        
+        // Update the selected furniture state in the FurniturePresetPanel
+        if (selectedItems.length > 0) {
+          // We need to pass this data to the FurniturePresetPanel
+          // For now, we'll use a custom event to communicate
+          const event = new CustomEvent('furnitureSelectionBoxComplete', {
+            detail: { selectedItems }
+          });
+          window.dispatchEvent(event);
+        }
+        
+        // Clear the selection box
+        setSelectionBox(null);
+      }
+      
       if (mouseStateRef.current.isDraggingViewport) {
         mouseStateRef.current.isDraggingViewport = false;
         viewportDragStart.current = null;
@@ -292,6 +441,7 @@ export const useMouseInteractions = ({
         draggedFurnitureId.current = null;
         dragStartPos.current = null;
         lastSentPositionRef.current = null;
+        tempFurnitureDragStart.current = null;
       }
       // Clear pending furniture drag
       pendingFurnitureId.current = null;
@@ -314,7 +464,8 @@ export const useMouseInteractions = ({
         !hasConnected ||
         (clickEnabledTimeRef.current !== null && now < clickEnabledTimeRef.current) ||
         mouseStateRef.current.isDraggingViewport ||
-        isControlButton
+        isControlButton ||
+        isFurnitureSelectionMode // Don't spawn circles when in selection mode
       ) {
         return;
       }
@@ -347,7 +498,7 @@ export const useMouseInteractions = ({
       cancelAnimationFrame(lastFrame);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [furniture, isCursorFrozen, hasConnected, viewportOffset, socketRef, cursors, username, setFurniture, setSelectedFurnitureId, selectedFurnitureId, setIsCursorFrozen, setFrozenCursorPosition, setViewportOffset, recordFurniturePlacement, afkStartTimeRef]);
+  }, [furniture, isCursorFrozen, hasConnected, viewportOffset, socketRef, cursors, username, setFurniture, setSelectedFurnitureId, selectedFurnitureId, setIsCursorFrozen, setFrozenCursorPosition, setViewportOffset, recordFurniturePlacement, afkStartTimeRef, isFurnitureSelectionMode, selectionBox]);
 
   // Double-click handler
   useEffect(() => {
