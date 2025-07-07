@@ -36,6 +36,8 @@ isActive: boolean;
  | null>>;
 tempFurniture?: Array<{ id: string; type: string; x: number; y: number; zIndex?: number; isFlipped?: boolean; isOn?: boolean; isTemp?: boolean; presetId?: string >;
 setTempFurniture?: React.Dispatch<React.SetStateAction<Array<{ id: string; type: string; x: number; y: number; zIndex?: number; isFlipped?: boolean; isOn?: boolean; isTemp?: boolean; presetId?: string >>>;
+selectedFurnitureDuringSelection?: Set<string>;
+setSelectedFurnitureDuringSelection?: React.Dispatch<React.SetStateAction<Set<string>>>;
 
 
 export const useMouseInteractions = ({
@@ -58,7 +60,8 @@ isFurnitureSelectionMode,
 selectionBox,
 setSelectionBox,
 tempFurniture,
-setTempFurniture
+setTempFurniture,
+setSelectedFurnitureDuringSelection
 : MouseInteractionsProps) => {
 const heartCounterRef = useRef(0);
 const circleCounterRef = useRef(0);
@@ -287,6 +290,17 @@ endX: canvasCoords.x,
 endY: canvasCoords.y
  : null);
 
+// Update which furniture items are being selected during the selection process
+if (setSelectedFurnitureDuringSelection) {
+const selectedItems = new Set<string>();
+Object.entries(furniture).forEach(([furnitureId, item]) => {
+if (isFurnitureInSelectionBox(item.x, item.y)) {
+selectedItems.add(furnitureId);
+
+);
+setSelectedFurnitureDuringSelection(selectedItems);
+
+
 
 // Check if we should start dragging furniture based on movement distance
 if (pendingFurnitureId.current && dragStartPos.current && !mouseStateRef.current.isDraggingFurniture && !isFurnitureSelectionMode) {
@@ -429,6 +443,7 @@ window.dispatchEvent(event);
 
 // Clear the selection box
 setSelectionBox(null);
+// Don't clear the selected furniture during selection - it should persist until preset is saved
 
 
 if (mouseStateRef.current.isDraggingViewport) {

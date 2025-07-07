@@ -80,6 +80,7 @@ endX: number;
 endY: number;
 isActive: boolean;
  | null>(null);
+const [selectedFurnitureDuringSelection, setSelectedFurnitureDuringSelection] = useState<Set<string>>(new Set());
 const [tempFurniture, setTempFurniture] = useState<Array<{ id: string; type: string; x: number; y: number; zIndex?: number; isFlipped?: boolean; isOn?: boolean; isTemp?: boolean; presetId?: string >>([]);
 
 // ===== GAME STATE =====
@@ -121,7 +122,9 @@ isFurnitureSelectionMode,
 selectionBox,
 setSelectionBox,
 tempFurniture,
-setTempFurniture
+setTempFurniture,
+selectedFurnitureDuringSelection,
+setSelectedFurnitureDuringSelection
 );
 useKeyboardInteractions({
 socketRef,
@@ -239,7 +242,9 @@ onDelete={(furnitureId) => setSelectedFurnitureId(prev => prev === furnitureId ?
 showGachaNotification={showGachaNotification
 gachaNotificationText={gachaNotificationText
 selectionBox={selectionBox
+selectedFurnitureDuringSelection={selectedFurnitureDuringSelection
 tempFurniture={tempFurniture
+isFurnitureSelectionMode={isFurnitureSelectionMode
 onConfirmPreset={() => {
 // Convert temporary furniture to real furniture
 if (tempFurniture && tempFurniture.length > 0 && socketRef.current) {
@@ -307,6 +312,7 @@ furniture={furniture
 isFurnitureSelectionMode={isFurnitureSelectionMode
 setTempFurniture={setTempFurniture
 viewportOffset={viewportOffset
+setSelectedFurnitureDuringSelection={setSelectedFurnitureDuringSelection
 style={{ zIndex: Z_INDEX_LAYERS.PANEL 
 />
 
@@ -355,6 +361,23 @@ hasConnected={hasConnected
 />
 
 
+
+{/* Selection mode viewport border */
+{isFurnitureSelectionMode && (
+<div
+style={{
+position: 'fixed',
+top: 0,
+left: 0,
+width: '100vw',
+height: '100vh',
+border: '2px dashed white',
+pointerEvents: 'none',
+zIndex: 9997,
+boxSizing: 'border-box'
+
+/>
+)
 
 {/* Overlays */
 <ConfettiOverlay showConfetti={showConfetti confettiTimestamp={confettiTimestamp />

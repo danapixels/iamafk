@@ -48,15 +48,21 @@ return (
 {Object.entries(groupedFurniture).map(([presetId, items]) => {
 if (items.length === 0) return null;
 
-// Calculate group bounds
+// Calculate group bounds dynamically based on furniture size
 const minX = Math.min(...items.map(item => item.x));
 const maxX = Math.max(...items.map(item => item.x));
 const minY = Math.min(...items.map(item => item.y));
 const maxY = Math.max(...items.map(item => item.y));
 const centerX = (minX + maxX) / 2;
 const centerY = (minY + maxY) / 2;
-const width = maxX - minX + 20; // Reduced padding from 100 to 20
-const height = maxY - minY + 20; // Reduced padding from 100 to 20
+
+// Calculate dynamic padding based on furniture size
+const furnitureWidth = maxX - minX;
+const furnitureHeight = maxY - minY;
+const padding = Math.max(40, Math.min(furnitureWidth, furnitureHeight) * 0.3); // 40px minimum, or 30% of smaller dimension
+
+const width = furnitureWidth + padding * 2;
+const height = furnitureHeight + padding * 2;
 
 return (
 <div key={presetId style={{ position: 'relative' >
@@ -85,9 +91,7 @@ transformStyle: 'preserve-3d',
 borderRadius: '6px',
 boxSizing: 'border-box',
 WebkitTouchCallout: 'none',
-WebkitTapHighlightColor: 'transparent',
-border: '2px dashed white',
-boxShadow: '0 0 10px rgba(255, 255, 255, 0.5)'
+WebkitTapHighlightColor: 'transparent'
 
 draggable={false
 />
@@ -101,11 +105,10 @@ left: centerX - width / 2,
 top: centerY - height / 2,
 width: width,
 height: height,
-border: '2px dashed white',
+border: '1px dashed white',
 borderRadius: '8px',
 pointerEvents: 'none',
 zIndex: (Z_INDEX_LAYERS.FURNITURE) + 999,
-boxShadow: '0 0 15px rgba(255, 255, 255, 0.3)'
 
 />
 
@@ -114,9 +117,9 @@ boxShadow: '0 0 15px rgba(255, 255, 255, 0.3)'
 style={{
 position: 'absolute',
 left: centerX,
-top: centerY - height / 2 - 40, // Reduced from 60 to 40
+top: centerY - height / 2 - Math.max(25, padding * 0.8), // Reduced space above the border
 display: 'flex',
-gap: '6px', // Reduced from 8px to 6px
+gap: '6px',
 zIndex: (Z_INDEX_LAYERS.FURNITURE) + 1001,
 pointerEvents: 'all'
 
@@ -124,40 +127,44 @@ pointerEvents: 'all'
 <button
 onClick={() => onConfirmPreset?.(presetId)
 style={{
-background: 'linear-gradient(135deg, #4CAF50, #45a049)',
-border: '2px solid #2E7D32',
-borderRadius: '4px', // Reduced from 6px to 4px
-color: 'white',
-fontFamily: '"Press Start 2P", monospace',
-fontSize: '0.5em', // Reduced from 0.6em to 0.5em
-fontWeight: 'bold',
-padding: '6px 12px', // Reduced from 8px 16px to 6px 12px
+background: 'none',
+border: 'none',
 cursor: 'pointer',
-textShadow: '1px 1px 0px rgba(0, 0, 0, 0.8)',
-boxShadow: '0 4px 8px rgba(0, 0, 0, 0.3)',
-transition: 'all 0.2s ease'
+padding: 0,
+transition: 'transform 0.1s ease'
 
 >
-✓ Confirm
+<img 
+src="/UI/checkbutton.png" 
+alt=""
+onMouseOver={(e) => {
+e.currentTarget.src = "/UI/checkbuttonhover.png";
+
+onMouseOut={(e) => {
+e.currentTarget.src = "/UI/checkbutton.png";
+
+/>
 </button>
 <button
 onClick={() => onDeleteTempPreset?.(presetId)
 style={{
-background: 'linear-gradient(135deg, #f44336, #d32f2f)',
-border: '2px solid #c62828',
-borderRadius: '4px', // Reduced from 6px to 4px
-color: 'white',
-fontFamily: '"Press Start 2P", monospace',
-fontSize: '0.5em', // Reduced from 0.6em to 0.5em
-fontWeight: 'bold',
-padding: '6px 12px', // Reduced from 8px 16px to 6px 12px
+background: 'none',
+border: 'none',
 cursor: 'pointer',
-textShadow: '1px 1px 0px rgba(0, 0, 0, 0.8)',
-boxShadow: '0 4px 8px rgba(0, 0, 0, 0.3)',
-transition: 'all 0.2s ease'
+padding: 0,
+transition: 'transform 0.1s ease'
 
 >
-✗ Delete
+<img 
+src="/UI/deletefurniturebutton.png" 
+alt="Delete Preset"
+onMouseOver={(e) => {
+e.currentTarget.src = "/UI/deletefurniturebuttonhover.png";
+
+onMouseOut={(e) => {
+e.currentTarget.src = "/UI/deletefurniturebutton.png";
+
+/>
 </button>
 </div>
 </div>

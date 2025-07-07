@@ -1185,8 +1185,7 @@ const user = userStats[deviceId];
 
 if (user && user.furniturePresets) {
 delete user.furniturePresets[slotIndex];
-// Reset preset usage count when preset is deleted
-user.presetUsageCount = 0;
+// Note: Daily preset usage is not reset when preset is deleted - it resets daily
 user.lastSeen = Date.now();
 
 // Add to batch for persistence
@@ -1206,21 +1205,22 @@ socket.on('placeFurniturePreset', ({ preset, x, y ) => {
 const deviceId = socketToDeviceMap[socket.id] || socket.id;
 const user = getUserStatsFromServer(socket.id);
 
-// Check preset usage limit
-const presetUsageCount = user.presetUsageCount || 0;
+// Check preset usage limit (daily reset)
+const today = new Date().toISOString().split('T')[0];
+const dailyPresetUsage = user.dailyPresetUsage?.[today] || 0;
 const PRESET_USAGE_LIMIT = 10;
 
-if (presetUsageCount >= PRESET_USAGE_LIMIT) {
-console.log(`🚫 Preset usage limit reached for ${user.username (${presetUsageCount/${PRESET_USAGE_LIMIT)`);
+if (dailyPresetUsage >= PRESET_USAGE_LIMIT) {
+console.log(`🚫 Daily preset usage limit reached for ${user.username (${dailyPresetUsage/${PRESET_USAGE_LIMIT)`);
 socket.emit('presetUsageLimitReached', { 
-message: `You've reached the preset usage limit of ${PRESET_USAGE_LIMIT. Delete and recreate your preset to continue.`,
-currentCount: presetUsageCount,
+message: `Sorry, you put down too many presets, try again tomorrow o-o`,
+currentCount: dailyPresetUsage,
 limit: PRESET_USAGE_LIMIT
 );
 return;
 
 
-console.log(`🏠 Placing furniture preset at (${x, ${y) for ${user.username (${presetUsageCount + 1/${PRESET_USAGE_LIMIT)`);
+console.log(`🏠 Placing furniture preset at (${x, ${y) for ${user.username (${dailyPresetUsage + 1/${PRESET_USAGE_LIMIT)`);
 
 // Place each furniture item from the preset
 preset.furniture.forEach((item, index) => {
@@ -1245,8 +1245,11 @@ timestamp: Date.now()
 recordFurniturePlacementOnServer(socket.id, item.type);
 );
 
-// Increment preset usage count
-user.presetUsageCount = presetUsageCount + 1;
+// Increment daily preset usage count
+if (!user.dailyPresetUsage) {
+user.dailyPresetUsage = {;
+
+user.dailyPresetUsage[today] = dailyPresetUsage + 1;
 user.lastSeen = Date.now();
 
 // Save to persistent storage
@@ -1257,8 +1260,8 @@ io.emit('furniture', furniture);
 
 // Notify the user of successful placement
 socket.emit('presetPlaced', { 
-message: `Preset placed! (${user.presetUsageCount/${PRESET_USAGE_LIMIT uses)`,
-currentCount: user.presetUsageCount,
+message: `Preset placed! (${user.dailyPresetUsage[today]/${PRESET_USAGE_LIMIT uses)`,
+currentCount: user.dailyPresetUsage[today],
 limit: PRESET_USAGE_LIMIT
 );
 
@@ -1359,7 +1362,7 @@ dailyFurniturePlacements: {,
 unlockedGachaHats: [],
 unlockedGachaFurniture: [],
 furniturePresets: [], // Array of furniture presets
-presetUsageCount: 0 // Added presetUsageCount
+dailyPresetUsage: { // Daily preset usage tracking
 ;
 userStats[deviceId] = newUser;
 return newUser;
