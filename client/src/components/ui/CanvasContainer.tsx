@@ -38,9 +38,11 @@ interface CanvasContainerProps {
     endY: number;
     isActive: boolean;
   } | null;
+  selectedFurnitureDuringSelection?: Set<string>;
   tempFurniture?: Array<{ id: string; type: string; x: number; y: number; zIndex?: number; isFlipped?: boolean; isOn?: boolean; isTemp?: boolean; presetId?: string }>;
   onConfirmPreset?: (presetId: string) => void;
   onDeleteTempPreset?: (presetId: string) => void;
+  isFurnitureSelectionMode?: boolean;
   // username?: string;
 }
 
@@ -63,9 +65,11 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = memo(({
   showGachaNotification,
   gachaNotificationText,
   selectionBox,
+  selectedFurnitureDuringSelection,
   tempFurniture,
   onConfirmPreset,
   onDeleteTempPreset,
+  isFurnitureSelectionMode,
 }) => {
   // Get user badges for statue achievements
   // const userBadges = useStatueBadges({
@@ -82,7 +86,7 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = memo(({
         top: -viewportOffset.y,
         width: CANVAS_SIZE,
         height: CANVAS_SIZE,
-        border: '2px solid white',
+        border: isFurnitureSelectionMode ? 'none' : '2px solid white',
         boxSizing: 'border-box',
         pointerEvents: 'none',
       }}
@@ -168,6 +172,7 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = memo(({
         <FurnitureRenderer
           visibleFurniture={visibleFurniture}
           selectedFurnitureId={selectedFurnitureId}
+          selectedFurnitureDuringSelection={selectedFurnitureDuringSelection}
           furnitureRefs={furnitureRefs}
           socketRef={socketRef}
           onMoveUp={onMoveUp}
@@ -193,7 +198,7 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = memo(({
               top: Math.min(selectionBox.startY, selectionBox.endY),
               width: Math.abs(selectionBox.endX - selectionBox.startX),
               height: Math.abs(selectionBox.endY - selectionBox.startY),
-              border: '2px dashed white',
+              border: '1px dashed white',
               backgroundColor: 'rgba(255, 255, 255, 0.1)',
               pointerEvents: 'none',
               zIndex: 9998,

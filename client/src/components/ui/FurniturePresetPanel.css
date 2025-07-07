@@ -1,7 +1,7 @@
 .furniture-preset-panel-container {
   position: fixed;
-  right: 320px; /* Position to the left of the furniture panel */
-  top: 0;
+  right: 160px;
+  top: 255px; /* Same right position as furniture panel */
   transform: none;
   pointer-events: none;
   animation: fadeInFromRight 0.5s ease-out;
@@ -45,6 +45,9 @@
   pointer-events: all;
   position: relative;
   z-index: 1000;
+  display: flex;
+  align-items: center;
+  height: 100%;
 }
 
 .preset-button:hover {
@@ -66,85 +69,65 @@
 .preset-slots-container {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
+  min-height: 32px;
+  width: 105px;
+  align-items: flex-start;
+  transform: translateX(-4px);
 }
 
 .preset-slot {
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
-  padding: 8px;
-  min-height: 60px;
+  background: #111111;
+  border: none;
+  border-bottom: 1px solid white;
+  padding: 1px 2px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: center;
+  min-height: 12px;
+  width: 105px;
+  transition: background-color 0.2s ease;
+}
+
+.preset-slot:hover {
+  background: #222222;
 }
 
 .preset-slot-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 4px;
+  height: 100%;
 }
 
 .preset-slot-name {
   font-family: 'Press Start 2P', monospace;
   font-size: 0.5em;
   color: white;
-  text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.8);
-}
-
-.preset-slot-count {
-  font-family: 'Press Start 2P', monospace;
-  font-size: 0.4em;
-  color: #ccc;
-  text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.8);
-}
-
-.preset-slot-actions {
+  line-height: 1;
   display: flex;
-  gap: 4px;
-  justify-content: center;
+  align-items: center;
+  height: 100%;
 }
 
-.preset-load-button,
-.preset-save-button,
+
+
 .preset-delete-button {
-  font-family: 'Press Start 2P', monospace;
-  font-size: 0.5em;
-  color: white;
-  background: rgba(0, 0, 0, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 2px;
-  padding: 4px 8px;
+  background: none;
+  border: none;
   cursor: pointer;
-  transition: all 0.2s ease;
-  text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.8);
-}
-
-.preset-load-button:hover,
-.preset-save-button:hover {
-  background: rgba(0, 128, 0, 0.6);
-  border-color: rgba(0, 255, 0, 0.5);
+  padding: 0;
+  transition: transform 0.1s ease;
+  display: flex;
+  align-items: center;
+  height: 100%;
 }
 
 .preset-delete-button:hover {
-  background: rgba(128, 0, 0, 0.6);
-  border-color: rgba(255, 0, 0, 0.5);
+  transform: scale(1.05);
 }
 
-.preset-load-button:disabled,
-.preset-save-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
 
-.preset-slot-empty {
-  font-family: 'Press Start 2P', monospace;
-  font-size: 0.4em;
-  color: #888;
-  text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.8);
-}
 
 /* Canvas overlay for placing presets */
 .canvas-overlay {
@@ -180,12 +163,13 @@
   top: 0;
   left: 0;
   width: 100vw;
-  height: 60px;
+  height: 80px;
   background: transparent;
   z-index: 10000;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding-top: 16px;
 }
 
 /* Placement mode overlay */
@@ -213,7 +197,6 @@
   font-family: 'Press Start 2P', monospace;
   font-size: 0.8em;
   color: white;
-  text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.8);
   font-weight: bold;
 }
 
@@ -221,7 +204,6 @@
   font-family: 'Press Start 2P', monospace;
   font-size: 0.5em;
   color: #e0e0e0;
-  text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.8);
 }
 
 .placement-buttons {
@@ -230,52 +212,22 @@
   margin-top: 4px;
 }
 
-.placement-confirm-button,
-.placement-cancel-button {
-  background: linear-gradient(135deg, #4CAF50, #45a049) !important;
-  border: 2px solid #2E7D32 !important;
-  border-radius: 6px !important;
-  color: white !important;
-  font-family: 'Press Start 2P', monospace !important;
-  font-size: 0.6em !important;
-  font-weight: bold !important;
-  padding: 8px 16px !important;
-  cursor: pointer !important;
-  text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.8) !important;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3) !important;
-  transition: all 0.2s ease !important;
-  text-align: center !important;
-}
 
-.placement-confirm-button:hover {
-  background: linear-gradient(135deg, #66BB6A, #4CAF50) !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4) !important;
-}
-
-.placement-cancel-button {
-  background: linear-gradient(135deg, #f44336, #d32f2f) !important;
-  border: 2px solid #c62828 !important;
-}
-
-.placement-cancel-button:hover {
-  background: linear-gradient(135deg, #ef5350, #f44336) !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4) !important;
-}
 
 .selection-mode-content {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
+  min-height: 80px;
+  justify-content: flex-start;
+  padding-top: 8px;
 }
 
 .selection-mode-text {
   font-family: 'Press Start 2P', monospace;
   font-size: 0.8em;
   color: white;
-  text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.8);
   font-weight: bold;
 }
 
@@ -283,37 +235,30 @@
   font-family: 'Press Start 2P', monospace;
   font-size: 0.5em;
   color: #e0e0e0;
-  text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.8);
 }
 
 /* Selection save button */
 .selection-save-button {
-  background: linear-gradient(135deg, #4CAF50, #45a049) !important;
-  border: 2px solid #2E7D32 !important;
+  background: #111111 !important;
+  border: 1px solid white !important;
   border-radius: 6px !important;
   color: white !important;
   font-family: 'Press Start 2P', monospace !important;
-  font-size: 0.7em !important;
+  font-size: 0.5em !important;
   font-weight: bold !important;
   padding: 10px 20px !important;
   cursor: pointer !important;
-  text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.8) !important;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3) !important;
-  transition: all 0.2s ease !important;
   margin-top: 8px !important;
-  min-width: 200px !important;
+  width: fit-content !important;
   text-align: center !important;
 }
 
 .selection-save-button:hover {
-  background: linear-gradient(135deg, #66BB6A, #4CAF50) !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4) !important;
+  background: #222222 !important;
 }
 
 .selection-save-button:active {
   transform: translateY(0) !important;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
 }
 
 @keyframes fadeInFromRight {

@@ -17,7 +17,7 @@ interface UserStats {
   unlockedGachaHats?: Array<{ item: string; unlockedBy: string }>;
   unlockedGachaFurniture?: Array<{ item: string; unlockedBy: string }>;
   furniturePresets?: Array<any>;
-  presetUsageCount?: number;
+  dailyPresetUsage?: { [date: string]: number };
 }
 
 interface UserStatsContextType {
@@ -150,8 +150,8 @@ export const UserStatsProvider: React.FC<UserStatsProviderProps> = ({
 
     socket.on('userStats', handleUserStats);
     socket.on('statsError', handleStatsError);
-    socket.on('presetPlaced', (data) => {
-      alert(data.message);
+    socket.on('presetPlaced', () => {
+      // Removed alert - preset placed successfully
     });
     socket.on('presetUsageLimitReached', (data) => {
       alert(data.message);

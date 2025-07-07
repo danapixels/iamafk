@@ -27,6 +27,7 @@ interface FurniturePresetPanelProps {
   setTempFurniture?: React.Dispatch<React.SetStateAction<Array<{ id: string; type: string; x: number; y: number; zIndex?: number; isFlipped?: boolean; isOn?: boolean; isTemp?: boolean }>>>;
   style?: React.CSSProperties;
   viewportOffset?: { x: number; y: number };
+  setSelectedFurnitureDuringSelection?: React.Dispatch<React.SetStateAction<Set<string>>>;
 }
 
 const FurniturePresetPanel: React.FC<FurniturePresetPanelProps> = ({
@@ -36,7 +37,8 @@ const FurniturePresetPanel: React.FC<FurniturePresetPanelProps> = ({
   isFurnitureSelectionMode,
   setTempFurniture,
   style,
-  viewportOffset
+  viewportOffset,
+  setSelectedFurnitureDuringSelection
 }) => {
   const { userStats } = useUserStats();
   const [selectedFurniture, setSelectedFurniture] = useState<Array<{ id: string; type: string; x: number; y: number; zIndex?: number; isFlipped?: boolean; isOn?: boolean }>>([]);
@@ -142,6 +144,8 @@ const FurniturePresetPanel: React.FC<FurniturePresetPanelProps> = ({
         setIsSelecting(false);
         setSelectedFurniture([]);
         onSelectionToggle?.(false);
+        // Clear the selected furniture during selection borders
+        setSelectedFurnitureDuringSelection?.(new Set());
       }
     };
 
@@ -160,6 +164,8 @@ const FurniturePresetPanel: React.FC<FurniturePresetPanelProps> = ({
       setIsSelecting(false);
       setSelectedFurniture([]);
       onSelectionToggle?.(false);
+      // Clear the selected furniture during selection borders
+      setSelectedFurnitureDuringSelection?.(new Set());
     } else {
       // Enter selection mode
       setIsSelecting(true);
@@ -192,6 +198,8 @@ const FurniturePresetPanel: React.FC<FurniturePresetPanelProps> = ({
     setSelectedFurniture([]);
     setIsSelecting(false);
     onSelectionToggle?.(false);
+    // Clear the selected furniture during selection borders
+    setSelectedFurnitureDuringSelection?.(new Set());
   };
 
   const handleLoadPreset = (preset: FurniturePreset) => {
@@ -243,7 +251,8 @@ const FurniturePresetPanel: React.FC<FurniturePresetPanelProps> = ({
   };
 
   const getPresetUsageInfo = () => {
-    const usageCount = userStats?.presetUsageCount || 0;
+    const today = new Date().toISOString().split('T')[0];
+    const usageCount = userStats?.dailyPresetUsage?.[today] || 0;
     const limit = 10;
     const remaining = limit - usageCount;
     return { usageCount, limit, remaining };
@@ -258,46 +267,50 @@ const FurniturePresetPanel: React.FC<FurniturePresetPanelProps> = ({
         <div className="preset-slots-container">
           {(() => {
             const preset = getPresetForSlot();
-            const { remaining, limit } = getPresetUsageInfo();
+            const { remaining } = getPresetUsageInfo();
             const isLimitReached = remaining <= 0;
             
             return (
-              <div key={0} className="preset-slot">
+              <div 
+                key={0} 
+                className="preset-slot"
+                onClick={preset && !isLimitReached ? () => handleLoadPreset(preset) : () => handleStartSelection()}
+                style={{
+                  cursor: 'pointer',
+                  opacity: preset && isLimitReached ? 0.5 : 1
+                }}
+                title={preset && isLimitReached ? 'Delete and recreate your preset to continue' : preset ? 'Click to load preset' : 'Click to start selection'}
+              >
                 <div className="preset-slot-header">
                   <span className="preset-slot-name">
                     {preset ? `${preset.furniture.length} items` : 'Empty'}
                   </span>
-                  {preset && (
-                    <span className="preset-usage-count" style={{ fontSize: '0.7em', color: isLimitReached ? '#ff6b6b' : '#4ecdc4' }}>
-                      {remaining}/{limit} uses left
-                    </span>
-                  )}
-                </div>
-                
-                <div className="preset-slot-actions">
                   {preset ? (
-                    <>
-                      <button 
-                        className="preset-load-button"
-                        onClick={() => handleLoadPreset(preset)}
-                        disabled={isLimitReached}
-                        style={{ 
-                          fontSize: '0.5em',
-                          opacity: isLimitReached ? 0.5 : 1,
-                          cursor: isLimitReached ? 'not-allowed' : 'pointer'
+                    <button 
+                      className="preset-delete-button"
+                      onClick={(e) => {
+                        e.stopPropagation(); // Prevent triggering the container click
+                        handleDeletePresetSlot(0);
+                      }}
+                      style={{ 
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: 0,
+                        transition: 'transform 0.1s ease'
+                      }}
+                    >
+                      <img 
+                        src="/UI/deletepreset.png" 
+                        alt="Delete Preset"
+                        onMouseOver={(e) => {
+                          e.currentTarget.src = "/UI/deletepresethover.png";
                         }}
-                        title={isLimitReached ? 'Delete and recreate your preset to continue' : 'Load preset'}
-                      >
-                        Load
-                      </button>
-                      <button 
-                        className="preset-delete-button"
-                        onClick={() => handleDeletePresetSlot(0)}
-                        style={{ fontSize: '0.5em' }}
-                      >
-                        Delete
-                      </button>
-                    </>
+                        onMouseOut={(e) => {
+                          e.currentTarget.src = "/UI/deletepreset.png";
+                        }}
+                      />
+                    </button>
                   ) : (
                     <button 
                       className={`preset-button ${isSelecting ? 'selecting' : ''}`}
@@ -325,8 +338,7 @@ const FurniturePresetPanel: React.FC<FurniturePresetPanelProps> = ({
       {isSelecting && (
         <div className="selection-mode-indicator">
           <div className="selection-mode-content">
-            <span className="selection-mode-text">preset selection mode</span>
-            <span className="selection-mode-hint">click and drag the furniture you want to include in your preset. esc to exit.</span>
+            <span className="selection-mode-hint">click & drag the items to include in your preset. esc to exit.</span>
             {selectedFurniture.length > 0 && (
               <button 
                 className="selection-save-button"
@@ -337,7 +349,7 @@ const FurniturePresetPanel: React.FC<FurniturePresetPanelProps> = ({
                 }}
                 style={{ pointerEvents: 'auto', zIndex: 10001 }}
               >
-                💾 Save Preset ({selectedFurniture.length} items)
+                Save {selectedFurniture.length} items
               </button>
             )}
           </div>

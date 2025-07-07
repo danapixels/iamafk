@@ -6,6 +6,7 @@ import { FurnitureControlButtons } from './FurnitureControlButtons';
 interface FurnitureRendererProps {
   visibleFurniture: Furniture[];
   selectedFurnitureId: string | null;
+  selectedFurnitureDuringSelection?: Set<string>;
   furnitureRefs: React.MutableRefObject<{ [key: string]: HTMLImageElement | null }>;
   socketRef: React.MutableRefObject<any>;
   onMoveUp: (furnitureId: string) => void;
@@ -16,6 +17,7 @@ interface FurnitureRendererProps {
 const FurnitureRenderer: React.FC<FurnitureRendererProps> = memo(({
   visibleFurniture,
   selectedFurnitureId,
+  selectedFurnitureDuringSelection,
   furnitureRefs,
   socketRef,
   onMoveUp,
@@ -85,8 +87,8 @@ const FurnitureRenderer: React.FC<FurnitureRendererProps> = memo(({
               WebkitBackfaceVisibility: 'hidden',
               WebkitTransform: `translate(-50%, -50%) ${item.isFlipped ? 'scaleX(-1)' : ''}`,
               transformStyle: 'preserve-3d',
-              border: selectedFurnitureId === item.id ? '1px dashed #fff' : 'none',
-              borderRadius: selectedFurnitureId === item.id ? '6px' : '0',
+              border: selectedFurnitureId === item.id || selectedFurnitureDuringSelection?.has(item.id) ? '1px dashed #fff' : 'none',
+              borderRadius: selectedFurnitureId === item.id || selectedFurnitureDuringSelection?.has(item.id) ? '6px' : '0',
               boxSizing: 'border-box',
               WebkitTouchCallout: 'none',
               WebkitTapHighlightColor: 'transparent'
