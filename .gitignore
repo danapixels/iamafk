@@ -157,6 +157,7 @@ temp/
 # Project-specific files
 furniture.json
 user_activity.json
+user_stats.json
 
 # SSL certificates and keys
 *.pem
