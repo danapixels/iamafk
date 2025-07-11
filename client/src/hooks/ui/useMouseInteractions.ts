@@ -75,7 +75,8 @@ const lastDoubleClickTimeRef = useRef(0);
 const lastSentPositionRef = useRef<{ x: number; y: number  | null>(null);
 const lastSentCursorRef = useRef<{ x: number; y: number  | null>(null);
 const lastSentViewportRef = useRef<{ x: number; y: number  | null>(null);
-const DOUBLE_CLICK_COOLDOWN_MS = 1000; // 1 second cooldown between double-clicks
+const lastEchoAnimationTimeRef = useRef(0);
+const ECHO_ANIMATION_COOLDOWN_MS = 500; // 500ms cooldown between echo animations (reduced for better responsiveness)
 const DRAG_THRESHOLD_PX = 5; // Minimum pixels to move before starting drag
 const pendingFurnitureId = useRef<string | null>(null);
 
@@ -488,6 +489,8 @@ return;
 socketRef.current.emit('resetStillTime');
 handleAFKDetection();
 
+// Check echo animation cooldown to reduce visual lag
+if (now - lastEchoAnimationTimeRef.current >= ECHO_ANIMATION_COOLDOWN_MS) {
 const canvasCoords = convertScreenToCanvas(e.clientX, e.clientY);
 const clampedCoords = clampToCanvas(canvasCoords.x, canvasCoords.y);
 
@@ -497,6 +500,10 @@ x: clampedCoords.x,
 y: clampedCoords.y,
 id: circleId,
 );
+
+// Update last echo animation time
+lastEchoAnimationTimeRef.current = now;
+
 
 
 window.addEventListener('mousemove', onMouseMove);
@@ -585,10 +592,8 @@ return;
 
 if (!socketRef.current?.connected || !hasConnected) return;
 
-// Check double-click cooldown to prevent spam
 const now = Date.now();
-if (now - lastDoubleClickTimeRef.current < DOUBLE_CLICK_COOLDOWN_MS) {
-return;
+
 
 
 // Update last double-click time
@@ -603,6 +608,8 @@ x: clampedCoords.x,
 y: clampedCoords.y,
 id: heartId,
 );
+
+
 ;
 
 window.addEventListener('dblclick', onDblClick);

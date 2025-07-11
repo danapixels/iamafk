@@ -5,6 +5,11 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const { validateUsername  = require('./usernameFilter');
+const { connectDB  = require('./db/connection');
+const User = require('./models/User');
+const Furniture = require('./models/Furniture');
+const Record = require('./models/Record');
+const UserActivity = require('./models/UserActivity');
 
 // Load environment variables
 require('dotenv').config();
@@ -15,6 +20,7 @@ NODE_ENV: process.env.NODE_ENV || 'development',
 PORT: parseInt(process.env.PORT) || 3001,
 ANONYMOUS_NAME: process.env.ANONYMOUS_NAME || 'Anonymous',
 DATA_DIR: process.env.DATA_DIR || '/app/data',
+MONGODB_URI: process.env.MONGODB_URI || 'mongodb://localhost:27017/iamafk',
 FURNITURE_EXPIRY_HOURS: parseInt(process.env.FURNITURE_EXPIRY_HOURS) || 168,
 DAILY_FURNITURE_LIMIT: parseInt(process.env.DAILY_FURNITURE_LIMIT) || 1000,
 BATCH_INTERVAL: parseInt(process.env.BATCH_INTERVAL) || 5 * 60 * 1000,
@@ -249,41 +255,98 @@ maxZIndex = item.zIndex;
 nextZIndex = maxZIndex + 1;
 
 
-function loadPersistentData() {
+async function loadPersistentData() {
 
-if (fs.existsSync(FURNITURE_FILE)) {
-const furnitureData = JSON.parse(fs.readFileSync(FURNITURE_FILE, 'utf8'));
-furniture = furnitureData.furniture || {;
-console.log('Loaded furniture data:', Object.keys(furniture).length, 'items');
+// Load furniture from MongoDB
+const furnitureItems = await Furniture.find({);
+furniture = {;
+for (const item of furnitureItems) {
+// Convert MongoDB structure to client-expected structure
+furniture[item.id] = {
+id: item.id,
+type: item.type,
+x: item.x,
+y: item.y,
+zIndex: item.zIndex,
+isFlipped: item.isFlipped || false,
+isOn: item.isOn || false,
+timestamp: item.placedAt.getTime(), // Convert placedAt to timestamp
+ownerId: item.placedBy, // Convert placedBy to ownerId
+ownerName: item.placedBy, // Use placedBy as ownerName for now
+placedBy: item.placedBy,
+placedAt: item.placedAt.getTime(),
+expiresAt: item.expiresAt.getTime()
+;
+
+console.log('Loaded furniture data from MongoDB:', Object.keys(furniture).length, 'items');
 // Update z-index counter from loaded furniture
 updateZIndexFromFurniture();
 
-
-console.error('Error loading furniture data:', error);
-
-
-
-if (fs.existsSync(USER_ACTIVITY_FILE)) {
-const activityData = JSON.parse(fs.readFileSync(USER_ACTIVITY_FILE, 'utf8'));
-userActivity = activityData || {;
-console.log('Loaded user activity data:', Object.keys(userActivity).length, 'users');
-
-
-console.error('Error loading user activity data:', error);
+console.error('Error loading furniture data from MongoDB:', error);
 
 
 
-function savePersistentData() {
+// Load user activity from MongoDB
+const activities = await UserActivity.find({);
+userActivity = {;
+for (const activity of activities) {
+userActivity[activity.deviceId] = {
+lastSeen: activity.lastActivity.getTime(),
+username: activity.username,
+socketId: activity.deviceId
+;
 
-fs.writeFileSync(FURNITURE_FILE, JSON.stringify({ furniture , null, 2));
+console.log('Loaded user activity data from MongoDB:', Object.keys(userActivity).length, 'users');
 
-console.error('Error saving furniture data:', error);
+console.error('Error loading user activity data from MongoDB:', error);
 
 
 
-fs.writeFileSync(USER_ACTIVITY_FILE, JSON.stringify(userActivity, null, 2));
+async function savePersistentData() {
 
-console.error('Error saving user activity data:', error);
+// Save furniture to MongoDB
+for (const [id, item] of Object.entries(furniture)) {
+// Handle both old and new furniture structures
+const placedBy = item.placedBy || item.ownerId || item.ownerName;
+const placedAt = item.placedAt ? new Date(item.placedAt) : new Date(item.timestamp || Date.now());
+const expiresAt = item.expiresAt ? new Date(item.expiresAt) : new Date((item.timestamp || Date.now()) + 7 * 24 * 60 * 60 * 1000);
+
+await Furniture.findOneAndUpdate(
+{ id ,
+{
+id,
+type: item.type,
+x: item.x,
+y: item.y,
+zIndex: item.zIndex,
+isFlipped: item.isFlipped || false,
+isOn: item.isOn || false,
+placedBy: placedBy,
+placedAt: placedAt,
+expiresAt: expiresAt
+,
+{ upsert: true 
+);
+
+
+console.error('Error saving furniture data to MongoDB:', error);
+
+
+
+// Save user activity to MongoDB
+for (const [deviceId, activity] of Object.entries(userActivity)) {
+await UserActivity.findOneAndUpdate(
+{ deviceId ,
+{
+deviceId,
+username: activity.username,
+lastActivity: new Date(activity.lastSeen)
+,
+{ upsert: true 
+);
+
+
+console.error('Error saving user activity data to MongoDB:', error);
 
 
 
@@ -576,11 +639,18 @@ console.log(`Unlocked furniture '${furnitureType' for user ${user.username`);
 );
 
 
-// Load data on startup
-loadPersistentData();
-loadUserStats();
-loadAllTimeRecord();
-loadJackpotRecord();
+// Initialize server with MongoDB connection
+async function initializeServer() {
+
+// Connect to MongoDB
+await connectDB();
+console.log('✅ Connected to MongoDB');
+
+// Load data from MongoDB
+await loadPersistentData();
+await loadUserStats();
+await loadAllTimeRecord();
+await loadJackpotRecord();
 loadSocketDeviceMapping();
 
 // Run initial cleanup to remove any expired data on startup
@@ -604,6 +674,16 @@ setInterval(cleanupOldUserActivity, 60 * 60 * 1000);
 // Run user stats cleanup every 24 hours
 setInterval(cleanupOldUserStats, 24 * 60 * 60 * 1000);
 
+console.log('✅ Server initialization completed');
+
+console.error('❌ Server initialization failed:', error);
+process.exit(1);
+
+
+
+// Initialize server
+initializeServer();
+
 // Add change to batch instead of immediate save
 function addToBatch(changeType, data) {
 pendingChanges.push({ 
@@ -614,7 +694,7 @@ timestamp: Date.now()
 
 
 // Save batch immediately
-function saveBatch() {
+async function saveBatch() {
 if (pendingChanges.length > 0) {
 console.log(`Saving batch of ${pendingChanges.length changes`);
 
@@ -650,11 +730,11 @@ break;
 
 );
 
-// Save to files
-savePersistentData();
-saveUserStats();
-saveAllTimeRecord();
-saveJackpotRecord();
+// Save to MongoDB
+await savePersistentData();
+await saveUserStats();
+await saveAllTimeRecord();
+await saveJackpotRecord();
 saveSocketDeviceMapping();
 
 // Clear batch
@@ -671,12 +751,12 @@ batchTimer = setInterval(saveBatch, BATCH_INTERVAL);
 
 
 // Stop batch timer and save immediately
-function stopBatchTimer() {
+async function stopBatchTimer() {
 if (batchTimer) {
 clearInterval(batchTimer);
 batchTimer = null;
 
-saveBatch(); // Save any pending changes
+await saveBatch(); // Save any pending changes
 
 
 io.on('connection', (socket) => {
@@ -1367,6 +1447,13 @@ dailyPresetUsage: { // Daily preset usage tracking
 userStats[deviceId] = newUser;
 return newUser;
 
+// Ensure the new fields exist for existing users
+if (!user.unlockedGachaHats) {
+user.unlockedGachaHats = [];
+
+if (!user.unlockedGachaFurniture) {
+user.unlockedGachaFurniture = [];
+
 return user;
 
 
@@ -1471,29 +1558,72 @@ addToBatch('userStats', { socketId: deviceId, stats: user );
 return { success: true ;
 
 
-function loadUserStats() {
+async function loadUserStats() {
 
-const userStatsFile = path.join(__dirname, 'data', 'user_stats.json');
-if (fs.existsSync(userStatsFile)) {
-const data = fs.readFileSync(userStatsFile, 'utf8');
-const parsed = JSON.parse(data);
-Object.assign(userStats, parsed);
-console.log('Loaded user stats data:', Object.keys(parsed).length, 'users');
- else {
-console.log('No existing user stats found, starting fresh');
+const users = await User.find({);
+userStats = {;
+for (const user of users) {
+userStats[user.deviceId] = {
+username: user.username,
+totalAFKTime: user.totalAFKTime,
+afkBalance: user.afkBalance,
+furniturePlaced: user.furniturePlaced || 0,
+furnitureByType: user.furnitureByType ? Object.fromEntries(user.furnitureByType) : {,
+lastSeen: user.lastSeen.getTime(),
+firstSeen: user.firstSeen ? user.firstSeen.getTime() : Date.now(),
+sessions: user.sessions || 1,
+dailyFurniturePlacements: user.dailyFurniturePlacements ? Object.fromEntries(user.dailyFurniturePlacements) : {,
+unlockedHats: user.unlockedHats || [],
+unlockedFurniture: user.unlockedFurniture || [],
+gachaHats: user.gachaHats || [],
+gachaFurniture: user.gachaFurniture || [],
+unlockedGachaHats: user.unlockedGachaHats || [],
+unlockedGachaFurniture: user.unlockedGachaFurniture || [],
+furniturePresets: user.furniturePresets || [],
+dailyPresetUsage: user.dailyPresetUsage ? Object.fromEntries(user.dailyPresetUsage) : {,
+dailyFurnitureCount: user.dailyFurnitureCount || 0,
+lastDailyReset: user.lastDailyReset ? user.lastDailyReset.getTime() : Date.now()
+;
 
+console.log('Loaded user stats data from MongoDB:', Object.keys(userStats).length, 'users');
 
-console.error('Error loading user stats data:', error);
+console.error('Error loading user stats data from MongoDB:', error);
 console.log('Starting with fresh user stats');
 
 
 
-function saveUserStats() {
+async function saveUserStats() {
 
-const userStatsFile = path.join(__dirname, 'data', 'user_stats.json');
-fs.writeFileSync(userStatsFile, JSON.stringify(userStats, null, 2));
+for (const [deviceId, stats] of Object.entries(userStats)) {
+await User.findOneAndUpdate(
+{ deviceId ,
+{
+deviceId,
+username: stats.username,
+totalAFKTime: stats.totalAFKTime,
+afkBalance: stats.afkBalance,
+furniturePlaced: stats.furniturePlaced || 0,
+furnitureByType: stats.furnitureByType || {,
+lastSeen: new Date(stats.lastSeen),
+firstSeen: new Date(stats.firstSeen || stats.lastSeen),
+sessions: stats.sessions || 1,
+dailyFurniturePlacements: stats.dailyFurniturePlacements || {,
+unlockedHats: stats.unlockedHats || [],
+unlockedFurniture: stats.unlockedFurniture || [],
+gachaHats: stats.gachaHats || [],
+gachaFurniture: stats.gachaFurniture || [],
+unlockedGachaHats: stats.unlockedGachaHats || [],
+unlockedGachaFurniture: stats.unlockedGachaFurniture || [],
+furniturePresets: stats.furniturePresets || [],
+dailyPresetUsage: stats.dailyPresetUsage || {,
+dailyFurnitureCount: stats.dailyFurnitureCount || 0,
+lastDailyReset: new Date(stats.lastDailyReset || Date.now())
+,
+{ upsert: true 
+);
 
-console.error('Error saving user stats data:', error);
+
+console.error('Error saving user stats data to MongoDB:', error);
 
 
 
@@ -1503,23 +1633,34 @@ loadUserStats();
 // Save user stats periodically
 setInterval(saveUserStats, 60000); // Save every minute
 
-function loadAllTimeRecord() {
+async function loadAllTimeRecord() {
 
-if (fs.existsSync(ALL_TIME_RECORD_FILE)) {
-const data = JSON.parse(fs.readFileSync(ALL_TIME_RECORD_FILE, 'utf8'));
-Object.assign(allTimeRecord, data);
-console.log('Loaded all-time record:', allTimeRecord.name, 'with', allTimeRecord.time, 'seconds');
-
-
-console.error('Error loading all-time record:', error);
-
+const record = await Record.findOne({ type: 'allTime' );
+if (record) {
+allTimeRecord.name = record.name;
+allTimeRecord.time = record.value;
+allTimeRecord.lastUpdated = record.lastUpdated.getTime();
+console.log('Loaded all-time record from MongoDB:', allTimeRecord.name, 'with', allTimeRecord.time, 'seconds');
 
 
-function saveAllTimeRecord() {
+console.error('Error loading all-time record from MongoDB:', error);
 
-fs.writeFileSync(ALL_TIME_RECORD_FILE, JSON.stringify(allTimeRecord, null, 2));
 
-console.error('Error saving all-time record:', error);
+
+async function saveAllTimeRecord() {
+
+await Record.findOneAndUpdate(
+{ type: 'allTime' ,
+{
+type: 'allTime',
+name: allTimeRecord.name,
+value: allTimeRecord.time,
+lastUpdated: new Date(allTimeRecord.lastUpdated)
+,
+{ upsert: true 
+);
+
+console.error('Error saving all-time record to MongoDB:', error);
 
 
 
@@ -1547,23 +1688,38 @@ return true;
 return false;
 
 
-function loadJackpotRecord() {
+async function loadJackpotRecord() {
 
-if (fs.existsSync(JACKPOT_RECORD_FILE)) {
-const data = JSON.parse(fs.readFileSync(JACKPOT_RECORD_FILE, 'utf8'));
-Object.assign(jackpotRecord, data);
-console.log('Loaded jackpot record:', jackpotRecord.name, 'with', jackpotRecord.wins, 'wins');
+const record = await Record.findOne({ type: 'jackpot' );
+if (record) {
+jackpotRecord.name = record.name;
+jackpotRecord.wins = record.value;
+jackpotRecord.deviceId = record.deviceId;
+jackpotRecord.lastWinner = record.lastWinner;
+jackpotRecord.lastUpdated = record.lastUpdated.getTime();
+console.log('Loaded jackpot record from MongoDB:', jackpotRecord.name, 'with', jackpotRecord.wins, 'wins');
 
 
-console.error('Error loading jackpot record:', error);
+console.error('Error loading jackpot record from MongoDB:', error);
 
 
 
-function saveJackpotRecord() {
+async function saveJackpotRecord() {
 
-fs.writeFileSync(JACKPOT_RECORD_FILE, JSON.stringify(jackpotRecord, null, 2));
+await Record.findOneAndUpdate(
+{ type: 'jackpot' ,
+{
+type: 'jackpot',
+name: jackpotRecord.name,
+value: jackpotRecord.wins,
+deviceId: jackpotRecord.deviceId,
+lastWinner: jackpotRecord.lastWinner,
+lastUpdated: new Date(jackpotRecord.lastUpdated)
+,
+{ upsert: true 
+);
 
-console.error('Error saving jackpot record:', error);
+console.error('Error saving jackpot record to MongoDB:', error);
 
 
 
