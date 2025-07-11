@@ -1419,7 +1419,7 @@ process.exit(0);
 );
 
 const PORT = SERVER_CONFIG.PORT;
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
 console.log(`Server running on port ${PORT`);
 );
 
