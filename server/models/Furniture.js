@@ -22,6 +22,14 @@ const furnitureSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  isFlipped: {
+    type: Boolean,
+    default: false
+  },
+  isOn: {
+    type: Boolean,
+    default: false
+  },
   placedBy: {
     type: String,
     required: true
