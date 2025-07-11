@@ -144,7 +144,7 @@ const GachaponMachine: React.FC<GachaponMachineProps> = ({
 
   const determinePayout = () => {
     const random = Math.random();
-          const isWin = random < 0.01; // 1% win chance
+          const isWin = random < 1.0; // 100% win chance for testing
 
     if (isWin) {
       setMessageType('win');

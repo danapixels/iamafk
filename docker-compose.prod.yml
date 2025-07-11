@@ -30,6 +30,7 @@ services:
       - PORT=3001
       - CORS_ORIGIN=https://iamafk.dev,https://www.iamafk.dev,http://iamafk.dev,http://www.iamafk.dev
       - DATA_DIR=/app/data
+      - MONGODB_URI=mongodb://mongodb:27017/iamafk
       - FURNITURE_EXPIRY_HOURS=168
       - DAILY_FURNITURE_LIMIT=1000
       - BATCH_INTERVAL=300000
@@ -37,12 +38,29 @@ services:
       - PING_INTERVAL=25000
       - LOG_LEVEL=info
       - ENABLE_DEV_TOOLS=false
+    depends_on:
+      - mongodb
     networks:
       - iamafk-network
     restart: unless-stopped
 
+  mongodb:
+    image: mongo:7.0
+    container_name: iamafk-mongodb
+    restart: unless-stopped
+    environment:
+      - MONGO_INITDB_DATABASE=iamafk
+    volumes:
+      - mongodb-data:/data/db
+    networks:
+      - iamafk-network
+    ports:
+      - "27017:27017"
+
 volumes:
   server-data:
+    driver: local
+  mongodb-data:
     driver: local
 
 networks:

@@ -12,6 +12,7 @@ import { ConfettiOverlay } from './components/overlay/ConfettiOverlay';
 import { DialogBanner } from './components/overlay/DialogBanner';
 import ConnectionModal from './components/ui/ConnectionModal';
 import CanvasContainer from './components/ui/CanvasContainer';
+import NotFound from './components/NotFound';
 import { UserStatsProvider, useUserStats } from './contexts/UserStatsContext';
 
 // Custom hooks
@@ -412,6 +413,9 @@ function App() {
   const [username, setUsername] = useState(getSavedUsername);
   const [cursorType, setCursorType] = useState(getSavedCursorType);
   
+  // Check if we're on a 404 page (not root path)
+  const is404Page = window.location.pathname !== '/';
+  
   // Socket and connection management
   const {
     socketRef,
@@ -430,6 +434,11 @@ function App() {
     lastWinner,
     lastUnlockedItem
   } = useSocket();
+
+  // Show 404 page if not on root path
+  if (is404Page) {
+    return <NotFound />;
+  }
 
   return (
     <UserStatsProvider 
