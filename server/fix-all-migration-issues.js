@@ -106,6 +106,55 @@ async function fixAllMigrationIssues() {
           needsUpdate = true;
         }
       }
+
+      // Migrate data from old gacha fields to new fields
+      const oldHats = user.unlockedHats || user.gachaHats || [];
+      const oldFurniture = user.unlockedFurniture || user.gachaFurniture || [];
+      
+      if (oldHats.length > 0 || oldFurniture.length > 0) {
+        // Convert old hat data to new format
+        const migratedHats = oldHats.map(item => {
+          if (typeof item === 'string') {
+            return { item, unlockedBy: user.username || 'Anonymous' };
+          }
+          return item;
+        });
+        
+        // Convert old furniture data to new format
+        const migratedFurniture = oldFurniture.map(item => {
+          if (typeof item === 'string') {
+            return { item, unlockedBy: user.username || 'Anonymous' };
+          }
+          return item;
+        });
+        
+        // Merge with existing new format data
+        const existingHats = user.unlockedGachaHats || [];
+        const existingFurniture = user.unlockedGachaFurniture || [];
+        
+        // Combine and remove duplicates
+        const allHats = [...existingHats, ...migratedHats];
+        const allFurniture = [...existingFurniture, ...migratedFurniture];
+        
+        // Remove duplicates based on item name
+        const uniqueHats = allHats.filter((hat, index, self) => 
+          index === self.findIndex(h => 
+            (typeof h === 'string' ? h : h.item) === (typeof hat === 'string' ? hat : hat.item)
+          )
+        );
+        
+        const uniqueFurniture = allFurniture.filter((furniture, index, self) => 
+          index === self.findIndex(f => 
+            (typeof f === 'string' ? f : f.item) === (typeof furniture === 'string' ? furniture : furniture.item)
+          )
+        );
+        
+        updates.unlockedGachaHats = uniqueHats;
+        updates.unlockedGachaFurniture = uniqueFurniture;
+        needsUpdate = true;
+        
+        console.log(`🔄 Migrated ${oldHats.length} hats and ${oldFurniture.length} furniture for ${user.username}`);
+      }
       
       // Fix Map fields - ensure they're proper Maps
       if (user.furnitureByType && !(user.furnitureByType instanceof Map)) {
@@ -225,6 +274,55 @@ async function fixAllMigrationIssues() {
             needsUpdate = true;
             console.log(`🔄 Restoring dailyPresetUsage for ${user.username}`);
           }
+        }
+        
+        // Restore gacha unlocks from original JSON if missing
+        const originalHats = originalStats.unlockedHats || originalStats.gachaHats || originalStats.unlockedGachaHats || [];
+        const originalFurniture = originalStats.unlockedFurniture || originalStats.gachaFurniture || originalStats.unlockedGachaFurniture || [];
+        
+        if (originalHats.length > 0 || originalFurniture.length > 0) {
+          // Convert original hat data to new format
+          const restoredHats = originalHats.map(item => {
+            if (typeof item === 'string') {
+              return { item, unlockedBy: originalStats.username || user.username || 'Anonymous' };
+            }
+            return item;
+          });
+          
+          // Convert original furniture data to new format
+          const restoredFurniture = originalFurniture.map(item => {
+            if (typeof item === 'string') {
+              return { item, unlockedBy: originalStats.username || user.username || 'Anonymous' };
+            }
+            return item;
+          });
+          
+          // Merge with existing data
+          const existingHats = user.unlockedGachaHats || [];
+          const existingFurniture = user.unlockedGachaFurniture || [];
+          
+          // Combine and remove duplicates
+          const allHats = [...existingHats, ...restoredHats];
+          const allFurniture = [...existingFurniture, ...restoredFurniture];
+          
+          // Remove duplicates based on item name
+          const uniqueHats = allHats.filter((hat, index, self) => 
+            index === self.findIndex(h => 
+              (typeof h === 'string' ? h : h.item) === (typeof hat === 'string' ? hat : hat.item)
+            )
+          );
+          
+          const uniqueFurniture = allFurniture.filter((furniture, index, self) => 
+            index === self.findIndex(f => 
+              (typeof f === 'string' ? f : f.item) === (typeof furniture === 'string' ? furniture : furniture.item)
+            )
+          );
+          
+          updates.unlockedGachaHats = uniqueHats;
+          updates.unlockedGachaFurniture = uniqueFurniture;
+          needsUpdate = true;
+          
+          console.log(`🔄 Restoring ${originalHats.length} hats and ${originalFurniture.length} furniture from original JSON for ${user.username}`);
         }
         
         restoredCount++;
