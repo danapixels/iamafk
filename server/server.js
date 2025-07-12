@@ -1563,16 +1563,28 @@ async function loadUserStats() {
 const users = await User.find({);
 userStats = {;
 for (const user of users) {
+// Helper function to safely convert MongoDB Map to regular object
+const convertMapToObject = (mapField) => {
+if (!mapField) return {;
+if (mapField instanceof Map) {
+return Object.fromEntries(mapField);
+
+if (typeof mapField === 'object' && mapField !== null) {
+return mapField;
+
+return {;
+;
+
 userStats[user.deviceId] = {
 username: user.username,
 totalAFKTime: user.totalAFKTime,
 afkBalance: user.afkBalance,
 furniturePlaced: user.furniturePlaced || 0,
-furnitureByType: user.furnitureByType ? Object.fromEntries(user.furnitureByType) : {,
+furnitureByType: convertMapToObject(user.furnitureByType),
 lastSeen: user.lastSeen.getTime(),
 firstSeen: user.firstSeen ? user.firstSeen.getTime() : Date.now(),
 sessions: user.sessions || 1,
-dailyFurniturePlacements: user.dailyFurniturePlacements ? Object.fromEntries(user.dailyFurniturePlacements) : {,
+dailyFurniturePlacements: convertMapToObject(user.dailyFurniturePlacements),
 unlockedHats: user.unlockedHats || [],
 unlockedFurniture: user.unlockedFurniture || [],
 gachaHats: user.gachaHats || [],
@@ -1580,7 +1592,7 @@ gachaFurniture: user.gachaFurniture || [],
 unlockedGachaHats: user.unlockedGachaHats || [],
 unlockedGachaFurniture: user.unlockedGachaFurniture || [],
 furniturePresets: user.furniturePresets || [],
-dailyPresetUsage: user.dailyPresetUsage ? Object.fromEntries(user.dailyPresetUsage) : {,
+dailyPresetUsage: convertMapToObject(user.dailyPresetUsage),
 dailyFurnitureCount: user.dailyFurnitureCount || 0,
 lastDailyReset: user.lastDailyReset ? user.lastDailyReset.getTime() : Date.now()
 ;
@@ -1595,6 +1607,16 @@ console.log('Starting with fresh user stats');
 async function saveUserStats() {
 
 for (const [deviceId, stats] of Object.entries(userStats)) {
+// Helper function to safely convert regular object to MongoDB Map
+const convertObjectToMap = (obj) => {
+if (!obj || typeof obj !== 'object') return new Map();
+const map = new Map();
+Object.entries(obj).forEach(([key, value]) => {
+map.set(key, value);
+);
+return map;
+;
+
 await User.findOneAndUpdate(
 { deviceId ,
 {
@@ -1603,11 +1625,11 @@ username: stats.username,
 totalAFKTime: stats.totalAFKTime,
 afkBalance: stats.afkBalance,
 furniturePlaced: stats.furniturePlaced || 0,
-furnitureByType: stats.furnitureByType || {,
+furnitureByType: convertObjectToMap(stats.furnitureByType),
 lastSeen: new Date(stats.lastSeen),
 firstSeen: new Date(stats.firstSeen || stats.lastSeen),
 sessions: stats.sessions || 1,
-dailyFurniturePlacements: stats.dailyFurniturePlacements || {,
+dailyFurniturePlacements: convertObjectToMap(stats.dailyFurniturePlacements),
 unlockedHats: stats.unlockedHats || [],
 unlockedFurniture: stats.unlockedFurniture || [],
 gachaHats: stats.gachaHats || [],
@@ -1615,7 +1637,7 @@ gachaFurniture: stats.gachaFurniture || [],
 unlockedGachaHats: stats.unlockedGachaHats || [],
 unlockedGachaFurniture: stats.unlockedGachaFurniture || [],
 furniturePresets: stats.furniturePresets || [],
-dailyPresetUsage: stats.dailyPresetUsage || {,
+dailyPresetUsage: convertObjectToMap(stats.dailyPresetUsage),
 dailyFurnitureCount: stats.dailyFurnitureCount || 0,
 lastDailyReset: new Date(stats.lastDailyReset || Date.now())
 ,
