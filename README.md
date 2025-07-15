@@ -9,30 +9,31 @@ Is your cursor tired of clicking all day? This is a place for your cursor to res
 
 
 
-##### Hat and furniture gachapon machine.
+#### Hat and furniture gachapon machine.
 
 
 ![gacha](/docs/gacha.png)
 
 
-##### AFK leaderboards.
+#### AFK leaderboards.
 
 
 ![leaderboard](/docs/leaderboard.png)
 
 
 
-##### Build a house.
+#### Build a house.
 
 
 ![furniture](/docs/furniture.png)
 
 
 
-##### Hang out with friends.
+#### Hang out with friends.
 
 
 ![friends](/docs/friends.png)
+
 
 
 
