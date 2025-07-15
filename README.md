@@ -1,6 +1,8 @@
 # iamafk
 <p>Is your cursor tired of clicking all day? This is a place for your cursor to rest.</p>
 
+---
+
 <p>Hat and furniture gachapon machine.</p>
 
 <p>AFK leaderboards.</p>
