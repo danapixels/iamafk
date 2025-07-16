@@ -41,10 +41,10 @@ is your cursor tired of clicking all day? this is a place for your cursor to res
 
 ## documentation .
 
-[Full process is on my blog](https://digi.dana.nyc/blog/cursor-hotel)
+- [full process is on my blog](https://digi.dana.nyc/blog/cursor-hotel)
 
   
-[7 days of user activity diary](https://digi.dana.nyc/blog/cursor-diary)
+- [7 days of user activity diary](https://digi.dana.nyc/blog/cursor-diary)
 
 
 
