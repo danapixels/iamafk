@@ -1,4 +1,5 @@
 # iamafk
+![beanie cursor](/docs/beanie.png) ![cap cursor](/docs/cap.png) ![sprout cursor](/docs/sprout.png)
 
 is your cursor tired of clicking all day? this is a place for your cursor to rest .
 
@@ -49,10 +50,10 @@ is your cursor tired of clicking all day? this is a place for your cursor to res
 
 ## thank you .
 
-thank you Mshj, Rox, Tim.
+thank you mshj, rox, tim .
 
+![smiling gif](/docs/smile.gif)
 
+coded with cursor, chatgpt, and claude .
 
-coded with Cursor, ChatGPT, and Claude .
-
-**I do not support AI taking roles of developers, programmers, or engineerings. This is a passion project which I would not have been able to do otherwise without these tools. I would also not have been able to do this without my friends who reviewed my code and gave me advice.**
+**i do not support ai taking roles of developers, programmers, or engineerings . this is a passion project which i would not have been able to do otherwise without these tools . i would also not have been able to do this without my friends who reviewed my code and gave me advice .**
