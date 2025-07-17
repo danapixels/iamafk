@@ -199,9 +199,7 @@ console.error(`❌ User not found for AFK time update: deviceId=${deviceId`);
 
 
 
-// Record files
-const ALL_TIME_RECORD_FILE = path.join(SERVER_CONFIG.DATA_DIR, 'all_time_record.json');
-const JACKPOT_RECORD_FILE = path.join(SERVER_CONFIG.DATA_DIR, 'jackpot_record.json');
+// Record files are now stored in MongoDB
 
 // Cache for badge calculations to reduce computational overhead
 let badgeCache = {;
@@ -211,10 +209,8 @@ const BADGE_CACHE_DURATION = 5000; // 5 seconds
 // Batch save system
 const BATCH_INTERVAL = SERVER_CONFIG.BATCH_INTERVAL;
 
-// Persistent furniture storage with expiration
-const FURNITURE_FILE = path.join(SERVER_CONFIG.DATA_DIR, 'furniture.json');
+// Furniture expiry configuration
 const FURNITURE_EXPIRY_HOURS = SERVER_CONFIG.FURNITURE_EXPIRY_HOURS;
-const USER_ACTIVITY_FILE = path.join(SERVER_CONFIG.DATA_DIR, 'user_activity.json');
 
 // Z-index management
 let nextZIndex = 5000; // Base z-index for furniture
@@ -1749,12 +1745,12 @@ function updateJackpotRecord(socketId, username) {
 // Get device ID for this socket, fallback to socket ID if no device ID
 const deviceId = socketToDeviceMap[socketId] || socketId;
 
-// Get current user wins (including this new win) using device ID
-const currentUserWins = (userStats[deviceId]?.gachaponWins || 0) + 1;
+// Get current user wins (the win has already been recorded)
+const currentUserWins = userStats[deviceId]?.gachaponWins || 0;
 
 // Check if this device already has the record
 if (jackpotRecord.deviceId === deviceId) {
-// Increment existing record
+// Update existing record
 jackpotRecord.wins = currentUserWins;
 jackpotRecord.name = username; // Update username in case it changed
  else {
@@ -1798,6 +1794,13 @@ jackpotRecord.deviceId = topDevice;
 jackpotRecord.name = topUsername;
 jackpotRecord.wins = maxWins;
 jackpotRecord.lastUpdated = Date.now();
+
+// Save to batch for persistence
+addToBatch('jackpotRecord', jackpotRecord);
+
+// Broadcast to all clients
+io.emit('jackpotRecordUpdated', jackpotRecord);
+
 console.log('Recalculated jackpot record:', topUsername, 'with', maxWins, 'wins');
 
 
