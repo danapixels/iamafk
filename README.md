@@ -57,3 +57,7 @@ thank you mshj, rox, tim .
 coded with cursor, chatgpt, and claude .
 
 **i do not support ai taking roles of developers, programmers, or engineerings . this is a passion project which i would not have been able to do otherwise without these tools . i would also not have been able to do this without my friends who reviewed my code and gave me advice .**
+
+## font
+like the font ?
+[digi font github page](https://github.com/danapixels/digi-ttf)
