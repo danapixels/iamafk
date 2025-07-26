@@ -21,7 +21,7 @@ const SERVER_CONFIG = {
   ANONYMOUS_NAME: process.env.ANONYMOUS_NAME || 'Anonymous',
   DATA_DIR: process.env.DATA_DIR || '/app/data',
   MONGODB_URI: process.env.MONGODB_URI || 'mongodb://localhost:27017/iamafk',
-  FURNITURE_EXPIRY_HOURS: parseInt(process.env.FURNITURE_EXPIRY_HOURS) || 168,
+  // FURNITURE_EXPIRY_HOURS: parseInt(process.env.FURNITURE_EXPIRY_HOURS) || 168, // FURNITURE DESPAWNING DISABLED
   DAILY_FURNITURE_LIMIT: parseInt(process.env.DAILY_FURNITURE_LIMIT) || 1000,
   BATCH_INTERVAL: parseInt(process.env.BATCH_INTERVAL) || 5 * 60 * 1000,
   PING_TIMEOUT: parseInt(process.env.PING_TIMEOUT) || 60000,
@@ -209,8 +209,8 @@ const BADGE_CACHE_DURATION = 5000; // 5 seconds
 // Batch save system
 const BATCH_INTERVAL = SERVER_CONFIG.BATCH_INTERVAL;
 
-// Furniture expiry configuration
-const FURNITURE_EXPIRY_HOURS = SERVER_CONFIG.FURNITURE_EXPIRY_HOURS;
+// Furniture expiry configuration - DISABLED
+// const FURNITURE_EXPIRY_HOURS = SERVER_CONFIG.FURNITURE_EXPIRY_HOURS;
 
 // Z-index management
 let nextZIndex = 5000; // Base z-index for furniture
@@ -271,7 +271,7 @@ async function loadPersistentData() {
         ownerName: item.placedBy, // Use placedBy as ownerName for now
         placedBy: item.placedBy,
         placedAt: item.placedAt.getTime(),
-        expiresAt: item.expiresAt.getTime()
+        // expiresAt: item.expiresAt.getTime() // FURNITURE DESPAWNING DISABLED
       };
     }
     console.log('Loaded furniture data from MongoDB:', Object.keys(furniture).length, 'items');
@@ -305,7 +305,7 @@ async function savePersistentData() {
       // Handle both old and new furniture structures
       const placedBy = item.placedBy || item.ownerId || item.ownerName;
       const placedAt = item.placedAt ? new Date(item.placedAt) : new Date(item.timestamp || Date.now());
-      const expiresAt = item.expiresAt ? new Date(item.expiresAt) : new Date((item.timestamp || Date.now()) + 7 * 24 * 60 * 60 * 1000);
+      // const expiresAt = item.expiresAt ? new Date(item.expiresAt) : new Date((item.timestamp || Date.now()) + 7 * 24 * 60 * 60 * 1000); // FURNITURE DESPAWNING DISABLED
       
       await Furniture.findOneAndUpdate(
         { id },
@@ -319,7 +319,7 @@ async function savePersistentData() {
           isOn: item.isOn || false,
           placedBy: placedBy,
           placedAt: placedAt,
-          expiresAt: expiresAt
+          // expiresAt: expiresAt // FURNITURE DESPAWNING DISABLED
         },
         { upsert: true }
       );
@@ -356,54 +356,36 @@ function updateUserActivity(socketId, username) {
   addToBatch('userActivity', { socketId, username });
 }
 
-function cleanupExpiredFurniture() {
-  const now = Date.now();
-  const expiryTime = FURNITURE_EXPIRY_HOURS * 60 * 60 * 1000; // Convert hours to milliseconds
-  let cleanedCount = 0;
-
-  Object.keys(furniture).forEach(furnitureId => {
-    const item = furniture[furnitureId];
-    if (item.timestamp && (now - item.timestamp) > expiryTime) {
-      // Check if the user who placed this furniture has been inactive for the expiry time
-      const userId = furnitureId.split('-')[0];
-      const userLastSeen = userActivity[userId]?.lastSeen || 0;
-      
-      if ((now - userLastSeen) > expiryTime) {
-        delete furniture[furnitureId];
-        cleanedCount++;
-        console.log(`Cleaned up ${cleanedCount} expired furniture items`);
-      }
-    }
-  });
-
-  if (cleanedCount > 0) {
-    console.log(`Cleaned up ${cleanedCount} expired furniture items`);
-    addToBatch('cleanup', { cleanedCount });
-    // Notify all clients about the cleanup
-    io.emit('furnitureCleanup', { cleanedCount });
-  }
-}
+// function cleanupExpiredFurniture() {
+//   // FURNITURE DESPAWNING DISABLED
+//   // This function has been disabled to prevent furniture from despawning
+// }
 
 function getValidCursors() {
   const filtered = {};
   const now = Date.now();
   
-  // Only recalculate badges if cache is expired
-  const shouldRecalculateBadges = (now - lastBadgeCalculation) > BADGE_CACHE_DURATION;
+  // Calculate daily badge once for all users
+  let dailyBest = { name: '', time: 0 };
+  Object.values(cursors).forEach((c) => {
+    if (!c || !c.name || c.name === SERVER_CONFIG.ANONYMOUS_NAME) return;
+    const stillTime = c.stillTime || 0;
+    if (stillTime > dailyBest.time) {
+      dailyBest = { name: c.name, time: stillTime };
+    }
+  });
+  
+  // Check if daily leader has changed (for cache invalidation)
+  const currentDailyLeader = badgeCache.dailyLeader || { name: '', time: 0 };
+  const dailyLeaderChanged = dailyBest.name !== currentDailyLeader.name || dailyBest.time !== currentDailyLeader.time;
+  
+  // Only recalculate badges if cache is expired OR daily leader changed
+  const shouldRecalculateBadges = (now - lastBadgeCalculation) > BADGE_CACHE_DURATION || dailyLeaderChanged;
   
   if (shouldRecalculateBadges) {
     badgeCache = {};
     lastBadgeCalculation = now;
-    
-    // Calculate daily badge once for all users
-    let dailyBest = { name: '', time: 0 };
-    Object.values(cursors).forEach((c) => {
-      if (!c || !c.name || c.name === SERVER_CONFIG.ANONYMOUS_NAME) return;
-      const stillTime = c.stillTime || 0;
-      if (stillTime > dailyBest.time) {
-        dailyBest = { name: c.name, time: stillTime };
-      }
-    });
+    badgeCache.dailyLeader = dailyBest; // Store current daily leader for comparison
     
     // Cache badge calculations
     Object.entries(cursors).forEach(([id, cursor]) => {
@@ -658,11 +640,11 @@ async function initializeServer() {
     // Start batch timer
     startBatchTimer();
 
-    // Clean up expired furniture every hour
-    setInterval(cleanupExpiredFurniture, 60 * 60 * 1000);
+    // Clean up expired furniture every hour - DISABLED
+    // setInterval(cleanupExpiredFurniture, 60 * 60 * 1000);
 
-    // Initial cleanup on startup
-    cleanupExpiredFurniture();
+    // Initial cleanup on startup - DISABLED
+    // cleanupExpiredFurniture();
 
     // Run cleanup every 1 hr
     setInterval(cleanupOldUserActivity, 60 * 60 * 1000);
