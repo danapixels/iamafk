@@ -125,12 +125,10 @@ isOn: data.isOn
 ));
 );
 
-socket.on('furnitureCleanup', (data: { cleanedCount: number ) => {
-// Optionally show a notification to users about cleanup
-if (data.cleanedCount > 0) {
-// You could add a toast notification here if desired
-
-);
+// socket.on('furnitureCleanup', (data: { cleanedCount: number ) => {
+// // FURNITURE DESPAWNING DISABLED
+// // This event listener has been disabled to prevent furniture cleanup notifications
+// );
 
 return () => {
 socket.off('furniture');
@@ -140,7 +138,7 @@ socket.off('furnitureDeleted');
 socket.off('furnitureZIndexChanged');
 socket.off('furnitureFlipped');
 socket.off('furnitureStateToggled');
-socket.off('furnitureCleanup');
+// socket.off('furnitureCleanup');
 ;
 , [socketRef, setFurniture, setSelectedFurnitureId, hasConnected, draggedFurnitureId, mouseStateRef]);
 ; 

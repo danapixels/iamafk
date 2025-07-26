@@ -38,15 +38,15 @@ placedAt: {
 type: Date,
 default: Date.now
 ,
-expiresAt: {
-type: Date,
-required: true
-
+// expiresAt: {
+// type: Date,
+// required: true
+//  // FURNITURE DESPAWNING DISABLED
 , {
 timestamps: true
 );
 
-// Index for expiration cleanup
-furnitureSchema.index({ expiresAt: 1 );
+// Index for expiration cleanup - DISABLED
+// furnitureSchema.index({ expiresAt: 1 ); // FURNITURE DESPAWNING DISABLED
 
 module.exports = mongoose.model('Furniture', furnitureSchema); 
