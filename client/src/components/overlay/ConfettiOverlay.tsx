@@ -10,7 +10,7 @@ if (!showConfetti) return null;
 
 return (
 <>
-{/* Left confetti */
+{/* left confetti */
 <div
 style={{
 position: 'fixed',
@@ -42,7 +42,7 @@ console.error('Left confetti GIF failed to load:', e);
 />
 </div>
 
-{/* Right confetti */
+{/* right confetti */
 <div
 style={{
 position: 'fixed',
@@ -64,10 +64,10 @@ style={{
 width: '200px',
 height: 'auto',
 maxHeight: '60vh',
-transform: 'scaleX(-1)' // Flip horizontally for variety
+transform: 'scaleX(-1)' // flips horizontally on other side 
 
 onLoad={() => {
-// Confetti loaded successfully
+// confetti loaded successfully
 
 onError={(e) => {
 console.error('Right confetti GIF failed to load:', e);

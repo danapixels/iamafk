@@ -11,9 +11,9 @@ const { userStats  = useUserStats();
 const [isHovered, setIsHovered] = useState(false);
 const [showTooltip, setShowTooltip] = useState(false);
 
-// Check if user has this specific furniture unlocked and get unlocker info
+// checks if user has this specific furniture unlocked and gets unlocker info
 const unlockedFurniture = userStats?.unlockedGachaFurniture?.find(furniture => {
-// Handle both string and object formats
+// handles both string and object formats
 if (typeof furniture === 'string') {
 return furniture === type;
  else if (typeof furniture === 'object' && furniture.item) {
@@ -29,8 +29,7 @@ if (!hasUnlocked) {
 return isHovered ? '/UI/furniturelockbuttonhover.png' : '/UI/furniturelockbutton.png';
 
 
-// For now, we'll use the furniture lock button images since we don't have specific unlocked furniture button images
-// You can add specific cases here when you have the unlocked furniture button images
+// switches between the locked and unlocked button images
 switch (type) {
 case 'computer':
 return isHovered ? '/UI/computerbuttonhover.png' : '/UI/computerbutton.png';

@@ -2,8 +2,6 @@ import React, { createContext, useContext, useState, useEffect  from 'react';
 import type { ReactNode  from 'react';
 import { Socket  from 'socket.io-client';
 
-console.log("👀 UserStatsContext loaded");
-
 interface UserStats {
 username: string;
 totalAFKTime: number;
@@ -51,7 +49,7 @@ const [userStats, setUserStats] = useState<UserStats | null>(null);
 const [isLoading, setIsLoading] = useState(false);
 const [error, setError] = useState<string | null>(null);
 
-// Request user stats from server
+// requests user stats from server
 const refreshStats = () => {
 if (socket?.connected) {
 setIsLoading(true);
@@ -60,7 +58,7 @@ socket.emit('requestUserStats');
 
 ;
 
-// Deduct AFK balance (server-validated)
+// deducts AFK balance (server-validated)
 const deductAFKBalance = async (seconds: number): Promise<boolean> => {
 if (!socket?.connected || !hasConnected) return false;
 
@@ -77,7 +75,7 @@ resolve(false);
 );
 ;
 
-// Add AFK time (for testing)
+// adds AFK time (for testing)
 const addAFKTime = async (seconds: number): Promise<boolean> => {
 if (!socket?.connected || !hasConnected) return false;
 
@@ -94,14 +92,14 @@ resolve(false);
 );
 ;
 
-// Record furniture placement (server-validated)
+// records furniture placement (server)
 const recordFurniturePlacement = async (type: string): Promise<boolean> => {
 if (!socket?.connected || !hasConnected) return false;
 
 return new Promise((resolve) => {
 socket.emit('recordFurniturePlacement', { type , (response: { success: boolean; error?: string ) => {
 if (response.success) {
-refreshStats(); // Refresh stats after successful placement
+refreshStats(); // refreshes stats after successful placement
 resolve(true);
  else {
 setError(response.error || 'Failed to record furniture placement');
@@ -111,7 +109,7 @@ resolve(false);
 );
 ;
 
-// Check if user can place furniture (based on server data)
+// checks if user can place furniture (based on server data)
 const canPlaceFurniture = (): boolean => {
 if (!userStats) return false;
 
@@ -122,7 +120,7 @@ const DAILY_FURNITURE_LIMIT = 1000;
 return dailyPlacements < DAILY_FURNITURE_LIMIT;
 ;
 
-// Get remaining daily furniture placements
+// gets remaining daily furniture placements
 const getRemainingDailyPlacements = (): number => {
 if (!userStats) return 0;
 
@@ -133,7 +131,7 @@ const DAILY_FURNITURE_LIMIT = 1000;
 return Math.max(0, DAILY_FURNITURE_LIMIT - dailyPlacements);
 ;
 
-// Socket event listeners
+// socket event listeners
 useEffect(() => {
 if (!socket) return;
 
@@ -151,13 +149,13 @@ setIsLoading(false);
 socket.on('userStats', handleUserStats);
 socket.on('statsError', handleStatsError);
 socket.on('presetPlaced', () => {
-// Removed alert - preset placed successfully
+// preset placed successfully
 );
 socket.on('presetUsageLimitReached', (data) => {
 alert(data.message);
 );
 
-// Request initial stats if connected
+// requests initial stats if connected
 if (socket.connected) {
 refreshStats();
 

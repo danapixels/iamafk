@@ -21,10 +21,10 @@ lastUpdated: 0
 
 useEffect(() => {
 if (socket) {
-// Request the jackpot record when component mounts
+// requests the jackpot record when component mounts
 socket.emit('requestJackpotRecord');
 
-// Listen for jackpot record updates
+// listens for jackpot record updates
 const handleJackpotRecord = (record: JackpotRecord) => {
 setJackpotRecord(record);
 ;
@@ -53,7 +53,7 @@ alignItems: 'center',
 gap: '0px'
 
 >
-{/* Statue image */
+{/* statue image */
 <img 
 src={UI_IMAGES.STATUE 
 alt="Statue" 
@@ -64,7 +64,7 @@ display: 'block'
 
 />
 
-{/* Jackpot image with leaderboard text underneath */
+{/* jackpot image with leaderboard text underneath */
 <div style={{ position: 'relative', margin: 0, padding: 0 >
 <img 
 src={UI_IMAGES.JACKPOTS 

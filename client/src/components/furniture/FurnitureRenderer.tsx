@@ -25,11 +25,11 @@ onMoveDown,
 onDelete
 ) => {
 const getFurnitureImage = (item: Furniture) => {
-// Check if this furniture type has toggle states
+// checks if this furniture type has toggle states
 if (FURNITURE_TOGGLE_IMAGES[item.type]) {
 return item.isOn ? FURNITURE_TOGGLE_IMAGES[item.type].on : FURNITURE_TOGGLE_IMAGES[item.type].off;
 
-// Default to regular furniture image
+// defaults to regular furniture image
 return FURNITURE_IMAGES[item.type];
 ;
 
@@ -66,13 +66,13 @@ alt={item.type
 data-furniture-id={item.id
 data-furniture-type={item.type
 onDoubleClick={(e) => {
-// Only handle double-click for toggleable furniture
+// only handle double-click for toggleable furniture
 if (FURNITURE_TOGGLE_IMAGES[item.type]) {
 e.preventDefault();
 e.stopPropagation();
 handleToggle(item.id);
 
-// For non-toggleable furniture (like toilet), let the global double-click handler handle it
+// for non-toggleable furniture (like toilet), let the global double-click handler handle it
 
 style={{
 position: 'absolute',

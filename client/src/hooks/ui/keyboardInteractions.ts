@@ -37,21 +37,21 @@ const lastEmoteTimeRef = useRef<{ [key: string]: number >({);
 const pressedKeysRef = useRef<{ [key: string]: boolean >({);
 const EMOTE_COOLDOWN_MS = 500; // 500ms cooldown between emotes
 
-// Helper function to convert screen coordinates to canvas coordinates
+// helper function to convert screen coordinates to canvas coordinates
 const convertScreenToCanvas = (screenX: number, screenY: number) => {
 return screenToCanvas(screenX, screenY, viewportOffset);
 ;
 
-// Handle keyboard interactions (emotes and backspace)
+// handles keyboard interactions (emotes and backspace)
 useEffect(() => {
 const handleKeyDown = (e: KeyboardEvent) => {
 if (socketRef.current?.connected && hasConnected && socketRef.current.id) {
-// Handle backspace for deleting selected furniture
+// handles backspace for deleting selected furniture
 if (e.key === 'Backspace' && selectedFurnitureId) {
 e.preventDefault();
 e.stopPropagation();
 
-// Delete the selected furniture
+// deletes the selected furniture
 if (socketRef.current) {
 socketRef.current.emit('deleteFurniture', selectedFurnitureId);
 setSelectedFurnitureId(null);
@@ -74,22 +74,22 @@ const emoteMap: { [key: string]: string  = {
 
 const emoteType = emoteMap[e.key];
 if (emoteType) {
-// Check if key is already pressed (prevent spam)
+// checks if key is already pressed (prevent spam)
 if (pressedKeysRef.current[e.key]) {
 return;
 
 
-// Check cooldown for this specific emote
+// checks cooldown for this specific emote
 const now = Date.now();
 const lastEmoteTime = lastEmoteTimeRef.current[e.key] || 0;
 if (now - lastEmoteTime < EMOTE_COOLDOWN_MS) {
 return;
 
 
-// Mark key as pressed
+// marks key as pressed
 pressedKeysRef.current[e.key] = true;
 
-// Update last emote time
+// updates last emote time
 lastEmoteTimeRef.current[e.key] = now;
 
 const cursorX = isCursorFrozen && frozenCursorPosition ? frozenCursorPosition.x : cursors[socketRef.current.id]?.x || 0;
@@ -122,7 +122,7 @@ type: emoteType
 ;
 
 const handleKeyUp = (e: KeyboardEvent) => {
-// Mark key as released
+// marks key as released
 pressedKeysRef.current[e.key] = false;
 ;
 

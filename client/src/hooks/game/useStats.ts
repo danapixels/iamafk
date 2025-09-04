@@ -9,16 +9,16 @@ hasConnected: boolean
 ) => {
 const afkStartTimeRef = useRef<number | null>(null);
 
-// Simplified: Just request stats periodically from server
+// request stats from server
 useEffect(() => {
 if (!hasConnected || !socketRef.current) {
 return;
 
 
-// Request initial stats
+// requests initial stats
 socketRef.current.emit('requestUserStats');
 
-// Request stats every 10 seconds to keep them updated (more frequent for AFK time)
+// requests stats every 10 seconds
 const interval = setInterval(() => {
 if (socketRef.current?.connected) {
 socketRef.current.emit('requestUserStats');

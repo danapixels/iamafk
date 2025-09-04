@@ -11,10 +11,10 @@ const Furniture = require('./models/Furniture');
 const Record = require('./models/Record');
 const UserActivity = require('./models/UserActivity');
 
-// Load environment variables
+// load environment variables
 require('dotenv').config();
 
-// Server configuration from environment variables
+// server configuration from environment variables
 const SERVER_CONFIG = {
 NODE_ENV: process.env.NODE_ENV || 'development',
 PORT: parseInt(process.env.PORT) || 3001,
@@ -37,10 +37,10 @@ const allowedOrigins = process.env.CORS_ORIGIN
 
 const app = express();
 
-// Environment-based CORS configuration
+// environment-based CORS configuration
 app.use(cors({
 origin: function (origin, callback) {
-// Allow requests with no origin (like mobile apps or curl requests)
+// allow requests with no origin (like mobile apps or curl requests)
 if (!origin) return callback(null, true);
 
 if (allowedOrigins.indexOf(origin) !== -1) {
@@ -54,7 +54,7 @@ allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 credentials: false
 ));
 
-// Add CORS headers manually for Socket.IO
+// add CORS headers manually for Socket.IO
 app.use((req, res, next) => {
 const origin = req.headers.origin;
 if (allowedOrigins.includes(origin)) {
@@ -83,7 +83,7 @@ transports: ['websocket', 'polling'],
 allowEIO3: true
 );
 
-// Global state
+// global state
 let cursors = {;
 let furniture = {;
 let lastMoveTimestamps = {;
@@ -94,15 +94,15 @@ let userStats = {;
 let allTimeRecord = { name: '', time: 0, lastUpdated: 0 ;
 let jackpotRecord = { name: '', wins: 0, lastUpdated: 0, deviceId: '', lastWinner: '' ;
 
-// Gacha item pools
+// gacha item pools
 const GACHA_HATS = ['easteregg1', 'balloon', 'ffr', 'ghost', 'loading'];
 const GACHA_FURNITURE = ['computer', 'tv', 'toilet', 'washingmachine', 'zuzu'];
 
-// Device ID to socket ID mapping for persistence
+// device ID to socket ID mapping for persistence
 let deviceToSocketMap = {;
 let socketToDeviceMap = {;
 
-// Load socket-to-device mapping from persistent storage
+// load socket-to-device mapping from persistent storage
 function loadSocketDeviceMapping() {
 
 const mappingFile = path.join(SERVER_CONFIG.DATA_DIR, 'socket_device_mapping.json');
@@ -113,11 +113,11 @@ socketToDeviceMap = parsed.socketToDeviceMap || {;
 deviceToSocketMap = parsed.deviceToSocketMap || {;
 
 
-// Error handling for missing mapping file
+// error handling for missing mapping file
 
 
 
-// Save socket-to-device mapping to persistent storage
+// save socket-to-device mapping to persistent storage
 function saveSocketDeviceMapping() {
 
 const mappingFile = path.join(SERVER_CONFIG.DATA_DIR, 'socket_device_mapping.json');
@@ -132,11 +132,11 @@ console.error('Error saving socket-to-device mapping:', error);
 
 
 
-// AFK time tracking variables
+// afk time tracking variables
 let userAFKStartTimes = {; // when each user started being AFK
 let lastAFKUpdateTimes = {; // last AFK time update for each user
 
-// Simplified AFK time tracking - server handles everything
+// server afk time tracking
 function updateUserAFKTime(socketId) {
 const deviceId = socketToDeviceMap[socketId] || socketId;
 const cursor = cursors[socketId];
@@ -147,15 +147,15 @@ if (!cursor) return;
 const isAFK = (cursor.stillTime >= 30 || cursor.isFrozen);
 const wasAFK = userAFKStartTimes[deviceId] !== undefined;
 
-// User just became AFK
+// user just became AFK
 if (isAFK && !wasAFK) {
 userAFKStartTimes[deviceId] = now;
 lastAFKUpdateTimes[deviceId] = now;
 
 
-// User is no longer AFK
+// user is no longer AFK
 if (!isAFK && wasAFK) {
-// Only add the remaining time since the last update, not the entire duration
+// only add the remaining time since the last update, not the entire duration
 const timeSinceLastUpdate = now - lastAFKUpdateTimes[deviceId];
 const remainingSeconds = Math.floor(timeSinceLastUpdate / 1000);
 if (remainingSeconds > 0) {
@@ -165,7 +165,7 @@ delete userAFKStartTimes[deviceId];
 delete lastAFKUpdateTimes[deviceId];
 
 
-// Update AFK time every 60 seconds while AFK
+// update AFK time every 60 seconds while AFK
 if (isAFK && wasAFK) {
 const timeSinceLastUpdate = now - lastAFKUpdateTimes[deviceId];
 if (timeSinceLastUpdate >= 60000) { // 60 seconds
@@ -176,7 +176,7 @@ lastAFKUpdateTimes[deviceId] = now;
 
 
 
-// Add AFK time to user stats
+// add AFK time to user stats
 function addAFKTimeToUser(deviceId, seconds) {
 const user = userStats[deviceId];
 if (user) {
@@ -187,10 +187,10 @@ user.totalAFKTime += seconds;
 user.afkBalance += seconds;
 user.lastSeen = Date.now();
 
-// Add to batch for persistence
+// add to batch for persistence
 addToBatch('userStats', { socketId: deviceId, stats: user );
 
-// Check for new all-time record
+// check for new all-time record
 if (user.username && user.username !== SERVER_CONFIG.ANONYMOUS_NAME) {
 updateAllTimeRecord(deviceId, user.username, 0);
 
@@ -199,33 +199,31 @@ console.error(`❌ User not found for AFK time update: deviceId=${deviceId`);
 
 
 
-// Record files are now stored in MongoDB
-
-// Cache for badge calculations to reduce computational overhead
+// cache for badge calculations
 let badgeCache = {;
 let lastBadgeCalculation = 0;
 const BADGE_CACHE_DURATION = 5000; // 5 seconds
 
-// Batch save system
+// batch save system
 const BATCH_INTERVAL = SERVER_CONFIG.BATCH_INTERVAL;
 
-// Furniture expiry configuration - DISABLED
+// furniture expiry configuration - disabled for now
 // const FURNITURE_EXPIRY_HOURS = SERVER_CONFIG.FURNITURE_EXPIRY_HOURS;
 
-// Z-index management
-let nextZIndex = 5000; // Base z-index for furniture
+// z-index management
+let nextZIndex = 5000; // base z-index for furniture
 
-// Server-side user stats storage and validation
+// server-side user stats storage and validation
 const DAILY_FURNITURE_LIMIT = SERVER_CONFIG.DAILY_FURNITURE_LIMIT;
 
-// Ensure data directory exists (only if it's a writable path)
+// ensure data directory exists
 if (SERVER_CONFIG.DATA_DIR !== '/app/data' || process.env.NODE_ENV === 'production') {
 if (!fs.existsSync(SERVER_CONFIG.DATA_DIR)) {
 
 fs.mkdirSync(SERVER_CONFIG.DATA_DIR, { recursive: true );
 
 console.warn(`Could not create data directory ${SERVER_CONFIG.DATA_DIR:`, error.message);
-// Fallback to local directory for development
+// fallback to local directory for development
 if (process.env.NODE_ENV === 'development') {
 SERVER_CONFIG.DATA_DIR = './data';
 if (!fs.existsSync(SERVER_CONFIG.DATA_DIR)) {
@@ -241,8 +239,8 @@ return nextZIndex++;
 
 
 function updateZIndexFromFurniture() {
-// Find the highest z-index currently in use
-let maxZIndex = 4999; // Base z-index - 1
+// find the highest z-index currently in use
+let maxZIndex = 4999; // base z-index - 1
 Object.values(furniture).forEach(item => {
 if (item.zIndex && item.zIndex > maxZIndex) {
 maxZIndex = item.zIndex;
@@ -253,11 +251,11 @@ nextZIndex = maxZIndex + 1;
 
 async function loadPersistentData() {
 
-// Load furniture from MongoDB
+// load furniture from MongoDB
 const furnitureItems = await Furniture.find({);
 furniture = {;
 for (const item of furnitureItems) {
-// Convert MongoDB structure to client-expected structure
+// convert MongoDB structure to client
 furniture[item.id] = {
 id: item.id,
 type: item.type,
@@ -266,23 +264,23 @@ y: item.y,
 zIndex: item.zIndex,
 isFlipped: item.isFlipped || false,
 isOn: item.isOn || false,
-timestamp: item.placedAt.getTime(), // Convert placedAt to timestamp
-ownerId: item.placedBy, // Convert placedBy to ownerId
-ownerName: item.placedBy, // Use placedBy as ownerName for now
+timestamp: item.placedAt.getTime(),
+ownerId: item.placedBy, 
+ownerName: item.placedBy, 
 placedBy: item.placedBy,
 placedAt: item.placedAt.getTime(),
 // expiresAt: item.expiresAt.getTime() // FURNITURE DESPAWNING DISABLED
 ;
 
 console.log('Loaded furniture data from MongoDB:', Object.keys(furniture).length, 'items');
-// Update z-index counter from loaded furniture
+// update z-index counter from loaded furniture
 updateZIndexFromFurniture();
 
 console.error('Error loading furniture data from MongoDB:', error);
 
 
 
-// Load user activity from MongoDB
+// load user activity from MongoDB
 const activities = await UserActivity.find({);
 userActivity = {;
 for (const activity of activities) {
@@ -300,9 +298,9 @@ console.error('Error loading user activity data from MongoDB:', error);
 
 async function savePersistentData() {
 
-// Save furniture to MongoDB
+// save furniture to MongoDB
 for (const [id, item] of Object.entries(furniture)) {
-// Handle both old and new furniture structures
+// handle both old and new furniture structures
 const placedBy = item.placedBy || item.ownerId || item.ownerName;
 const placedAt = item.placedAt ? new Date(item.placedAt) : new Date(item.timestamp || Date.now());
 // const expiresAt = item.expiresAt ? new Date(item.expiresAt) : new Date((item.timestamp || Date.now()) + 7 * 24 * 60 * 60 * 1000); // FURNITURE DESPAWNING DISABLED
@@ -329,7 +327,7 @@ console.error('Error saving furniture data to MongoDB:', error);
 
 
 
-// Save user activity to MongoDB
+// save user activity to MongoDB
 for (const [deviceId, activity] of Object.entries(userActivity)) {
 await UserActivity.findOneAndUpdate(
 { deviceId ,
@@ -358,14 +356,14 @@ addToBatch('userActivity', { socketId, username );
 
 // function cleanupExpiredFurniture() {
 // // FURNITURE DESPAWNING DISABLED
-// // This function has been disabled to prevent furniture from despawning
+// // disabled to prevent furniture from despawning
 // 
 
 function getValidCursors() {
 const filtered = {;
 const now = Date.now();
 
-// Calculate daily badge once for all users
+// calculate daily badge once for all users
 let dailyBest = { name: '', time: 0 ;
 Object.values(cursors).forEach((c) => {
 if (!c || !c.name || c.name === SERVER_CONFIG.ANONYMOUS_NAME) return;
@@ -375,19 +373,19 @@ dailyBest = { name: c.name, time: stillTime ;
 
 );
 
-// Check if daily leader has changed (for cache invalidation)
+// check if daily leader has changed (for cache invalidation)
 const currentDailyLeader = badgeCache.dailyLeader || { name: '', time: 0 ;
 const dailyLeaderChanged = dailyBest.name !== currentDailyLeader.name || dailyBest.time !== currentDailyLeader.time;
 
-// Only recalculate badges if cache is expired OR daily leader changed
+// only recalculate badges if cache is expired OR daily leader changed
 const shouldRecalculateBadges = (now - lastBadgeCalculation) > BADGE_CACHE_DURATION || dailyLeaderChanged;
 
 if (shouldRecalculateBadges) {
 badgeCache = {;
 lastBadgeCalculation = now;
-badgeCache.dailyLeader = dailyBest; // Store current daily leader for comparison
+badgeCache.dailyLeader = dailyBest; // store current daily leader for comparison
 
-// Cache badge calculations
+// cache badge calculations
 Object.entries(cursors).forEach(([id, cursor]) => {
 if (cursor.name && cursor.name.trim() !== '' && cursor.name !== SERVER_CONFIG.ANONYMOUS_NAME) {
 const userBadges = {
@@ -417,10 +415,10 @@ return filtered;
 
 function cleanupOldUserActivity() {
 const now = Date.now();
-const ONE_HOUR = 60 * 60 * 1000; // 1 hour in milliseconds
-const FORTY_NINE_HOURS = 49 * 60 * 60 * 1000; // 49 hours in milliseconds
+const ONE_HOUR = 60 * 60 * 1000; // 1 hour
+const FORTY_NINE_HOURS = 49 * 60 * 60 * 1000; // 49 hours
 
-// Remove entries older than 49 hours
+// remove entries older than 49 hours
 for (const socketId in userActivity) {
 if (now - userActivity[socketId].lastSeen > FORTY_NINE_HOURS) {
 delete userActivity[socketId];
@@ -431,10 +429,10 @@ addToBatch('userActivity', null);
 
 function cleanupOldUserStats() {
 const now = Date.now();
-const ONE_DAY = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
-const TWO_WEEKS = 14 * 24 * 60 * 60 * 1000; // 14 days in milliseconds
+const ONE_DAY = 24 * 60 * 60 * 1000; // 24 hours
+const TWO_WEEKS = 14 * 24 * 60 * 60 * 1000; // 14 days
 
-// Clean up AFK tracking data older than 1 day
+// clean up AFK tracking data older than 1 day
 Object.keys(userAFKStartTimes).forEach(deviceId => {
 const lastUpdate = lastAFKUpdateTimes[deviceId];
 if (lastUpdate && (now - lastUpdate) > ONE_DAY) {
@@ -443,12 +441,12 @@ delete lastAFKUpdateTimes[deviceId];
 
 );
 
-// Clean up deviceID mappings and user stats older than 2 weeks
+// clean up deviceID mappings and user stats older than 2 weeks
 const deviceIdsToRemove = [];
 
-// Check deviceID mappings for expiration
+// check deviceID mappings for expiration
 Object.entries(socketToDeviceMap).forEach(([socketId, deviceId]) => {
-// If socket is not connected and device hasn't been seen in 2 weeks
+// if socket is not connected and device hasn't been seen in 2 weeks
 if (!cursors[socketId] && userStats[deviceId]) {
 const lastSeen = userStats[deviceId].lastSeen || 0;
 if (now - lastSeen > TWO_WEEKS) {
@@ -459,7 +457,7 @@ delete deviceToSocketMap[deviceId];
 
 );
 
-// Check user stats for expiration (deviceIDs not in mappings)
+// check user stats for expiration (deviceIDs not in mappings)
 Object.keys(userStats).forEach(deviceId => {
 const lastSeen = userStats[deviceId].lastSeen || 0;
 if (now - lastSeen > TWO_WEEKS) {
@@ -468,17 +466,17 @@ delete userStats[deviceId];
 
 );
 
-// Remove duplicate deviceIDs
+// remove duplicate deviceIDs
 const uniqueDeviceIdsToRemove = [...new Set(deviceIdsToRemove)];
 
 if (uniqueDeviceIdsToRemove.length > 0) {
 console.log(`🧹 Cleaned up ${uniqueDeviceIdsToRemove.length expired deviceIDs and user stats after 2 weeks of inactivity`);
 console.log(`📊 Removed deviceIDs: ${uniqueDeviceIdsToRemove.join(', ')`);
 
-// Save the updated mappings to persistent storage
+// save the updated mappings to persistent storage
 saveSocketDeviceMapping();
 
-// Add to batch for user stats persistence
+// add to batch for user stats persistence
 addToBatch('cleanup', { type: 'deviceIdCleanup', count: uniqueDeviceIdsToRemove.length );
 
 
@@ -490,44 +488,24 @@ cleanupOldUserStats();
 console.log('✅ Manual cleanup completed');
 
 
-/*
- * DeviceID Cleanup Strategy:
- * 
- * 1. AFK tracking data (userAFKStartTimes, lastAFKUpdateTimes) - cleaned up after 1 day
- * 2. DeviceID mappings (socketToDeviceMap, deviceToSocketMap) - cleaned up after 2 weeks of inactivity
- * 3. User stats (userStats) - cleaned up after 2 weeks of inactivity
- * 
- * Cleanup runs:
- * - Every 24 hours automatically
- * - On server startup
- * - On user disconnect
- * - Manually via socket event 'triggerCleanup'
- * 
- * This ensures that:
- * - Active users are never affected
- * - Inactive users have their data removed after 2 weeks
- * - Memory usage is kept under control
- * - Persistent storage doesn't grow indefinitely
- */
-
-// Gacha unlock helper functions
+// gacha unlock helper functions
 function unlockRandomGachaHat(deviceId) {
 const user = userStats[deviceId];
 if (!user) return null;
 
-// Initialize unlocked hats array if it doesn't exist
+// start unlocked hats array if doesn't exist
 if (!user.unlockedGachaHats) {
 user.unlockedGachaHats = [];
 
 
-// Select random hat from pool
+// select random hat from pool
 const randomHat = GACHA_HATS[Math.floor(Math.random() * GACHA_HATS.length)];
 
-// Add to unlocked hats (allows duplicates) with unlocker info
+// add to unlocked hats (allows duplicates) with unlocker info
 user.unlockedGachaHats.push({ item: randomHat, unlockedBy: user.username );
 user.lastSeen = Date.now();
 
-// Add to batch for persistence
+// add to batch for persistence
 addToBatch('userStats', { socketId: deviceId, stats: user );
 
 console.log(`Unlocked gacha hat for ${user.username: ${randomHat`);
@@ -538,39 +516,39 @@ function unlockRandomGachaFurniture(deviceId) {
 const user = userStats[deviceId];
 if (!user) return null;
 
-// Initialize unlocked furniture array if it doesn't exist
+// start unlocked furniture array if doesn't exist
 if (!user.unlockedGachaFurniture) {
 user.unlockedGachaFurniture = [];
 
 
-// Select random furniture from pool
+// select random furniture from pool
 const randomFurniture = GACHA_FURNITURE[Math.floor(Math.random() * GACHA_FURNITURE.length)];
 
-// Add to unlocked furniture (allows duplicates) with unlocker info
+// add to unlocked furniture (allows duplicates) with unlocker info
 user.unlockedGachaFurniture.push({ item: randomFurniture, unlockedBy: user.username );
 user.lastSeen = Date.now();
 
-// Add to batch for persistence
+// add to batch for persistence
 addToBatch('userStats', { socketId: deviceId, stats: user );
 
 console.log(`Unlocked gacha furniture for ${user.username: ${randomFurniture`);
 return randomFurniture;
 
 
-// Unlock specific hat for all connected users
+// unlock specific hat for all connected users
 function unlockHatForAllUsers(hatType, unlockerName) {
 console.log(`Unlocking hat '${hatType' for all connected users`);
-// Get all connected socket IDs
+// get all connected socket IDs
 const connectedSocketIds = Object.keys(cursors);
 connectedSocketIds.forEach(socketId => {
 const deviceId = socketToDeviceMap[socketId] || socketId;
 const user = userStats[deviceId];
 if (user) {
-// Initialize unlocked hats array if it doesn't exist
+// start unlocked hats array if doesn't exist
 if (!user.unlockedGachaHats) {
 user.unlockedGachaHats = [];
 
-// Only add if not already unlocked (handle both string and object formats)
+// only add if not already unlocked
 const alreadyUnlocked = user.unlockedGachaHats.some(hat => {
 if (typeof hat === 'string') return hat === hatType;
 if (typeof hat === 'object' && hat.item) return hat.item === hatType;
@@ -579,7 +557,7 @@ return false;
 if (!alreadyUnlocked) {
 user.unlockedGachaHats.push({ item: hatType, unlockedBy: unlockerName );
 user.lastSeen = Date.now();
-// Add to batch for persistence
+// add to batch for persistence
 addToBatch('userStats', { socketId: deviceId, stats: user );
 console.log(`Unlocked hat '${hatType' for user ${user.username`);
 
@@ -587,20 +565,18 @@ console.log(`Unlocked hat '${hatType' for user ${user.username`);
 );
 
 
-// Unlock specific furniture for all connected users
+// unlock specific furniture for all connected users
 function unlockFurnitureForAllUsers(furnitureType, unlockerName) {
 console.log(`Unlocking furniture '${furnitureType' for all connected users`);
-// Get all connected socket IDs
+// get all connected socket IDs
 const connectedSocketIds = Object.keys(cursors);
 connectedSocketIds.forEach(socketId => {
 const deviceId = socketToDeviceMap[socketId] || socketId;
 const user = userStats[deviceId];
 if (user) {
-// Initialize unlocked furniture array if it doesn't exist
 if (!user.unlockedGachaFurniture) {
 user.unlockedGachaFurniture = [];
 
-// Only add if not already unlocked (handle both string and object formats)
 const alreadyUnlocked = user.unlockedGachaFurniture.some(furniture => {
 if (typeof furniture === 'string') return furniture === furnitureType;
 if (typeof furniture === 'object' && furniture.item) return furniture.item === furnitureType;
@@ -609,7 +585,7 @@ return false;
 if (!alreadyUnlocked) {
 user.unlockedGachaFurniture.push({ item: furnitureType, unlockedBy: unlockerName );
 user.lastSeen = Date.now();
-// Add to batch for persistence
+// add to batch for persistence
 addToBatch('userStats', { socketId: deviceId, stats: user );
 console.log(`Unlocked furniture '${furnitureType' for user ${user.username`);
 
@@ -617,39 +593,39 @@ console.log(`Unlocked furniture '${furnitureType' for user ${user.username`);
 );
 
 
-// Initialize server with MongoDB connection
+// start server with MongoDB connection
 async function initializeServer() {
 
-// Connect to MongoDB
+// connect to MongoDB
 await connectDB();
 console.log('✅ Connected to MongoDB');
 
-// Load data from MongoDB
+// load data from MongoDB
 await loadPersistentData();
 await loadUserStats();
 await loadAllTimeRecord();
 await loadJackpotRecord();
 loadSocketDeviceMapping();
 
-// Run initial cleanup to remove any expired data on startup
+// run initial cleanup to remove any expired data on startup
 cleanupOldUserStats();
 
-// Recalculate jackpot record to ensure it's correct after loading user stats
+// recalculate jackpot record to ensure it's correct after loading user stats
 recalculateJackpotRecord();
 
-// Start batch timer
+// start batch timer
 startBatchTimer();
 
-// Clean up expired furniture every hour - DISABLED
+// clean up expired furniture every hour - DISABLED
 // setInterval(cleanupExpiredFurniture, 60 * 60 * 1000);
 
-// Initial cleanup on startup - DISABLED
+// initial cleanup on startup - DISABLED
 // cleanupExpiredFurniture();
 
-// Run cleanup every 1 hr
+// run cleanup every 1 hr
 setInterval(cleanupOldUserActivity, 60 * 60 * 1000);
 
-// Run user stats cleanup every 24 hours
+// run user stats cleanup every 24 hours
 setInterval(cleanupOldUserStats, 24 * 60 * 60 * 1000);
 
 console.log('✅ Server initialization completed');
@@ -659,10 +635,10 @@ process.exit(1);
 
 
 
-// Initialize server
+// initialize server
 initializeServer();
 
-// Add change to batch instead of immediate save
+// add change to batch instead of immediate save
 function addToBatch(changeType, data) {
 pendingChanges.push({ 
 type: changeType, 
@@ -671,12 +647,12 @@ timestamp: Date.now()
 );
 
 
-// Save batch immediately
+// save batch immediately
 async function saveBatch() {
 if (pendingChanges.length > 0) {
 console.log(`Saving batch of ${pendingChanges.length changes`);
 
-// Process each change
+// process each change
 pendingChanges.forEach(change => {
 switch (change.type) {
 case 'userActivity':
@@ -690,37 +666,33 @@ socketId: socketId
 
 break;
 case 'furniture':
-// Furniture changes are already applied to memory
 break;
 case 'cleanup':
-// Cleanup changes are already applied to memory
 break;
 case 'userStats':
 const { socketId, stats  = change.data;
 userStats[socketId] = stats;
 break;
 case 'allTimeRecord':
-// All-time record changes are already applied to memory
 break;
 case 'jackpotRecord':
-// Jackpot record changes are already applied to memory
 break;
 
 );
 
-// Save to MongoDB
+// save to MongoDB
 await savePersistentData();
 await saveUserStats();
 await saveAllTimeRecord();
 await saveJackpotRecord();
 saveSocketDeviceMapping();
 
-// Clear batch
+// clear batch
 pendingChanges.length = 0;
 
 
 
-// Start batch timer
+// start batch timer
 function startBatchTimer() {
 if (batchTimer) {
 clearInterval(batchTimer);
@@ -728,32 +700,32 @@ clearInterval(batchTimer);
 batchTimer = setInterval(saveBatch, BATCH_INTERVAL);
 
 
-// Stop batch timer and save immediately
+// stop batch timer and save immediately
 async function stopBatchTimer() {
 if (batchTimer) {
 clearInterval(batchTimer);
 batchTimer = null;
 
-await saveBatch(); // Save any pending changes
+await saveBatch(); // save any pending changes
 
 
 io.on('connection', (socket) => {
 console.log(`🔌 New socket connection: ${socket.id`);
 
-// Initialize cursor for new user
+// initialize cursor for new user
 cursors[socket.id] = { x: 0, y: 0, username: '', cursorType: 'default' ;
 lastMoveTimestamps[socket.id] = Date.now();
 
-// Update user activity on connection
+// update user activity on connection
 updateUserActivity(socket.id, SERVER_CONFIG.ANONYMOUS_NAME);
 
-// Send current state to new user
+// send current state to new user
 socket.emit('initialState', {
 cursors: getValidCursors(),
 furniture: furniture,
 );
 
-// Notify other users about new connection
+// notify other users about new connection
 socket.broadcast.emit('clientConnected', { 
 socketId: socket.id, 
 cursor: cursors[socket.id] 
@@ -763,12 +735,12 @@ socket.on('setName', async ({ name ) => {
 console.log(`👤 setName received for socket ${socket.id: "${name"`);
 
 if (cursors[socket.id]) {
-// Validate username before setting it
+// validate username before setting it
 const validation = await validateUsername(name);
 
 if (!validation.isAppropriate) {
 console.log(`❌ Username validation failed for "${name": ${validation.reason`);
-// Send error message to client
+// send error message to client
 socket.emit('usernameError', { 
 message: validation.reason || 'Username is not allowed' 
 );
@@ -778,7 +750,7 @@ return;
 const username = name?.trim() || SERVER_CONFIG.ANONYMOUS_NAME;
 cursors[socket.id].name = username;
 
-// Update username in user stats for persistence
+// update username in user stats for persistence
 const deviceId = socketToDeviceMap[socket.id] || socket.id;
 if (userStats[deviceId]) {
 userStats[deviceId].username = username;
@@ -786,15 +758,15 @@ userStats[deviceId].lastSeen = Date.now();
 addToBatch('userStats', { socketId: deviceId, stats: userStats[deviceId] );
 
 
-// Update user activity with the username
+// update user activity with the username
 updateUserActivity(socket.id, username);
 
-// Send success response to client
+// send success response to client
 socket.emit('usernameAccepted', { username );
 
 console.log(`✅ Username accepted for socket ${socket.id: "${username"`);
 
-// Broadcast updated cursors to all clients
+// broadcast updated cursors to all clients
 io.emit('cursors', getValidCursors());
 
 );
@@ -821,12 +793,12 @@ lastMoveTimestamps[socket.id] = now;
 const diffSeconds = Math.floor((now - lastMoveTimestamps[socket.id]) / 1000);
 cursors[socket.id].stillTime = diffSeconds;
 
-// All-time record is now checked when AFK time is updated, not here
+// all-time record is now checked when AFK time is updated, not here
 
 
 if (name && name.trim() !== '') {
 cursors[socket.id].name = name.trim();
-// Update user activity on movement
+// update user activity on movement
 addToBatch('userActivity', { socketId: socket.id, username: name.trim() );
 
 
@@ -834,12 +806,12 @@ addToBatch('userActivity', { socketId: socket.id, username: name.trim() );
 io.emit('cursors', getValidCursors());
 );
 
-// NEW: Reset stillTime on client request (click/dblclick)
+// reset stillTime on client request (click/dblclick)
 socket.on('resetStillTime', () => {
 if (cursors[socket.id]) {
 cursors[socket.id].stillTime = 0;
 lastMoveTimestamps[socket.id] = Date.now();
-// Update user activity on interaction
+// update user activity on interaction
 addToBatch('userActivity', { socketId: socket.id, username: cursors[socket.id].name );
 io.emit('cursors', getValidCursors());
 
@@ -866,7 +838,7 @@ socket.on('spawnFurniture', (data) => {
 const furnitureId = `${socket.id-${Date.now()`;
 const now = Date.now();
 
-// Create furniture with timestamp for persistence and z-index
+// create furniture with timestamp for persistence and z-index
 furniture[furnitureId] = {
 id: furnitureId,
 type: data.type,
@@ -879,10 +851,10 @@ ownerName: cursors[socket.id]?.name || SERVER_CONFIG.ANONYMOUS_NAME,
 zIndex: getNextZIndex() // Assign z-index from server
 ;
 
-// Save to persistent storage
+// save to persistent storage
 addToBatch('furniture', furniture[furnitureId]);
 
-// Broadcast to all clients including sender
+// broadcast to all clients including sender
 io.emit('furnitureSpawned', furniture[furnitureId]);
 );
 
@@ -894,11 +866,11 @@ furniture[furnitureId].y = y;
 if (typeof isFlipped === 'boolean') {
 furniture[furnitureId].isFlipped = isFlipped;
 
-// Update timestamp when furniture is moved
+// update timestamp when furniture is moved
 furniture[furnitureId].timestamp = Date.now();
-// Save to persistent storage
+// save to persistent storage
 addToBatch('furniture', furniture[furnitureId]);
-// Broadcast to ALL clients including sender
+// broadcast to all clients including sender
 const broadcastData = { 
 id: furnitureId, 
 x, 
@@ -912,16 +884,16 @@ io.emit('furnitureMoved', broadcastData);
 socket.on('flipFurniture', (data) => {
 const { furnitureId  = data;
 if (furniture[furnitureId]) {
-// Toggle the flipped state
+// toggle the flipped state
 furniture[furnitureId].isFlipped = !furniture[furnitureId].isFlipped;
 
-// Update timestamp when furniture is flipped
+// update timestamp when furniture is flipped
 furniture[furnitureId].timestamp = Date.now();
 
-// Save to persistent storage
+// save to persistent storage
 addToBatch('furniture', furniture[furnitureId]);
 
-// Broadcast to ALL clients including sender
+// broadcast to all clients including sender
 io.emit('furnitureFlipped', { 
 id: furnitureId, 
 isFlipped: furniture[furnitureId].isFlipped 
@@ -932,16 +904,16 @@ isFlipped: furniture[furnitureId].isFlipped
 socket.on('toggleFurnitureState', (data) => {
 const { furnitureId  = data;
 if (furniture[furnitureId]) {
-// Toggle the on/off state
+// toggle the on/off state
 furniture[furnitureId].isOn = !furniture[furnitureId].isOn;
 
-// Update timestamp when furniture state is toggled
+// update timestamp when furniture state is toggled
 furniture[furnitureId].timestamp = Date.now();
 
-// Save to persistent storage
+// save to persistent storage
 addToBatch('furniture', furniture[furnitureId]);
 
-// Broadcast to ALL clients including sender
+// broadcast to all clients including sender
 io.emit('furnitureStateToggled', { 
 id: furnitureId, 
 isOn: furniture[furnitureId].isOn 
@@ -954,13 +926,13 @@ const { furnitureId, zIndex  = data;
 if (furniture[furnitureId]) {
 furniture[furnitureId].zIndex = zIndex;
 
-// Update timestamp when furniture z-index is changed
+// update timestamp when furniture z-index is changed
 furniture[furnitureId].timestamp = Date.now();
 
-// Save to persistent storage
+// save to persistent storage
 addToBatch('furniture', furniture[furnitureId]);
 
-// Broadcast to ALL clients including sender
+// broadcast to all clients including sender
 io.emit('furnitureZIndexChanged', { 
 id: furnitureId, 
 zIndex: furniture[furnitureId].zIndex 
@@ -971,7 +943,7 @@ zIndex: furniture[furnitureId].zIndex
 socket.on('moveFurnitureUp', (data) => {
 const { furnitureId  = data;
 if (furniture[furnitureId]) {
-// Find the furniture with the next higher z-index
+// find the furniture with the next higher z-index
 const currentZIndex = furniture[furnitureId].zIndex || 100;
 let targetFurniture = null;
 let minHigherZIndex = Infinity;
@@ -984,20 +956,20 @@ targetFurniture = item;
 );
 
 if (targetFurniture) {
-// Swap z-indices
+// swap z-indices
 const tempZIndex = furniture[furnitureId].zIndex;
 furniture[furnitureId].zIndex = targetFurniture.zIndex;
 targetFurniture.zIndex = tempZIndex;
 
-// Update timestamps
+// update timestamps
 furniture[furnitureId].timestamp = Date.now();
 targetFurniture.timestamp = Date.now();
 
-// Save to persistent storage
+// save to persistent storage
 addToBatch('furniture', furniture[furnitureId]);
 addToBatch('furniture', targetFurniture);
 
-// Broadcast to ALL clients
+// broadcast to ALL clients
 io.emit('furnitureZIndexChanged', [
 { id: furnitureId, zIndex: furniture[furnitureId].zIndex ,
 { id: targetFurniture.id, zIndex: targetFurniture.zIndex 
@@ -1009,7 +981,7 @@ io.emit('furnitureZIndexChanged', [
 socket.on('moveFurnitureDown', (data) => {
 const { furnitureId  = data;
 if (furniture[furnitureId]) {
-// Find the furniture with the next lower z-index
+// find the furniture with the next lower z-index
 const currentZIndex = furniture[furnitureId].zIndex || 100;
 let targetFurniture = null;
 let maxLowerZIndex = -Infinity;
@@ -1022,20 +994,20 @@ targetFurniture = item;
 );
 
 if (targetFurniture) {
-// Swap z-indices
+// swap z-indices
 const tempZIndex = furniture[furnitureId].zIndex;
 furniture[furnitureId].zIndex = targetFurniture.zIndex;
 targetFurniture.zIndex = tempZIndex;
 
-// Update timestamps
+// update timestamps
 furniture[furnitureId].timestamp = Date.now();
 targetFurniture.timestamp = Date.now();
 
-// Save to persistent storage
+// save to persistent storage
 addToBatch('furniture', furniture[furnitureId]);
 addToBatch('furniture', targetFurniture);
 
-// Broadcast to ALL clients
+// broadcast to all clients
 io.emit('furnitureZIndexChanged', [
 { id: furnitureId, zIndex: furniture[furnitureId].zIndex ,
 { id: targetFurniture.id, zIndex: targetFurniture.zIndex 
@@ -1047,7 +1019,7 @@ io.emit('furnitureZIndexChanged', [
 socket.on('deleteFurniture', (furnitureId) => {
 if (furniture[furnitureId]) {
 delete furniture[furnitureId];
-// Save to persistent storage
+// save to persistent storage
 addToBatch('furniture', null);
 io.emit('furnitureDeleted', { id: furnitureId );
 
@@ -1055,20 +1027,20 @@ io.emit('furnitureDeleted', { id: furnitureId );
 
 socket.on('cursorFreeze', ({ isFrozen, x, y, sleepingOnBed ) => {
 if (cursors[socket.id]) {
-// Update the cursor's frozen state
+// update the cursor's frozen state
 cursors[socket.id].isFrozen = isFrozen;
 cursors[socket.id].sleepingOnBed = sleepingOnBed;
 
 if (isFrozen) {
-// Store the frozen position when freezing
+// store the frozen position when freezing
 cursors[socket.id].frozenPosition = { x, y ;
  else {
-// Remove frozen position when unfreezing
+// remove frozen position when unfreezing
 delete cursors[socket.id].frozenPosition;
 delete cursors[socket.id].sleepingOnBed;
 
 
-// Broadcast to all clients that this cursor is frozen/unfrozen
+// broadcast to all clients that this cursor is frozen/unfrozen
 io.emit('cursorFrozen', { 
 id: socket.id, 
 isFrozen,
@@ -1076,18 +1048,18 @@ frozenPosition: cursors[socket.id].frozenPosition,
 sleepingOnBed: cursors[socket.id].sleepingOnBed
 );
 
-// Update the cursors state for all clients
+// update the cursors state for all clients
 io.emit('cursors', getValidCursors());
 
 );
 
 socket.on('changeCursor', ({ type ) => {
 if (cursors[socket.id]) {
-// Update the cursor type
+// update the cursor type
 cursors[socket.id].cursorType = type;
-// Broadcast the cursor change to all clients
+// broadcast the cursor change to all clients
 io.emit('cursorChanged', { id: socket.id, type );
-// Update the cursors state for all clients
+// update the cursors state for all clients
 io.emit('cursors', getValidCursors());
 
 );
@@ -1095,32 +1067,32 @@ io.emit('cursors', getValidCursors());
 socket.on('gachaponWin', ({ winnerId, winnerName ) => {
 console.log('Server received gachaponWin (hat):', { winnerId, winnerName );
 
-// Get device ID for the winner
+// get device ID for the winner
 const deviceId = socketToDeviceMap[winnerId] || winnerId;
 
-// Update user stats with gachapon win using device ID
+// update user stats with gachapon win using device ID
 if (userStats[deviceId]) {
 userStats[deviceId].gachaponWins = (userStats[deviceId].gachaponWins || 0) + 1;
 userStats[deviceId].lastSeen = Date.now();
 addToBatch('userStats', { socketId: deviceId, stats: userStats[deviceId] );
 
 
-// Unlock random gacha hat for winner first
+// unlock random gacha hat for winner first
 const unlockedHat = unlockRandomGachaHat(deviceId);
 
-// Unlock the same hat for ALL connected users
+// unlock the same hat for ALL connected users
 if (unlockedHat) {
 unlockHatForAllUsers(unlockedHat, winnerName);
 
 
-// Update jackpot record using device ID
+// update jackpot record using device ID
 updateJackpotRecord(winnerId, winnerName);
 
-// Store the last winner in the jackpot record
+// store the last winner in the jackpot record
 jackpotRecord.lastWinner = winnerName;
 addToBatch('jackpotRecord', jackpotRecord);
 
-// Broadcast to ALL currently online clients
+// broadcast to all currently online clients
 io.emit('gachaponWin', { winnerId, winnerName, unlockedItem: unlockedHat, type: 'hat' );
 io.emit('showDialogBanner', { winnerName, unlockedItem: unlockedHat, type: 'hat' );
 console.log('Server broadcasted gachaponWin (hat) to all clients');
@@ -1129,41 +1101,41 @@ console.log('Server broadcasted gachaponWin (hat) to all clients');
 socket.on('furnitureGachaponWin', ({ winnerId, winnerName ) => {
 console.log('Server received furnitureGachaponWin:', { winnerId, winnerName );
 
-// Get device ID for the winner
+// get device ID for the winner
 const deviceId = socketToDeviceMap[winnerId] || winnerId;
 
-// Update user stats with furniture gachapon win using device ID
+// update user stats with furniture gachapon win using device ID
 if (userStats[deviceId]) {
 userStats[deviceId].furnitureGachaponWins = (userStats[deviceId].furnitureGachaponWins || 0) + 1;
 userStats[deviceId].lastSeen = Date.now();
 addToBatch('userStats', { socketId: deviceId, stats: userStats[deviceId] );
 
 
-// Unlock random gacha furniture for winner first
+// unlock random gacha furniture for winner first
 const unlockedFurniture = unlockRandomGachaFurniture(deviceId);
 
-// Unlock the same furniture for ALL connected users
+// unlock the same furniture for ALL connected users
 if (unlockedFurniture) {
 unlockFurnitureForAllUsers(unlockedFurniture, winnerName);
 
 
-// Broadcast to ALL currently online clients
+// broadcast to all currently online clients
 io.emit('furnitureGachaponWin', { winnerId, winnerName, unlockedItem: unlockedFurniture, type: 'furniture' );
 io.emit('showDialogBanner', { winnerName, unlockedItem: unlockedFurniture, type: 'furniture' );
 console.log('Server broadcasted furnitureGachaponWin to all clients');
 );
 
 socket.on('gachaponAnimation', ({ userId, hasEnoughTime ) => {
-// Broadcast the animation event to all clients except the sender
+// broadcast the animation event to all clients except the sender
 socket.broadcast.emit('gachaponAnimation', { userId, hasEnoughTime );
 );
 
 socket.on('furnitureGachaponAnimation', ({ userId, hasEnoughTime ) => {
-// Broadcast the furniture animation event to all clients except the sender
+// broadcast the furniture animation event to all clients except the sender
 socket.broadcast.emit('furnitureGachaponAnimation', { userId, hasEnoughTime );
 );
 
-// Server-side user stats handlers (simplified)
+// server-side user stats handlers
 socket.on('requestUserStats', () => {
 const userStats = getUserStatsFromServer(socket.id);
 socket.emit('userStats', userStats);
@@ -1192,21 +1164,16 @@ const result = recordFurniturePlacementOnServer(socket.id, type);
 callback(result);
 );
 
-// Admin function to trigger manual cleanup
+// admin function for manual cleanup
 socket.on('triggerCleanup', () => {
 console.log(`🧹 Manual cleanup triggered by socket ${socket.id`);
 manualCleanup();
 socket.emit('cleanupCompleted', { message: 'Manual cleanup completed' );
 );
 
-// Furniture preset handlers
-// Removed server-side furniture selection handlers - this is now client-side only
-
 socket.on('furnitureSelected', (data) => {
-// This event is handled by the client-side FurniturePresetPanel
+// handled by the client-side FurniturePresetPanel
 );
-
-// Removed server-side furniture selection handlers - this is now client-side only
 
 socket.on('saveFurniturePreset', ({ slotIndex, preset ) => {
 
@@ -1214,17 +1181,17 @@ const deviceId = socketToDeviceMap[socket.id] || socket.id;
 const user = userStats[deviceId];
 
 if (user) {
-// Initialize furniturePresets array if it doesn't exist
+// initialize furniturePresets array if it doesn't exist
 if (!user.furniturePresets) {
 user.furniturePresets = [];
 
 
-// Update or add preset to the specified slot
+// update or add preset to the specified slot - only 1 for now
 preset.id = `slot_${slotIndex_${Date.now()`;
 user.furniturePresets[slotIndex] = preset;
 user.lastSeen = Date.now();
 
-// Add to batch for persistence
+// add to batch for persistence
 addToBatch('userStats', { socketId: deviceId, stats: user );
 
 console.log(`💾 Saved furniture preset for ${user.username in slot ${slotIndex + 1`);
@@ -1243,10 +1210,9 @@ const user = userStats[deviceId];
 
 if (user && user.furniturePresets) {
 delete user.furniturePresets[slotIndex];
-// Note: Daily preset usage is not reset when preset is deleted - it resets daily
+// Note: daily preset usage is not reset when preset is deleted - it resets daily
 user.lastSeen = Date.now();
-
-// Add to batch for persistence
+// add to batch for persistence
 addToBatch('userStats', { socketId: deviceId, stats: user );
 
 console.log(`🗑️ Deleted furniture preset for ${user.username from slot ${slotIndex + 1 and reset usage count`);
@@ -1280,13 +1246,13 @@ return;
 
 console.log(`🏠 Placing furniture preset at (${x, ${y) for ${user.username (${dailyPresetUsage + 1/${PRESET_USAGE_LIMIT)`);
 
-// Place each furniture item from the preset
+// place each furniture item from the preset
 preset.furniture.forEach((item, index) => {
 const furnitureId = `preset_${socket.id_${Date.now()_${Math.random().toString(36).substr(2, 9)_${index`;
 const adjustedX = x + item.x;
 const adjustedY = y + item.y;
 
-// Add furniture to the global furniture state
+// add furniture to the global furniture state
 furniture[furnitureId] = {
 id: furnitureId,
 type: item.type,
@@ -1299,24 +1265,24 @@ placedBy: socketToDeviceMap[socket.id] || socket.id,
 timestamp: Date.now()
 ;
 
-// Record furniture placement for the user
+// record furniture placement for the user
 recordFurniturePlacementOnServer(socket.id, item.type);
 );
 
-// Increment daily preset usage count
+// increment daily preset usage count
 if (!user.dailyPresetUsage) {
 user.dailyPresetUsage = {;
 
 user.dailyPresetUsage[today] = dailyPresetUsage + 1;
 user.lastSeen = Date.now();
 
-// Save to persistent storage
+// save to persistent storage
 addToBatch('userStats', { socketId: deviceId, stats: user );
 
-// Broadcast the new furniture to all clients
+// broadcast the new furniture to all clients
 io.emit('furniture', furniture);
 
-// Notify the user of successful placement
+// notify the user of successful placement
 socket.emit('presetPlaced', { 
 message: `Preset placed! (${user.dailyPresetUsage[today]/${PRESET_USAGE_LIMIT uses)`,
 currentCount: user.dailyPresetUsage[today],
@@ -1331,27 +1297,27 @@ socket.emit('error', { message: 'Failed to place furniture preset' );
 );
 
 socket.on('disconnect', () => {
-// Save any pending changes immediately when user disconnects
+// save any pending changes immediately when user disconnects
 saveBatch();
 
-// Clean up user stats
+// clean up user stats
 cleanupOldUserStats();
 
-// Remove cursor
+// remove cursor
 delete cursors[socket.id];
 delete lastMoveTimestamps[socket.id];
 
-// Notify other clients
+// notify other clients
 io.emit('clientDisconnected', socket.id);
 );
 
-// Handle device ID setup immediately on connection
+// handle device ID setup immediately on connection
 socket.on('setDeviceId', ({ deviceId ) => {
 if (deviceId) {
 deviceToSocketMap[deviceId] = socket.id;
 socketToDeviceMap[socket.id] = deviceId;
 
-// Save the mapping to persistent storage
+// save the mapping to persistent storage
 saveSocketDeviceMapping();
 
 console.log('Device ID mapped:', deviceId, '->', socket.id);
@@ -1373,7 +1339,7 @@ cursor.stillTime = diffSeconds;
 updated = true;
 
 
-// Update AFK time for this user
+// update AFK time for this user
 updateUserAFKTime(id);
 
 );
@@ -1383,7 +1349,7 @@ io.emit('cursors', getValidCursors());
 
 , 1000);
 
-// Graceful shutdown handlers
+// shutdown handlers
 process.on('SIGINT', () => {
 console.log('Shutting down server...');
 stopBatchTimer();
@@ -1401,12 +1367,12 @@ server.listen(PORT, '0.0.0.0', () => {
 console.log(`Server running on port ${PORT`);
 );
 
-// Get user stats from server storage
+// get user stats from server storage
 function getUserStatsFromServer(socketId) {
 const deviceId = socketToDeviceMap[socketId] || socketId;
 const user = userStats[deviceId];
 if (!user) {
-// Initialize new user stats
+// initialize new user stats
 const newUser = {
 username: cursors[socketId]?.name || SERVER_CONFIG.ANONYMOUS_NAME,
 totalAFKTime: 0,
@@ -1419,13 +1385,13 @@ sessions: 1,
 dailyFurniturePlacements: {,
 unlockedGachaHats: [],
 unlockedGachaFurniture: [],
-furniturePresets: [], // Array of furniture presets
-dailyPresetUsage: { // Daily preset usage tracking
+furniturePresets: [], // array of furniture presets
+dailyPresetUsage: { // daily preset usage tracking
 ;
 userStats[deviceId] = newUser;
 return newUser;
 
-// Ensure the new fields exist for existing users
+// new fields for existing users
 if (!user.unlockedGachaHats) {
 user.unlockedGachaHats = [];
 
@@ -1435,7 +1401,7 @@ user.unlockedGachaFurniture = [];
 return user;
 
 
-// Deduct AFK balance on server (validated)
+// deduct AFK balance on server 
 function deductAFKBalanceOnServer(socketId, seconds) {
 
 const deviceId = socketToDeviceMap[socketId] || socketId;
@@ -1445,7 +1411,7 @@ if (user && user.afkBalance >= seconds) {
 user.afkBalance -= seconds;
 user.lastSeen = Date.now();
 
-// Add to batch for persistence
+// add to batch for persistence
 addToBatch('userStats', { socketId: deviceId, stats: user );
 
 console.log(`Deducted AFK balance for ${user.username: -${secondss (Remaining: ${user.afkBalances)`);
@@ -1463,7 +1429,7 @@ return { success: false, error: 'Server error' ;
 
 
 
-// Add AFK time on server (for testing)
+// add AFK time on server (for testing)
 function addAFKTimeOnServer(socketId, seconds) {
 
 const deviceId = socketToDeviceMap[socketId] || socketId;
@@ -1474,7 +1440,7 @@ user.totalAFKTime += seconds;
 user.afkBalance += seconds;
 user.lastSeen = Date.now();
 
-// Add to batch for persistence
+// add to batch for persistence
 addToBatch('userStats', { socketId: deviceId, stats: user );
 
 console.log(`Added AFK time for ${user.username: +${secondss (Total: ${user.totalAFKTimes, Balance: ${user.afkBalances)`);
@@ -1489,9 +1455,9 @@ return { success: false, error: 'Server error' ;
 
 
 
-// Clean up user stats when user disconnects
+// clean up user stats when user disconnects
 function cleanupUserStats(socketId) {
-// Only remove from memory if user is not in cursors (completely disconnected)
+// only remove from memory if user fully disconnected
 if (!cursors[socketId]) {
 const deviceId = socketToDeviceMap[socketId];
 if (deviceId) {
@@ -1500,16 +1466,13 @@ delete deviceToSocketMap[deviceId];
 delete userAFKStartTimes[deviceId];
 delete lastAFKUpdateTimes[deviceId];
 
-// Save the updated mapping to persistent storage
 saveSocketDeviceMapping();
 
-// Don't delete userStats - keep them persistent by device ID
 
 
 
-// Record furniture placement on server (validated)
+// record furniture placement on server
 function recordFurniturePlacementOnServer(socketId, type) {
-// Validate input
 if (typeof type !== 'string' || !type.trim()) {
 return { success: false, error: 'Invalid furniture type' ;
 
@@ -1519,18 +1482,18 @@ const user = getUserStatsFromServer(socketId);
 const today = new Date().toISOString().split('T')[0];
 const dailyPlacements = user.dailyFurniturePlacements[today] || 0;
 
-// Check daily limit
+// check daily limit
 if (dailyPlacements >= DAILY_FURNITURE_LIMIT) {
 return { success: false, error: 'Daily furniture placement limit reached' ;
 
 
-// Update stats
+// ipdate stats
 user.dailyFurniturePlacements[today] = dailyPlacements + 1;
 user.furniturePlaced += 1;
 user.furnitureByType[type] = (user.furnitureByType[type] || 0) + 1;
 user.lastSeen = Date.now();
 
-// Save to persistent storage
+// save to persistent storage
 addToBatch('userStats', { socketId: deviceId, stats: user );
 
 return { success: true ;
@@ -1541,7 +1504,7 @@ async function loadUserStats() {
 const users = await User.find({);
 userStats = {;
 for (const user of users) {
-// Helper function to safely convert MongoDB Map to regular object
+// helper function to safely convert MongoDB Map to regular object
 const convertMapToObject = (mapField) => {
 if (!mapField) return {;
 if (mapField instanceof Map) {
@@ -1585,7 +1548,7 @@ console.log('Starting with fresh user stats');
 async function saveUserStats() {
 
 for (const [deviceId, stats] of Object.entries(userStats)) {
-// Helper function to safely convert regular object to MongoDB Map
+// helper function to safely convert regular object to MongoDB Map
 const convertObjectToMap = (obj) => {
 if (!obj || typeof obj !== 'object') return new Map();
 const map = new Map();
@@ -1627,11 +1590,11 @@ console.error('Error saving user stats data to MongoDB:', error);
 
 
 
-// Load user stats on startup
+// load user stats on startup
 loadUserStats();
 
-// Save user stats periodically
-setInterval(saveUserStats, 60000); // Save every minute
+// save user stats periodically
+setInterval(saveUserStats, 60000); // save every minute
 
 async function loadAllTimeRecord() {
 
@@ -1665,10 +1628,10 @@ console.error('Error saving all-time record to MongoDB:', error);
 
 
 function updateAllTimeRecord(socketId, username, stillTime) {
-// Get device ID for this socket, fallback to socket ID if no device ID
+// get device ID for this socket, fallback to socket ID if no device ID
 const deviceId = socketToDeviceMap[socketId] || socketId;
 
-// Get user's total AFK time instead of current session stillTime
+// get user's total AFK time instead of current session stillTime
 const userTotalAFKTime = userStats[deviceId]?.totalAFKTime || 0;
 
 if (userTotalAFKTime > allTimeRecord.time) {
@@ -1676,10 +1639,10 @@ allTimeRecord.name = username;
 allTimeRecord.time = userTotalAFKTime;
 allTimeRecord.lastUpdated = Date.now();
 
-// Add to batch instead of immediate save
+// add to batch instead of immediate save
 addToBatch('allTimeRecord', allTimeRecord);
 
-// Broadcast to all clients
+// broadcast to all clients
 io.emit('allTimeRecordUpdated', allTimeRecord);
 
 console.log('New all-time record set by', username, 'with', userTotalAFKTime, 'seconds (total AFK time)');
@@ -1724,19 +1687,19 @@ console.error('Error saving jackpot record to MongoDB:', error);
 
 
 function updateJackpotRecord(socketId, username) {
-// Get device ID for this socket, fallback to socket ID if no device ID
+// get device ID for this socket, fallback to socket ID if no device ID
 const deviceId = socketToDeviceMap[socketId] || socketId;
 
-// Get current user wins (the win has already been recorded)
+// get current user wins (the win has already been recorded)
 const currentUserWins = userStats[deviceId]?.gachaponWins || 0;
 
-// Check if this device already has the record
+// check if this device already has the record
 if (jackpotRecord.deviceId === deviceId) {
-// Update existing record
+// update existing record
 jackpotRecord.wins = currentUserWins;
-jackpotRecord.name = username; // Update username in case it changed
+jackpotRecord.name = username; // update username in case it changed
  else {
-// Check if this device has more wins than current record
+// check if this device has more wins than current record
 if (currentUserWins > jackpotRecord.wins) {
 jackpotRecord.deviceId = deviceId;
 jackpotRecord.name = username;
@@ -1746,10 +1709,10 @@ jackpotRecord.wins = currentUserWins;
 
 jackpotRecord.lastUpdated = Date.now();
 
-// Add to batch instead of immediate save
+// add to batch instead of immediate save
 addToBatch('jackpotRecord', jackpotRecord);
 
-// Broadcast to all clients
+// broadcast to all clients
 io.emit('jackpotRecordUpdated', jackpotRecord);
 
 console.log('Jackpot record updated:', jackpotRecord.name, 'now has', jackpotRecord.wins, 'wins');
@@ -1757,7 +1720,7 @@ return true;
 
 
 function recalculateJackpotRecord() {
-// Find the device with the most gachapon wins
+// find the device with the most gachapon wins
 let maxWins = 0;
 let topDevice = null;
 let topUsername = '';
@@ -1777,10 +1740,10 @@ jackpotRecord.name = topUsername;
 jackpotRecord.wins = maxWins;
 jackpotRecord.lastUpdated = Date.now();
 
-// Save to batch for persistence
+// save to batch for persistence
 addToBatch('jackpotRecord', jackpotRecord);
 
-// Broadcast to all clients
+// broadcast to all clients
 io.emit('jackpotRecordUpdated', jackpotRecord);
 
 console.log('Recalculated jackpot record:', topUsername, 'with', maxWins, 'wins');

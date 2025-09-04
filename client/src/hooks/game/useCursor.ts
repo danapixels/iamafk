@@ -7,18 +7,18 @@ isCursorFrozen: boolean,
 setIsCursorFrozen: (frozen: boolean) => void,
 setFrozenCursorPosition: (pos: { x: number; y: number  | null) => void
 ) => {
-// Add click handler to unfreeze cursor
+// adds click handler to unfreeze cursor
 useEffect(() => {
 const handleClick = (e: MouseEvent) => {
-// Don't unfreeze if clicking on furniture controls
+// doesn't unfreeze if clicking on furniture controls
 const target = e.target as HTMLElement;
 if (target.closest('[data-furniture-control="true"]')) {
 return;
 
 
-// Unfreeze if clicking anywhere in the app (including panel)
+// unfreeze if clicking anywhere in the app (including panel)
 if (isCursorFrozen && socketRef.current) {
-// Unfreeze the cursor
+// unfreeze the cursor
 setFrozenCursorPosition(null);
 setIsCursorFrozen(false);
 socketRef.current.emit('cursorFreeze', { 

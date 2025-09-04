@@ -76,11 +76,11 @@ const lastSentPositionRef = useRef<{ x: number; y: number  | null>(null);
 const lastSentCursorRef = useRef<{ x: number; y: number  | null>(null);
 const lastSentViewportRef = useRef<{ x: number; y: number  | null>(null);
 const lastEchoAnimationTimeRef = useRef(0);
-const ECHO_ANIMATION_COOLDOWN_MS = 500; // 500ms cooldown between echo animations (reduced for better responsiveness)
-const DRAG_THRESHOLD_PX = 5; // Minimum pixels to move before starting drag
+const ECHO_ANIMATION_COOLDOWN_MS = 500; // 500ms cooldown between animations
+const DRAG_THRESHOLD_PX = 5; // minimum pixels to move before starting drag
 const pendingFurnitureId = useRef<string | null>(null);
 
-// Mouse state ref for optimized handling
+// mouse state ref for optimized handling
 const mouseStateRef = useRef({
 isDraggingViewport: false,
 isDraggingFurniture: false,
@@ -89,16 +89,16 @@ lastY: 0,
 lastEvent: null as MouseEvent | null,
 );
 
-// Throttle emits for furniture dragging
+// throttle emits for furniture dragging
 let lastEmitTime = 0;
-const DRAG_THROTTLE_MS = 16; // Reduced from 50ms to 16ms (60fps) for smoother dragging
+const DRAG_THROTTLE_MS = 16;
 
-// Helper function to convert screen coordinates to canvas coordinates
+// helper function to convert screen coordinates to canvas coordinates
 const convertScreenToCanvas = (screenX: number, screenY: number) => {
 return screenToCanvas(screenX, screenY, viewportOffset);
 ;
 
-// Helper function to check if furniture is within selection box
+// helper function to check if furniture is within selection box
 const isFurnitureInSelectionBox = (furnitureX: number, furnitureY: number) => {
 if (!selectionBox || !selectionBox.isActive) return false;
 
@@ -110,18 +110,18 @@ const bottom = Math.max(selectionBox.startY, selectionBox.endY);
 return furnitureX >= left && furnitureX <= right && furnitureY >= top && furnitureY <= bottom;
 ;
 
-// Helper function to handle AFK detection
+// helper function to handle AFK detection
 const handleAFKDetection = () => {
 if (hasConnected && afkStartTimeRef.current) {
 const myCursor = cursors[socketRef.current?.id || ''];
 if (myCursor) {
-// Only update AFK time if user was actually AFK (stillTime >= 30)
+// updates AFK time if user was AFK (stillTime >= 30)
 if (myCursor.stillTime >= 30) {
-// Calculate only the incremental time since last update
+// calculates only the incremental time since last update
 const now = Date.now();
 const incrementalTime = Math.floor((now - afkStartTimeRef.current) / 1000);
 if (incrementalTime > 0) {
-// Use context API for AFK time updates
+// uses context API for AFK time updates
 
 
 afkStartTimeRef.current = null;
@@ -129,40 +129,40 @@ afkStartTimeRef.current = null;
 
 ;
 
-// Main mouse interaction handler
+// main mouse interaction handler
 useEffect(() => {
 let lastFrame = 0;
 let isPageVisible = !document.hidden;
 let lastMouseUpdate = 0;
-const MOUSE_THROTTLE_MS = 16; // 60fps when visible, but can be increased when hidden
+const MOUSE_THROTTLE_MS = 16; // 60fps when visible
 
-// Animation loop for smooth updates
+// animation loop for smooth updates
 function animationLoop() {
-// Only run animation loop if page is visible
+// runs animation loop if page is visible
 if (!isPageVisible) {
 lastFrame = requestAnimationFrame(animationLoop);
 return;
 
 
 if (mouseStateRef.current.isDraggingFurniture && draggedFurnitureId.current && mouseStateRef.current.lastEvent) {
-// Get the cursor's canvas coordinates
+// gets the cursor's canvas coordinates
 const canvasCoords = convertScreenToCanvas(mouseStateRef.current.lastX, mouseStateRef.current.lastY);
 const clampedCoords = clampToCanvas(canvasCoords.x, canvasCoords.y);
 
-// Check if we're dragging temporary furniture
+// checks dragging temporary furniture
 const isDraggingTempFurniture = tempFurniture?.some(item => item.id === draggedFurnitureId.current);
 
 if (isDraggingTempFurniture && setTempFurniture && tempFurnitureDragStart.current) {
-// Find the dragged item to get its preset ID
+// finds the dragged item to get its preset ID
 const draggedItem = tempFurniture?.find(item => item.id === draggedFurnitureId.current);
 if (draggedItem && draggedItem.presetId) {
-// Calculate the offset from the original position when drag started
+// calculates the offset from the original position when drag started
 const originalPos = tempFurnitureDragStart.current[draggedItem.id];
 if (originalPos) {
 const offsetX = clampedCoords.x - originalPos.x;
 const offsetY = clampedCoords.y - originalPos.y;
 
-// Move all items in the same preset group by the same offset from their original positions
+// moves all items in the same preset group by the same offset from their original positions
 setTempFurniture(prev => prev.map(item => 
 item.presetId === draggedItem.presetId
 ? { 
@@ -175,8 +175,8 @@ y: tempFurnitureDragStart.current![item.id].y + offsetY
 
 
  else {
-// Update regular furniture position
-// Only update if position changed
+// updates regular furniture position
+// only updates if position changed
 if (
 !lastSentPositionRef.current ||
 lastSentPositionRef.current.x !== clampedCoords.x ||
@@ -191,7 +191,7 @@ y: clampedCoords.y
 
 ));
 
-// Throttled emit for furniture position updates
+// throttled emit for furniture position updates
 if (socketRef.current) {
 const now = Date.now();
 if (now - lastEmitTime > DRAG_THROTTLE_MS) {
@@ -213,7 +213,7 @@ if (mouseStateRef.current.isDraggingViewport && viewportDragStart.current && mou
 const dx = mouseStateRef.current.lastX - viewportDragStart.current.x;
 const dy = mouseStateRef.current.lastY - viewportDragStart.current.y;
 
-// Only update if mouse actually moved
+// updates if mouse actually moved
 if (dx !== 0 || dy !== 0) {
 setViewportOffset(prev => {
 const newX = prev.x - dx;
@@ -223,7 +223,7 @@ const maxOffsetY = Math.max(0, CANVAS_SIZE - window.innerHeight);
 const clampedX = Math.max(0, Math.min(maxOffsetX, newX));
 const clampedY = Math.max(0, Math.min(maxOffsetY, newY));
 
-// Only update if viewport position actually changed
+// updates if viewport position actually changed
 if (
 !lastSentViewportRef.current ||
 lastSentViewportRef.current.x !== clampedX ||
@@ -242,12 +242,12 @@ if (socketRef.current?.connected && !isCursorFrozen && hasConnected && mouseStat
 const canvasCoords = convertScreenToCanvas(mouseStateRef.current.lastX, mouseStateRef.current.lastY);
 const clampedCoords = clampToCanvas(canvasCoords.x, canvasCoords.y);
 
-// Throttle cursor updates based on page visibility
+// throttles cursor updates based on page visibility
 const now = Date.now();
-const throttleMs = isPageVisible ? MOUSE_THROTTLE_MS : 100; // Slower updates when hidden
+const throttleMs = isPageVisible ? MOUSE_THROTTLE_MS : 100; // slower updates when hidden
 
 if (now - lastMouseUpdate > throttleMs) {
-// Only emit if cursor position changed
+// emits if cursor position changed
 if (
 !lastSentCursorRef.current ||
 lastSentCursorRef.current.x !== clampedCoords.x ||
@@ -267,22 +267,22 @@ lastMouseUpdate = now;
 lastFrame = requestAnimationFrame(animationLoop);
 
 
-// Handle page visibility changes
+// handles page visibility changes
 const handleVisibilityChange = () => {
 isPageVisible = !document.hidden;
-// Reset mouse update timer when visibility changes
+// resets mouse update timer when visibility changes
 lastMouseUpdate = 0;
 ;
 
 document.addEventListener('visibilitychange', handleVisibilityChange);
 
-// Mouse event handlers
+// mouse event handlers
 function onMouseMove(e: MouseEvent) {
 mouseStateRef.current.lastX = e.clientX;
 mouseStateRef.current.lastY = e.clientY;
 mouseStateRef.current.lastEvent = e;
 
-// Update selection box if active
+// updates selection box if active
 if (selectionBox && selectionBox.isActive) {
 const canvasCoords = convertScreenToCanvas(e.clientX, e.clientY);
 setSelectionBox(prev => prev ? {
@@ -291,7 +291,7 @@ endX: canvasCoords.x,
 endY: canvasCoords.y
  : null);
 
-// Update which furniture items are being selected during the selection process
+// updates which furniture items are being selected during selection
 if (setSelectedFurnitureDuringSelection) {
 const selectedItems = new Set<string>();
 Object.entries(furniture).forEach(([furnitureId, item]) => {
@@ -303,14 +303,14 @@ setSelectedFurnitureDuringSelection(selectedItems);
 
 
 
-// Check if we should start dragging furniture based on movement distance
+// checks dragging furniture based on movement distance
 if (pendingFurnitureId.current && dragStartPos.current && !mouseStateRef.current.isDraggingFurniture && !isFurnitureSelectionMode) {
 const dx = e.clientX - dragStartPos.current.x;
 const dy = e.clientY - dragStartPos.current.y;
 const distance = Math.sqrt(dx * dx + dy * dy);
 
 if (distance > DRAG_THRESHOLD_PX) {
-// Start dragging
+// starts dragging
 mouseStateRef.current.isDraggingFurniture = true;
 draggedFurnitureId.current = pendingFurnitureId.current;
 lastSentPositionRef.current = null;
@@ -321,7 +321,7 @@ lastSentPositionRef.current = null;
 function onMouseDown(e: MouseEvent) {
 const target = e.target as HTMLElement;
 
-// Check if clicking on furniture (regular or temporary)
+// checks clicking on furniture
 const furnitureElement = target.closest('[data-furniture-id]');
 if (furnitureElement) {
 const furnitureId = furnitureElement.getAttribute('data-furniture-id');
@@ -341,20 +341,18 @@ y: e.clientY
 );
 
 
-// Handle furniture selection mode - client-side only
+// handles furniture selection mode - client-side only
 if (isFurnitureSelectionMode) {
-// Selection is now handled by the FurniturePresetPanel component
-// which listens for clicks on furniture elements
-return; // Don't do normal furniture selection or dragging
+return;
 
 
-// Handle temporary furniture dragging
+// handles temporary furniture dragging
 if (isTempFurniture) {
-// Store the furniture ID and start position for potential dragging
+// stores the furniture ID and start position for potential dragging
 dragStartPos.current = { x: e.clientX, y: e.clientY ;
 pendingFurnitureId.current = furnitureId;
 
-// Store original positions of all items in the same preset group
+// stores original positions of all items in the same preset group
 const draggedItem = tempFurniture?.find(item => item.id === furnitureId);
 if (draggedItem && draggedItem.presetId) {
 tempFurnitureDragStart.current = {;
@@ -367,16 +365,16 @@ tempFurnitureDragStart.current![item.id] = { x: item.x, y: item.y ;
 return;
 
 
-// Only handle normal furniture selection if NOT in selection mode
+// handles normal furniture selection if NOT in selection mode
 if (!isFurnitureSelectionMode) {
-// Immediately handle furniture selection
+// immediately handles furniture selection
 if (selectedFurnitureId === furnitureId) {
 setSelectedFurnitureId(null);
  else {
 setSelectedFurnitureId(furnitureId);
 
 
-// Store the furniture ID and start position for potential dragging
+// stores the furniture ID and start position for potential dragging
 dragStartPos.current = { x: e.clientX, y: e.clientY ;
 pendingFurnitureId.current = furnitureId;
 
@@ -393,7 +391,7 @@ dragStartPos.current = null;
 pendingFurnitureId.current = null;
 
 
-// Handle selection box creation in selection mode
+// handles selection box creation in selection mode
 if (e.button === 0 && isFurnitureSelectionMode && (target.id === 'app-root' || target.classList.contains('canvas-container'))) {
 const canvasCoords = convertScreenToCanvas(e.clientX, e.clientY);
 setSelectionBox({
@@ -409,14 +407,14 @@ return;
 if (e.button === 0 && (target.id === 'app-root' || target.classList.contains('canvas-container')) && !isFurnitureSelectionMode) {
 mouseStateRef.current.isDraggingViewport = true;
 viewportDragStart.current = { x: e.clientX, y: e.clientY ;
-lastSentCursorRef.current = null; // Reset to ensure first cursor update happens
+lastSentCursorRef.current = null; // resets to ensure first cursor update happens
 
 
 
 function onMouseUp() {
-// Handle selection box completion
+// handles selection box completion
 if (selectionBox && selectionBox.isActive && isFurnitureSelectionMode) {
-// Select all furniture within the selection box
+// selects all furniture within the selection box
 const selectedItems: Array<{ id: string; type: string; x: number; y: number; zIndex?: number; isFlipped?: boolean; isOn?: boolean > = [];
 Object.entries(furniture).forEach(([furnitureId, item]) => {
 if (isFurnitureInSelectionBox(item.x, item.y)) {
@@ -432,25 +430,23 @@ isOn: item.isOn
 
 );
 
-// Update the selected furniture state in the FurniturePresetPanel
+// updates the selected furniture state in the FurniturePresetPanel
 if (selectedItems.length > 0) {
-// We need to pass this data to the FurniturePresetPanel
-// For now, we'll use a custom event to communicate
 const event = new CustomEvent('furnitureSelectionBoxComplete', {
 detail: { selectedItems 
 );
 window.dispatchEvent(event);
 
 
-// Clear the selection box
+// clears the selection box
 setSelectionBox(null);
-// Don't clear the selected furniture during selection - it should persist until preset is saved
+// doesn't clear the selected furniture during selection - persists until preset saved
 
 
 if (mouseStateRef.current.isDraggingViewport) {
 mouseStateRef.current.isDraggingViewport = false;
 viewportDragStart.current = null;
-lastSentCursorRef.current = null; // Reset when viewport dragging ends
+lastSentCursorRef.current = null; // resets when viewport dragging ends
 
 if (mouseStateRef.current.isDraggingFurniture) {
 mouseStateRef.current.isDraggingFurniture = false;
@@ -459,7 +455,7 @@ dragStartPos.current = null;
 lastSentPositionRef.current = null;
 tempFurnitureDragStart.current = null;
 
-// Clear pending furniture drag
+// clears pending furniture drag
 pendingFurnitureId.current = null;
 dragStartPos.current = null;
 
@@ -481,7 +477,7 @@ if (
 (clickEnabledTimeRef.current !== null && now < clickEnabledTimeRef.current) ||
 mouseStateRef.current.isDraggingViewport ||
 isControlButton ||
-isFurnitureSelectionMode // Don't spawn circles when in selection mode
+isFurnitureSelectionMode // stops circle spawning when in selection mode
 ) {
 return;
 
@@ -489,7 +485,7 @@ return;
 socketRef.current.emit('resetStillTime');
 handleAFKDetection();
 
-// Check echo animation cooldown to reduce visual lag
+// checks click animation cooldown to reduce visual lag
 if (now - lastEchoAnimationTimeRef.current >= ECHO_ANIMATION_COOLDOWN_MS) {
 const canvasCoords = convertScreenToCanvas(e.clientX, e.clientY);
 const clampedCoords = clampToCanvas(canvasCoords.x, canvasCoords.y);
@@ -501,7 +497,7 @@ y: clampedCoords.y,
 id: circleId,
 );
 
-// Update last echo animation time
+// updates last click animation time
 lastEchoAnimationTimeRef.current = now;
 
 
@@ -522,7 +518,7 @@ document.removeEventListener('visibilitychange', handleVisibilityChange);
 ;
 , [furniture, isCursorFrozen, hasConnected, viewportOffset, socketRef, cursors, username, setFurniture, setSelectedFurnitureId, selectedFurnitureId, setIsCursorFrozen, setFrozenCursorPosition, setViewportOffset, recordFurniturePlacement, afkStartTimeRef, isFurnitureSelectionMode, selectionBox]);
 
-// Double-click handler
+// double-click handler
 useEffect(() => {
 const onDblClick = (e: MouseEvent) => {
 const target = e.target as HTMLElement;
@@ -533,12 +529,12 @@ if (furnitureId) {
 e.preventDefault();
 e.stopPropagation();
 
-// Cancel any pending furniture drag
+// cancels any pending furniture drag
 pendingFurnitureId.current = null;
 dragStartPos.current = null;
 
 const item = furniture[furnitureId];
-// Check for furniture that can freeze the cursor
+// checks for furniture that can freeze the cursor
 if (item && (item.type === 'bed' || item.type === 'chair' || item.type === 'toilet')) {
 setSelectedFurnitureId(null);
 const canvasCoords = convertScreenToCanvas(e.clientX, e.clientY);
@@ -568,9 +564,9 @@ setIsCursorFrozen(!isCursorFrozen);
 return;
 
 
-// Check for furniture that can be toggled (computer, tv, washingmachine)
+// checks for furniture that can be toggled (computer, tv, washingmachine)
 if (item && (item.type === 'computer' || item.type === 'tv' || item.type === 'washingmachine')) {
-// Let the furniture's own double-click handler handle the toggle
+// lets the furniture's own double-click handler handle the toggle
 return;
 
 
@@ -596,7 +592,7 @@ const now = Date.now();
 
 
 
-// Update last double-click time
+// updates last double-click time
 lastDoubleClickTimeRef.current = now;
 
 socketRef.current.emit('resetStillTime');

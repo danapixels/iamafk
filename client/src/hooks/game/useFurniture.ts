@@ -19,7 +19,7 @@ hasConnected: boolean,
 draggedFurnitureId?: React.MutableRefObject<string | null>,
 mouseStateRef?: React.MutableRefObject<any>
 ) => {
-// Socket listeners for furniture events
+// socket listeners for furniture events
 useEffect(() => {
 if (!socketRef.current || !hasConnected) {
 return;
@@ -28,7 +28,7 @@ return;
 const socket = socketRef.current;
 
 socket.on('furniture', (furnitureData: { [key: string]: Furniture ) => {
-// Update the entire furniture state
+// updates the entire furniture state
 setFurniture(furnitureData);
 );
 
@@ -36,7 +36,7 @@ socket.on('furnitureSpawned', (data: any) => {
 if (data && data.id) {
 setFurniture(prev => ({ ...prev, [data.id]: data ));
 
-// Auto-select the furniture if this user spawned it
+// auto-selects the furniture if this user spawned it
 if (data.ownerId === socket.id) {
 setSelectedFurnitureId(data.id);
 
@@ -44,7 +44,7 @@ setSelectedFurnitureId(data.id);
 );
 
 socket.on('furnitureMoved', (data: any) => {
-// Ignore server updates for furniture currently being dragged by this client
+// ignores server updates for furniture currently being dragged by this client
 if (
 draggedFurnitureId &&
 mouseStateRef &&
@@ -73,14 +73,14 @@ const newFurniture = { ...prev ;
 delete newFurniture[data.id];
 return newFurniture;
 );
-// Clear selection if the deleted furniture was selected
+// clears selection if the deleted furniture was selected
 setSelectedFurnitureId(prev => prev === data.id ? null : prev);
 
 );
 
 socket.on('furnitureZIndexChanged', (data: { id: string, zIndex: number  | { id: string, zIndex: number []) => {
 if (Array.isArray(data)) {
-// Handle multiple z-index changes (for move up/down operations)
+// handles multiple z-index changes (for move up/down operations)
 setFurniture(prev => {
 const newFurniture = { ...prev ;
 data.forEach(change => {
@@ -94,7 +94,7 @@ zIndex: change.zIndex
 return newFurniture;
 );
  else {
-// Handle single z-index change
+// handles single z-index change
 setFurniture(prev => ({
 ...prev,
 [data.id]: {

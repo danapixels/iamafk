@@ -1,18 +1,21 @@
+/* container for the panel*/
 .furniture-preset-panel-container {
 position: fixed;
 right: 160px;
-top: 255px; /* Same right position as furniture panel */
+top: 255px;
 transform: none;
 pointer-events: none;
 animation: fadeInFromRight 0.5s ease-out;
 
 
+/* background image for the panel*/
 .furniture-preset-panel-background {
 width: auto;
 height: auto;
 pointer-events: none;
 
 
+/* content of the panel*/
 .furniture-preset-panel-content {
 position: absolute;
 top: 0;
@@ -23,12 +26,12 @@ display: flex;
 flex-direction: column;
 gap: 15px;
 padding: 20px;
-padding-top: 42px; /* 20px + 22px extra top padding */
+padding-top: 42px;
 box-sizing: border-box;
 pointer-events: all;
 
 
-/* Button Container */
+/* button container*/
 .preset-button-container {
 display: flex;
 flex-direction: column;
@@ -36,6 +39,7 @@ gap: 8px;
 align-items: center;
 
 
+/* button for the preset*/
 .preset-button {
 background: none;
 border: none;
@@ -50,22 +54,25 @@ align-items: center;
 height: 100%;
 
 
+/* hover effect for the preset button*/
 .preset-button:hover {
 transform: scale(1.05);
 
 
+/* disabled effect for the preset button*/
 .preset-button:disabled {
 cursor: not-allowed;
 opacity: 0.5;
 
 
+/* image for the preset button*/
 .preset-button img {
 width: auto;
 height: auto;
 pointer-events: none;
 
 
-/* Save Slots Container */
+/* save slots container*/
 .preset-slots-container {
 display: flex;
 flex-direction: column;
@@ -76,6 +83,7 @@ align-items: flex-start;
 transform: translateX(-4px);
 
 
+/* preset slot*/
 .preset-slot {
 background: #111111;
 border: none;
@@ -89,10 +97,12 @@ width: 105px;
 transition: background-color 0.2s ease;
 
 
+/* hover effect for the preset slot*/
 .preset-slot:hover {
 background: #222222;
 
 
+/* header for the preset slot*/
 .preset-slot-header {
 display: flex;
 justify-content: space-between;
@@ -100,6 +110,7 @@ align-items: center;
 height: 100%;
 
 
+/* name for the preset slot*/
 .preset-slot-name {
 font-family: 'Press Start 2P', monospace;
 font-size: 0.5em;
@@ -108,8 +119,6 @@ line-height: 1;
 display: flex;
 align-items: center;
 height: 100%;
-
-
 
 
 .preset-delete-button {
@@ -127,9 +136,7 @@ height: 100%;
 transform: scale(1.05);
 
 
-
-
-/* Canvas overlay for placing presets */
+/* canvas overlay for placing presets*/
 .canvas-overlay {
 position: fixed;
 top: 0;
@@ -142,22 +149,24 @@ z-index: 9999;
 pointer-events: all;
 
 
+/* hover effect for the canvas overlay*/
 .canvas-overlay:hover {
 background: rgba(0, 0, 0, 0.2);
 
 
-/* Selection mode indicator */
+/* selection mode indicator*/
 .preset-button.selecting {
 animation: pulse 1s infinite;
 
 
+/* pulse animation for the selection mode indicator*/
 @keyframes pulse {
 0% { transform: scale(1); 
 50% { transform: scale(1.05); 
 100% { transform: scale(1); 
 
 
-/* Selection mode overlay */
+/* selection mode overlay*/
 .selection-mode-indicator {
 position: fixed;
 top: 0;
@@ -172,7 +181,7 @@ justify-content: center;
 padding-top: 16px;
 
 
-/* Placement mode overlay */
+/* placement mode overlay*/
 .placement-mode-indicator {
 position: fixed;
 top: 0;
@@ -186,6 +195,7 @@ align-items: center;
 justify-content: center;
 
 
+/* content for the placement mode overlay*/
 .placement-mode-content {
 display: flex;
 flex-direction: column;
@@ -193,6 +203,7 @@ align-items: center;
 gap: 4px;
 
 
+/* text for the placement mode overlay*/
 .placement-mode-text {
 font-family: 'Press Start 2P', monospace;
 font-size: 0.8em;
@@ -200,20 +211,21 @@ color: white;
 font-weight: bold;
 
 
+/* hint for the placement mode overlay*/
 .placement-mode-hint {
 font-family: 'Press Start 2P', monospace;
 font-size: 0.5em;
 color: #e0e0e0;
 
 
+/* buttons for the placement mode overlay*/
 .placement-buttons {
 display: flex;
 gap: 8px;
 margin-top: 4px;
 
 
-
-
+/* content for the selection mode overlay*/
 .selection-mode-content {
 display: flex;
 flex-direction: column;
@@ -224,6 +236,7 @@ justify-content: flex-start;
 padding-top: 8px;
 
 
+/* text for the selection mode overlay*/
 .selection-mode-text {
 font-family: 'Press Start 2P', monospace;
 font-size: 0.8em;
@@ -231,13 +244,14 @@ color: white;
 font-weight: bold;
 
 
+/* hint for the selection mode overlay*/
 .selection-mode-hint {
 font-family: 'Press Start 2P', monospace;
 font-size: 0.5em;
 color: #e0e0e0;
 
 
-/* Selection save button */
+/* selection save button*/
 .selection-save-button {
 background: #111111 !important;
 border: 1px solid white !important;
@@ -253,14 +267,17 @@ width: fit-content !important;
 text-align: center !important;
 
 
+/* hover effect for the selection save button*/
 .selection-save-button:hover {
 background: #222222 !important;
 
 
+/* active effect for the selection save button*/
 .selection-save-button:active {
 transform: translateY(0) !important;
 
 
+/* fade in from right animation*/
 @keyframes fadeInFromRight {
 from {
 opacity: 0;

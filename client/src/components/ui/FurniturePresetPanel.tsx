@@ -45,7 +45,7 @@ const [selectedFurniture, setSelectedFurniture] = useState<Array<{ id: string; t
 const [presets, setPresets] = useState<(FurniturePreset | null)[]>([]);
 const [isSelecting, setIsSelecting] = useState(false);
 
-// Load presets from user stats context
+// loads presets from user stats context
 useEffect(() => {
 if (userStats?.furniturePresets) {
 setPresets([userStats.furniturePresets[0] || null]);
@@ -54,7 +54,7 @@ setPresets([null]);
 
 , [userStats]);
 
-// Listen for preset save confirmation
+// listens for preset save confirmation
 useEffect(() => {
 if (socket) {
 socket.on('furniturePresetSaved', (data) => {
@@ -64,7 +64,7 @@ setPresets([preset]);
 
 );
 
-// Listen for preset delete confirmation
+// listens for preset delete confirmation
 socket.on('furniturePresetDeleted', (data) => {
 const { slotIndex  = data;
 if (slotIndex === 0) {
@@ -79,10 +79,10 @@ socket.off('furniturePresetDeleted');
 
 , [socket]);
 
-// Handle furniture selection when in selection mode
+// handles furniture selection when in selection mode
 useEffect(() => {
 if (isFurnitureSelectionMode && furniture) {
-// Listen for clicks on furniture elements
+// listens for clicks on furniture elements
 const handleFurnitureClick = (e: MouseEvent) => {
 const target = e.target as HTMLElement;
 if (target.closest('[data-furniture-id]')) {
@@ -90,7 +90,7 @@ const furnitureId = target.closest('[data-furniture-id]')?.getAttribute('data-fu
 if (furnitureId && furniture[furnitureId]) {
 const furnitureItem = furniture[furnitureId];
 setSelectedFurniture(prev => {
-// Check if already selected
+// checks if already selected
 const isAlreadySelected = prev.some(item => 
 item.id === furnitureId && 
 item.type === furnitureItem.type
@@ -112,11 +112,11 @@ isOn: furnitureItem.isOn
 
 ;
 
-// Listen for selection box completion
+// listens for selection box completion
 const handleSelectionBoxComplete = (e: CustomEvent<{ selectedItems: Array<{ id: string; type: string; x: number; y: number; zIndex?: number; isFlipped?: boolean; isOn?: boolean > >) => {
 const { selectedItems  = e.detail;
 setSelectedFurniture(prev => {
-// Add new items, avoiding duplicates
+// adds new items, avoiding duplicates
 const newItems = selectedItems.filter((newItem: { id: string; type: string; x: number; y: number; zIndex?: number; isFlipped?: boolean; isOn?: boolean ) => 
 !prev.some(existingItem => 
 existingItem.id === newItem.id && 
@@ -137,7 +137,7 @@ window.removeEventListener('furnitureSelectionBoxComplete', handleSelectionBoxCo
 
 , [isFurnitureSelectionMode, furniture]);
 
-// Handle keyboard events for selection mode
+// handles keyboard events for selection mode
 useEffect(() => {
 const handleKeyDown = (event: KeyboardEvent) => {
 if (event.key === 'Escape' && isSelecting) {
@@ -160,14 +160,14 @@ document.removeEventListener('keydown', handleKeyDown);
 
 const handleStartSelection = () => {
 if (isSelecting) {
-// Exit selection mode
+// exits selection mode
 setIsSelecting(false);
 setSelectedFurniture([]);
 onSelectionToggle?.(false);
-// Clear the selected furniture during selection borders
+// clears the selected furniture during selection borders
 setSelectedFurnitureDuringSelection?.(new Set());
  else {
-// Enter selection mode
+// enters selection mode
 setIsSelecting(true);
 setSelectedFurniture([]);
 onSelectionToggle?.(true);
@@ -177,7 +177,7 @@ onSelectionToggle?.(true);
 const handleSavePreset = () => {
 if (selectedFurniture.length === 0) return;
 
-// Only one slot (slot 0)
+// only one slot (slot 0)
 if (presets[0]) {
 alert('Delete the save to create another preset!');
 return;
@@ -198,16 +198,16 @@ setPresets([preset]);
 setSelectedFurniture([]);
 setIsSelecting(false);
 onSelectionToggle?.(false);
-// Clear the selected furniture during selection borders
+// clears the selected furniture during selection borders
 setSelectedFurnitureDuringSelection?.(new Set());
 ;
 
 const handleLoadPreset = (preset: FurniturePreset) => {
-// Calculate the center of the preset furniture
+// calculates the center of the preset furniture
 const presetCenterX = preset.furniture.reduce((sum, item) => sum + item.x, 0) / preset.furniture.length;
 const presetCenterY = preset.furniture.reduce((sum, item) => sum + item.y, 0) / preset.furniture.length;
 
-// Calculate the target center (center of current viewport)
+// calculates the target center (center of current viewport)
 const centerX = window.innerWidth / 2;
 const centerY = window.innerHeight / 2;
 const canvasX = centerX + (viewportOffset?.x || 0);
@@ -215,13 +215,13 @@ const canvasY = centerY + (viewportOffset?.y || 0);
 
 
 
-// Create temporary furniture items positioned at center of viewport
+// creates temporary furniture items positioned at center of viewport
 const tempFurniture = preset.furniture.map((item, index) => {
-// Calculate the offset from the preset center
+// calculates the offset from the preset center
 const offsetX = item.x - presetCenterX;
 const offsetY = item.y - presetCenterY;
 
-// Position at target center + offset
+// positions at target center + offset
 const finalX = canvasX + offsetX;
 const finalY = canvasY + offsetY;
 
@@ -233,7 +233,7 @@ id: `temp_preset_${index`,
 x: finalX,
 y: finalY,
 isTemp: true,
-presetId: preset.id // Group them together
+presetId: preset.id // groups them together
 ;
 );
 
@@ -263,7 +263,7 @@ return (
 <img src="/UI/presetpanel.png" alt="Preset Panel" className="furniture-preset-panel-background" />
 
 <div className="furniture-preset-panel-content">
-{/* Save Slots Container */
+{/* save slots container */
 <div className="preset-slots-container">
 {(() => {
 const preset = getPresetForSlot();
@@ -289,7 +289,7 @@ title={preset && isLimitReached ? 'Delete and recreate your preset to continue' 
 <button 
 className="preset-delete-button"
 onClick={(e) => {
-e.stopPropagation(); // Prevent triggering the container click
+e.stopPropagation(); // prevents triggering the container click
 handleDeletePresetSlot(0);
 
 style={{ 
@@ -334,7 +334,7 @@ alt="Select Furniture"
 </div>
 </div>
 
-{/* Selection mode indicator */
+{/* selection mode indicator */
 {isSelecting && (
 <div className="selection-mode-indicator">
 <div className="selection-mode-content">

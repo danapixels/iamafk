@@ -11,7 +11,7 @@ if (!showDialogBanner) return null;
 
 const getDisplayName = (item: string) => {
 switch (item) {
-// Hat items
+// hat items
 case 'easteregg1':
 return 'crown hat';
 case 'balloon':
@@ -22,7 +22,7 @@ case 'ghost':
 return 'ghost hat';
 case 'loading':
 return 'loading hat';
-// Furniture items
+// furniture items
 case 'zuzu':
 return 'zuzu';
 case 'tv':

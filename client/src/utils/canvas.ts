@@ -1,6 +1,6 @@
 import { CANVAS_SIZE  from '../constants';
 
-// Helper function to convert screen coordinates to canvas coordinates
+// helper to convert screen coordinates to canvas coordinates
 export const screenToCanvas = (screenX: number, screenY: number, viewportOffset: { x: number; y: number ) => {
 return {
 x: screenX + viewportOffset.x,
@@ -8,7 +8,7 @@ y: screenY + viewportOffset.y
 ;
 ;
 
-// Helper function to clamp coordinates within canvas bounds
+// helper to clamp coordinates within canvas bounds
 export const clampToCanvas = (x: number, y: number) => {
 return {
 x: Math.max(0, Math.min(CANVAS_SIZE, x)),
@@ -16,7 +16,7 @@ y: Math.max(0, Math.min(CANVAS_SIZE, y))
 ;
 ;
 
-// Helper function to check if an element is visible in the current viewport
+// helper to check if an element is visible in the current viewport
 export const isElementVisible = (
 x: number, 
 y: number, 
@@ -33,7 +33,7 @@ screenY <= window.innerHeight + buffer
 );
 ;
 
-// Helper function to format time for display (hh:mm:ss, mm:ss, or ss)
+// helper to format time for display (hh:mm:ss, mm:ss, or ss)
 export const formatTime = (seconds: number) => {
 const hours = Math.floor(seconds / 3600);
 const minutes = Math.floor((seconds % 3600) / 60);

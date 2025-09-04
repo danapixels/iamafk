@@ -17,29 +17,29 @@ furniture,
 cursors
 : ViewportFilteringProps) => {
 
-// Progressive quality system based on user count
+// quality based on user count
 const qualitySettings = useMemo(() => {
 const userCount = Object.keys(cursors).length;
 
 if (userCount > 50) {
-// Very crowded - reduce quality significantly
+// very crowded
 return {
 cursorUpdateInterval: 2000, // 2 seconds
-animationLimit: 5, // Only 5 animations visible
+animationLimit: 5, // 5 animations visible
 quality: 'low'
 ;
  else if (userCount > 20) {
-// Crowded - moderate quality reduction
+// crowded
 return {
 cursorUpdateInterval: 1500, // 1.5 seconds
 animationLimit: 10, // 10 animations visible
 quality: 'medium'
 ;
  else {
-// Normal - full quality
+// normal
 return {
 cursorUpdateInterval: 1000, // 1 second
-animationLimit: 20, // All animations visible
+animationLimit: 20, // all animations visible
 quality: 'high'
 ;
 
@@ -85,14 +85,14 @@ return filtered;
 , [emotes, qualitySettings]);
 
 const visibleFurniture = useMemo(() => {
-// Show all furniture - no filtering, even before connecting
-// Use Object.values directly for better performance
+// shows all furniture - no filtering, even before connecting
+// uses Object.values directly for better performance
 return Object.values(furniture);
 , [furniture]);
 
 const visibleCursors = useMemo(() => {
-// Show all cursors - no filtering, even before connecting
-// Use Object.entries directly and filter in one pass
+// shows all cursors - no filtering, even before connecting
+// uses Object.entries directly and filter in one pass
 return Object.entries(cursors).filter(([_id, cursor]) => cursor && cursor.name);
 , [cursors]);
 

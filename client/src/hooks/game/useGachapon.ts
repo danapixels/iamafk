@@ -14,8 +14,7 @@ setIsCursorFrozen
 : UseGachaponProps) => {
 
 const handleGachaponUse = useCallback(() => {
-// This function is called after AFK balance has already been deducted by the gacha machine
-// No additional deduction needed here
+// after AFK balance removed by the gacha machine
 , []);
 
 const handleGachaponUnfreeze = useCallback(() => {
