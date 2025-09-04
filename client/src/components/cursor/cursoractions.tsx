@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 import { Z_INDEX_LAYERS, UI_IMAGES } from '../../constants';
 
+// defines the cursor data interface
 interface CursorData {
   x: number;
   y: number;
@@ -17,6 +18,7 @@ interface CursorData {
   };
 }
 
+// defines the cursor renderer props interface
 interface CursorRendererProps {
   visibleCursors: [string, CursorData][];
   socketRef: React.RefObject<any>;
@@ -26,6 +28,7 @@ interface CursorRendererProps {
   formatTime: (seconds: number) => string;
 }
 
+// defines the cursor renderer component
 const CursorRenderer: React.FC<CursorRendererProps> = memo(({
   visibleCursors,
   socketRef,
@@ -66,7 +69,7 @@ const CursorRenderer: React.FC<CursorRendererProps> = memo(({
                   <div className="cursor-timer">AFK {formatTime(cursor.stillTime)}</div>
                 )}
                 <div className="cursor-id-label" style={{ position: 'relative' }}>
-                  {/* Badges for all users */}
+                  {/* badges displayed for all users */}
                   {cursor.badges && (
                     <div style={{ 
                       position: 'absolute', 
@@ -114,11 +117,11 @@ const CursorRenderer: React.FC<CursorRendererProps> = memo(({
                       alt="Sleeping"
                       style={{
                         position: 'absolute',
-                        left: '100%', // Position to the right of the label
+                        left: '100%',
                         top: '50%',
                         transform: 'translateY(-50%)',
-                        marginLeft: '6px', // Spacing between label and gif
-                        paddingBottom: '4px', // Increased bottom padding
+                        marginLeft: '6px', 
+                        paddingBottom: '4px',
                         zIndex: isMe ? Z_INDEX_LAYERS.CURSORS + 10 : Z_INDEX_LAYERS.CURSORS - 10,
                         pointerEvents: 'none'
                       }}

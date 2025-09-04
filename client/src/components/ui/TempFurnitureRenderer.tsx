@@ -25,15 +25,15 @@ const TempFurnitureRenderer: React.FC<TempFurnitureRendererProps> = ({
   onDeleteTempPreset 
 }) => {
   const getFurnitureImage = (item: TempFurnitureItem) => {
-    // Check if this furniture type has toggle states
+    // checks if this furniture type has toggle states
     if (FURNITURE_TOGGLE_IMAGES[item.type]) {
       return item.isOn ? FURNITURE_TOGGLE_IMAGES[item.type].on : FURNITURE_TOGGLE_IMAGES[item.type].off;
     }
-    // Default to regular furniture image
+    // defaults to regular furniture image
     return FURNITURE_IMAGES[item.type];
   };
 
-  // Group temp furniture by presetId
+  // groups temp furniture by presetId
   const groupedFurniture = tempFurniture.reduce((groups, item) => {
     const presetId = item.presetId || 'default';
     if (!groups[presetId]) {
@@ -56,7 +56,7 @@ const TempFurnitureRenderer: React.FC<TempFurnitureRendererProps> = ({
         const centerX = (minX + maxX) / 2;
         const centerY = (minY + maxY) / 2;
         
-        // Calculate dynamic padding based on furniture size
+        // calculates dynamic padding based on furniture size
         const furnitureWidth = maxX - minX;
         const furnitureHeight = maxY - minY;
         const padding = Math.max(40, Math.min(furnitureWidth, furnitureHeight) * 0.3); // 40px minimum, or 30% of smaller dimension
@@ -66,7 +66,7 @@ const TempFurnitureRenderer: React.FC<TempFurnitureRendererProps> = ({
 
         return (
           <div key={presetId} style={{ position: 'relative' }}>
-            {/* Render furniture items */}
+            {/* render furniture items */}
             {items.map((item) => (
               <img
                 key={item.id}
@@ -97,7 +97,7 @@ const TempFurnitureRenderer: React.FC<TempFurnitureRendererProps> = ({
               />
             ))}
 
-            {/* Group selection border */}
+            {/* gruoup selection border */}
             <div
               style={{
                 position: 'absolute',
@@ -112,7 +112,7 @@ const TempFurnitureRenderer: React.FC<TempFurnitureRendererProps> = ({
               }}
             />
 
-            {/* Control buttons */}
+            {/* control buttons */}
             <div
               style={{
                 position: 'absolute',

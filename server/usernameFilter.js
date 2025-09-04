@@ -1,15 +1,12 @@
-// Username filtering utility
-// This uses external services to check for inappropriate content
+// username filtering utility
 
 const axios = require('axios');
 
-// Option 1: Use a free content filtering API
 async function checkUsernameWithAPI(username) {
   try {
-    // Using a free content filtering service
     const response = await axios.post('https://api.moderatecontent.com/text', {
       text: username,
-      key: process.env.MODERATE_CONTENT_API_KEY || 'free' // Free tier available
+      key: process.env.MODERATE_CONTENT_API_KEY || 'free' 
     });
     
     return {
@@ -22,18 +19,16 @@ async function checkUsernameWithAPI(username) {
   }
 }
 
-// Option 2: Simple pattern-based filtering (no offensive words)
 function checkUsernameFallback(username) {
   const lowerUsername = username.toLowerCase();
   
-  // Check for common patterns without using actual words
   const suspiciousPatterns = [
-    /[0-9]{3,}/, // Too many numbers
-    /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]{3,}/, // Too many symbols
-    /(.)\1{4,}/, // Repeated characters (5+)
-    /^(admin|mod|owner|staff|support|help|test|guest|user|anonymous)$/i, // Reserved names
-    /^(fuck|shit|bitch|ass|dick|pussy|cock|whore|slut|nazi|hitler|kys|kms)/i, // Common patterns
-    /(fuck|shit|bitch|ass|dick|pussy|cock|whore|slut|nazi|hitler|kys|kms)/i, // Anywhere in name
+    /[0-9]{3,}/, 
+    /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]{3,}/, 
+    /(.)\1{4,}/, 
+    /^(admin|mod|owner|staff|support|help|test|guest|user|anonymous)$/i,
+    /^(fuck|shit|bitch|ass|dick|pussy|cock|whore|slut|nazi|hitler|kys|kms)/i, 
+    /(fuck|shit|bitch|ass|dick|pussy|cock|whore|slut|nazi|hitler|kys|kms)/i,
   ];
   
   for (const pattern of suspiciousPatterns) {
@@ -45,7 +40,7 @@ function checkUsernameFallback(username) {
     }
   }
   
-  // Check length and basic requirements
+  // check length and basic requirements
   if (username.length < 2 || username.length > 50) {
     return {
       isAppropriate: false,
@@ -53,7 +48,7 @@ function checkUsernameFallback(username) {
     };
   }
   
-  // Check for only whitespace or special characters
+  // check for whitespace or special characters
   if (!/^[a-zA-Z0-9\s\-_]+$/.test(username)) {
     return {
       isAppropriate: false,
@@ -67,7 +62,7 @@ function checkUsernameFallback(username) {
   };
 }
 
-// Main validation function
+// main validation function
 async function validateUsername(username) {
   if (!username || typeof username !== 'string') {
     return {
@@ -85,8 +80,6 @@ async function validateUsername(username) {
     };
   }
   
-  // Use only local validation for faster connections
-  // Skip the slow external API call
   return checkUsernameFallback(trimmedUsername);
 }
 

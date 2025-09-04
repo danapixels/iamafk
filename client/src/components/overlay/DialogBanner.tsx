@@ -11,7 +11,7 @@ export const DialogBanner: React.FC<DialogBannerProps> = ({ showDialogBanner, la
 
   const getDisplayName = (item: string) => {
     switch (item) {
-      // Hat items
+      // hat items
       case 'easteregg1':
         return 'crown hat';
       case 'balloon':
@@ -22,7 +22,7 @@ export const DialogBanner: React.FC<DialogBannerProps> = ({ showDialogBanner, la
         return 'ghost hat';
       case 'loading':
         return 'loading hat';
-      // Furniture items
+      // furniture items
       case 'zuzu':
         return 'zuzu';
       case 'tv':

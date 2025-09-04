@@ -1,16 +1,16 @@
-// localStorage utility for managing user preferences (username, cursor)
+// localStorage utility for user preferences (username, cursor, device ID)
 
 const STORAGE_KEYS = {
   USERNAME: 'iamafk_username',
   DEVICE_ID: 'iamafk_device_id'
 } as const;
 
-// Generate a unique device ID
+// generates a unique device ID
 const generateDeviceId = (): string => {
   return 'device_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now().toString(36);
 };
 
-// Get or create device ID
+// gets or creates device ID
 export const getDeviceId = (): string => {
   try {
     let deviceId = localStorage.getItem(STORAGE_KEYS.DEVICE_ID);
@@ -21,12 +21,12 @@ export const getDeviceId = (): string => {
     return deviceId;
   } catch (error) {
     console.error('Error managing device ID:', error);
-    // Fallback to session-based ID if localStorage fails
+    // fallback to session-based ID if localStorage fails
     return 'session_' + Math.random().toString(36).substr(2, 9);
   }
 };
 
-// Save username for next session
+// saves username for next session
 export const saveUsername = (username: string): void => {
   try {
     localStorage.setItem(STORAGE_KEYS.USERNAME, username);
@@ -35,7 +35,7 @@ export const saveUsername = (username: string): void => {
   }
 };
 
-// Get saved username
+// gets saved username
 export const getSavedUsername = (): string => {
   try {
     return localStorage.getItem(STORAGE_KEYS.USERNAME) || '';
@@ -45,10 +45,10 @@ export const getSavedUsername = (): string => {
   }
 };
 
-// Get saved cursor type
+// gets saved cursor type
 export const getSavedCursorType = (): string => {
   try {
-    // For backward compatibility, just return 'default' if not set
+    // returns 'default' if not set
     return localStorage.getItem('iamafk_cursorType') || 'default';
   } catch (error) {
     console.error('Error reading cursor type from preferences:', error);
@@ -56,7 +56,7 @@ export const getSavedCursorType = (): string => {
   }
 };
 
-// Save cursor type
+// saves cursor type
 export const saveCursorType = (cursorType: string): void => {
   try {
     localStorage.setItem('iamafk_cursorType', cursorType);

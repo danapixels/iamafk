@@ -2,18 +2,20 @@ import React, { memo, useEffect, useState } from 'react';
 import { HEART_DURATION, CIRCLE_DURATION, THUMBSUP_DURATION, ANIMATION_CONSTANTS, UI_IMAGES } from '../../constants';
 import type { Circle, Heart, Emote } from '../../types';
 
+// defines the animation renderer props interface, circle is for clicking, heart is double clicking, emote is numbers 1-0
 interface AnimationRendererProps {
   visibleCircles: Circle[];
   visibleHearts: Heart[];
   visibleEmotes: Emote[];
 }
 
+// defines the animation renderer component
 const AnimationRenderer: React.FC<AnimationRendererProps> = memo(({
   visibleCircles,
   visibleHearts,
   visibleEmotes
 }) => {
-  // Add a state to force re-render
+  // adds a state to force re-render
   const [, setTick] = useState(0);
 
   useEffect(() => {
@@ -21,7 +23,7 @@ const AnimationRenderer: React.FC<AnimationRendererProps> = memo(({
     let isPageVisible = !document.hidden;
 
     function loop() {
-      // Only run animation loop if page is visible
+      // only run animation loop if page is visible
       if (!isPageVisible) {
         frame = requestAnimationFrame(loop);
         return;
@@ -31,14 +33,14 @@ const AnimationRenderer: React.FC<AnimationRendererProps> = memo(({
       frame = requestAnimationFrame(loop);
     }
 
-    // Handle page visibility changes
+    // handles page visibility changes
     const handleVisibilityChange = () => {
       isPageVisible = !document.hidden;
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    // Only run the loop if there are active animations
+    // only run the loop if there are active animations
     if (
       visibleCircles.length > 0 ||
       visibleHearts.length > 0 ||

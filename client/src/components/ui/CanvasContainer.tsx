@@ -104,7 +104,7 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = memo(({
       >
         <TutorialOverlay />
 
-        {/* Beach background in top right - above roads */}
+        {/* beach background in top right*/}
         <div
           style={{
             position: 'absolute',
@@ -121,25 +121,25 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = memo(({
           }}
         />
 
-        {/* Statue with leaderboard */}
+        {/* statue with leaderboard */}
         <Statue 
           cursors={Object.fromEntries(visibleCursors)} 
           style={getStatueStyle()}
         />
 
-        {/* All-time statue with historical record */}
+        {/* all-time statue with historical record */}
         <AllTimeStatue 
           socket={socketRef.current}
           style={getAllTimeStatueStyle()}
         />
 
-        {/* Jackpot statue with gachapon wins record */}
+        {/* jackpot statue with gachapon wins record */}
         <JackpotStatue 
           socket={socketRef.current}
           style={getJackpotStatueStyle()}
         />
 
-        {/* Gacha notification - positioned absolutely on canvas like tutorial */}
+        {/* gacha notification - positioned absolutely on canvas*/}
         {showGachaNotification && gachaNotificationText && (
           <div
             style={{
@@ -180,7 +180,7 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = memo(({
           onDelete={onDelete}
         />
 
-        {/* Temporary Furniture Renderer */}
+        {/* temporary furniture renderer for furniture presets*/}
         {tempFurniture && tempFurniture.length > 0 && (
           <TempFurnitureRenderer 
             tempFurniture={tempFurniture}
@@ -189,7 +189,7 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = memo(({
           />
         )}
 
-        {/* Selection Box */}
+        {/* selection box for furniture preset placement*/}
         {selectionBox && selectionBox.isActive && (
           <div
             style={{

@@ -21,7 +21,7 @@ const ConnectionModal: React.FC<ConnectionModalProps> = memo(({
 
   const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    // Limit to 50 characters
+    // limits to 50 characters
     if (value.length <= 50) {
       onUsernameChange(value);
     }

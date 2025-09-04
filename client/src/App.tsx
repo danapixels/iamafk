@@ -15,7 +15,7 @@ import CanvasContainer from './components/ui/CanvasContainer';
 import NotFound from './components/NotFound';
 import { UserStatsProvider, useUserStats } from './contexts/UserStatsContext';
 
-// Custom hooks
+// custom hooks
 import { useSocket } from './hooks/connection/useSocket';
 import { useCursor } from './hooks/game/useCursor';
 import { useFurniture } from './hooks/game/useFurniture';
@@ -30,7 +30,7 @@ import { useConnectionHandlers } from './hooks/connection/useConnectionHandlers'
 import { useCursorHandlers } from './hooks/game/useCursorHandlers';
 import { useFurnitureHandlers } from './hooks/game/useFurnitureHandlers';
 
-// Constants and utilities
+// constants and utilities
 import { 
   Z_INDEX_LAYERS
 } from './constants';
@@ -62,7 +62,7 @@ function AppContent({
   lastWinner,
   lastUnlockedItem
 }: AppContentProps) {
-  // Use Context API for user stats
+  // uses context API for user stats
   const { 
     userStats, 
     recordFurniturePlacement,
@@ -141,21 +141,21 @@ function AppContent({
   useFurniture(socketRef, setFurniture, setSelectedFurnitureId, hasConnected, draggedFurnitureId, mouseStateRef);
   useConfetti(socketRef, setShowConfetti, setConfettiTimestamp);
 
-  // Animation and cleanup
+  // animation and cleanup
   useAnimationCleanup({
     setHearts: setHearts,
     setCircles: setCircles,
     setEmotes: setEmotes
   });
 
-  // Gachapon machine logic
+  // gachapon machine logic
   const { handleGachaponUse, handleGachaponUnfreeze } = useGachapon({
     socket: socketRef.current,
     setFrozenCursorPosition,
     setIsCursorFrozen
   });
 
-  // Viewport filtering for performance
+  // viewport filtering for performance
   const {
     visibleCircles,
     visibleHearts,
@@ -170,7 +170,7 @@ function AppContent({
     cursors
   });
 
-  // Event handlers
+  // event handlers
   const { handleConnect } = useConnectionHandlers({
     socket: socketRef.current,
     username,
@@ -189,7 +189,7 @@ function AppContent({
     recordFurniturePlacement
   });
 
-  // Gacha notification handler
+  // gacha notification handler
   const handleShowGachaNotification = (text: string) => {
     setGachaNotificationText(text);
     setShowGachaNotification(true);
@@ -223,7 +223,7 @@ function AppContent({
         overflow: 'hidden'
       }}
     >
-      {/* Canvas container with viewport offset */}
+      {/* canvas container with viewport offset */}
       <CanvasContainer
         viewportOffset={viewportOffset}
         visibleCircles={visibleCircles}
@@ -247,9 +247,9 @@ function AppContent({
         tempFurniture={tempFurniture}
         isFurnitureSelectionMode={isFurnitureSelectionMode}
         onConfirmPreset={() => {
-          // Convert temporary furniture to real furniture
+          // converts temporary furniture to real furniture
           if (tempFurniture && tempFurniture.length > 0 && socketRef.current) {
-            // Group furniture by preset ID
+            // groups furniture by preset ID
             const groupedFurniture = tempFurniture.reduce((groups, item) => {
               const groupId = item.presetId || 'default';
               if (!groups[groupId]) {
@@ -259,26 +259,26 @@ function AppContent({
               return groups;
             }, {} as { [key: string]: typeof tempFurniture });
 
-            // Place each group of furniture
+            // places each group of furniture
             Object.entries(groupedFurniture).forEach(([, items]) => {
               if (items.length > 0) {
-                // Calculate the center of the group
+                // calculates the center of the group
                 const groupCenterX = items.reduce((sum, item) => sum + item.x, 0) / items.length;
                 const groupCenterY = items.reduce((sum, item) => sum + item.y, 0) / items.length;
 
-                // Store each item's offset from the group center
+                // stores each item's offset from the group center
                 const preset = {
                   furniture: items.map(item => ({
                     type: item.type,
-                    x: item.x - groupCenterX, // Offset from group center
-                    y: item.y - groupCenterY, // Offset from group center
+                    x: item.x - groupCenterX, // offset from group center
+                    y: item.y - groupCenterY, // offset from group center
                     zIndex: item.zIndex,
                     isFlipped: item.isFlipped,
                     isOn: item.isOn
                   }))
                 };
 
-                // Send to server: place group at group center
+                // sends to server: place preset group at its center
                 if (socketRef.current) {
                   socketRef.current.emit('placeFurniturePreset', {
                     preset,
@@ -290,7 +290,7 @@ function AppContent({
             });
           }
           
-          // Clear the temp furniture
+          // clears the temp furniture
           setTempFurniture([]);
         }}
         onDeleteTempPreset={() => {
@@ -298,7 +298,7 @@ function AppContent({
         }}
       />
 
-      {/* UI Elements */}
+      {/* ui elements */}
       <FurniturePanel 
         socket={socketRef.current} 
         onFurnitureSpawn={handleFurnitureSpawn}
@@ -327,7 +327,7 @@ function AppContent({
       <AFKTimeDisplay hasConnected={hasConnected} userStats={userStats} />
       <Logo />
 
-      {/* Gachapon Machine */}
+      {/* gachapon machine */}
       <GachaponMachine
         src={'/UI/gacha.gif'}
         alt="Gacha"
@@ -340,7 +340,7 @@ function AppContent({
         onShowNotification={handleShowGachaNotification}
       />
 
-      {/* Furniture Gachapon Machine */}
+      {/* furniture gachapon machine */}
       <FurnitureGachaponMachine
         src={'/UI/furnituregacha.gif'}
         alt="Furniture Gacha"
@@ -353,7 +353,7 @@ function AppContent({
         onShowNotification={handleShowGachaNotification}
       />
 
-      {/* Connection Modal */}
+      {/* connection modal */}
       <ConnectionModal
         username={username}
         onUsernameChange={setUsername}
@@ -363,7 +363,7 @@ function AppContent({
 
 
 
-      {/* Selection mode viewport border */}
+      {/* selection mode viewport border */}
       {isFurnitureSelectionMode && (
         <div
           style={{
@@ -380,7 +380,7 @@ function AppContent({
         />
       )}
 
-      {/* Overlays */}
+      {/* overlays */}
       <ConfettiOverlay showConfetti={showConfetti} confettiTimestamp={confettiTimestamp} />
       <DialogBanner showDialogBanner={showDialogBanner} lastWinner={lastWinner} lastUnlockedItem={lastUnlockedItem} />
     </div>
@@ -413,10 +413,10 @@ function App() {
   const [username, setUsername] = useState(getSavedUsername);
   const [cursorType, setCursorType] = useState(getSavedCursorType);
   
-  // Check if we're on a 404 page (not root path)
+  // checks if 404 page
   const is404Page = window.location.pathname !== '/';
   
-  // Socket and connection management
+  // socket and connection management
   const {
     socketRef,
     hasConnected,
@@ -435,7 +435,7 @@ function App() {
     lastUnlockedItem
   } = useSocket();
 
-  // Show 404 page if not on root path
+  // shows 404 page if not on root path
   if (is404Page) {
     return <NotFound />;
   }

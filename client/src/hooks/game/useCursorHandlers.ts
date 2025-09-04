@@ -15,7 +15,7 @@ export const useCursorHandlers = ({
   const handleCursorChange = useCallback((cursor: { type: string }) => {
     if (socket) {
       setCursorType(cursor.type);
-      // Save cursor type to localStorage for persistence
+      // saves cursor type to localStorage for persistence
       saveCursorType(cursor.type);
       socket.emit('changeCursor', cursor);
     }

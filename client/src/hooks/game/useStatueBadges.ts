@@ -26,7 +26,7 @@ export const useStatueBadges = ({ cursors, username, socket }: UseStatueBadgesPr
       return;
     }
     
-    // Check daily badge - find the best stillTime among all users for today
+    // checks daily badge - find the best stillTime among all users for today
     let dailyBest = { name: '', time: 0 };
     Object.values(cursors).forEach((cursor: any) => {
       if (!cursor || !cursor.name || cursor.name === SERVER_CONFIG.ANONYMOUS_NAME) return;
@@ -36,7 +36,7 @@ export const useStatueBadges = ({ cursors, username, socket }: UseStatueBadgesPr
       }
     });
 
-    // Check if current user has the daily badge
+    // checks if current user has the daily badge
     const hasDailyBadge = dailyBest.name === username && dailyBest.time > 0;
 
     setBadges(prev => ({
@@ -46,7 +46,7 @@ export const useStatueBadges = ({ cursors, username, socket }: UseStatueBadgesPr
 
   }, [cursors, username]);
 
-  // Listen for all-time record updates
+  // listens for all-time record updates
   useEffect(() => {
     if (!socket || !username) return;
 
@@ -78,11 +78,11 @@ export const useStatueBadges = ({ cursors, username, socket }: UseStatueBadgesPr
       }));
     };
 
-    // Request current records
+    // requests current records
     socket.emit('requestAllTimeRecord');
     socket.emit('requestJackpotRecord');
 
-    // Listen for updates
+    // listens for updates
     socket.on('allTimeRecord', handleAllTimeRecord);
     socket.on('allTimeRecordUpdated', handleAllTimeRecordUpdated);
     socket.on('jackpotRecord', handleJackpotRecord);

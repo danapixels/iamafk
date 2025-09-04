@@ -1,6 +1,6 @@
 import { Socket } from 'socket.io-client';
 
-// Cursor related types
+// cursor related types
 export interface CursorData {
   x: number;
   y: number;
@@ -21,7 +21,7 @@ export interface CursorsMap {
   [socketId: string]: CursorData;
 }
 
-// Effect types
+// effect types
 export interface Heart {
   id: string;
   x: number;
@@ -44,7 +44,7 @@ export interface Emote {
   type: string;
 }
 
-// Furniture types
+// furniture types
 export interface Furniture {
   id: string;
   type: string;
@@ -55,7 +55,7 @@ export interface Furniture {
   isOn?: boolean;
 }
 
-// Panel props
+// panel props
 export interface PanelProps {
   socket: Socket | null;
   onCursorChange: (type: string) => void;
@@ -64,7 +64,7 @@ export interface PanelProps {
   style?: React.CSSProperties;
 }
 
-// Mouse state
+// mouse state
 export interface MouseState {
   isDraggingFurniture: boolean;
   isDraggingViewport: boolean;
@@ -73,7 +73,7 @@ export interface MouseState {
   lastEvent: MouseEvent | null;
 }
 
-// Viewport types
+// viewport types
 export interface ViewportOffset {
   x: number;
   y: number;

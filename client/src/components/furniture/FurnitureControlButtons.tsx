@@ -19,7 +19,7 @@ export const FurnitureControlButtons: React.FC<FurnitureControlButtonsProps> = (
 }) => {
   return (
     <>
-      {/* Left button - positioned directly to the left */}
+      {/* left button */}
       <div
         style={{
           position: 'absolute',
@@ -56,7 +56,7 @@ export const FurnitureControlButtons: React.FC<FurnitureControlButtonsProps> = (
         </div>
       </div>
       
-      {/* Top button - positioned directly above */}
+      {/* top button */}
       <div
         style={{
           position: 'absolute',
@@ -93,7 +93,7 @@ export const FurnitureControlButtons: React.FC<FurnitureControlButtonsProps> = (
         </div>
       </div>
       
-      {/* Bottom button - positioned directly below */}
+      {/* bottom button */}
       <div
         style={{
           position: 'absolute',
@@ -130,7 +130,7 @@ export const FurnitureControlButtons: React.FC<FurnitureControlButtonsProps> = (
         </div>
       </div>
       
-      {/* Right button - positioned directly to the right */}
+      {/* right button */}
       <div
         style={{
           position: 'absolute',

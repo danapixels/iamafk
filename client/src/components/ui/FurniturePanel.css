@@ -1,6 +1,6 @@
 .furniture-panel-container {
   position: fixed;
-  right: 160px; /* Position closer to the main panel */
+  right: 160px;
   top: 0;
   transform: none;
   pointer-events: none;
@@ -23,7 +23,7 @@
   flex-direction: column;
   gap: 10px;
   padding: 20px 20px 20px 20px;
-  padding-top: 42px; /* 20px + 22px extra top padding */
+  padding-top: 42px; 
   box-sizing: border-box;
   pointer-events: all;
 }
@@ -36,7 +36,7 @@
   width: 100%;
 }
 
-/* gaps for furniture buttons */
+/* gaps for furniture buttons in the panel*/
 .furniture-panel-section {
   gap: 2px;
 }
@@ -49,7 +49,7 @@
   gap: 2px;
 }
 
-/* Add top padding to the last row */
+/* padding to the last row of buttons*/
 .furniture-panel-section .button-grid .button-row:last-child {
   margin-top: 0;
   padding-top: 1px;

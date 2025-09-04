@@ -37,18 +37,19 @@ html, body {
   cursor: none !important;
 }
 
-/* Hide system cursor only when connected */
+/* hides system cursor only when connected */
 .cursor-hidden {
   cursor: none;
 }
 
+/* cursor wrapper */
 .cursor-wrapper {
   position: absolute;
   pointer-events: none;
   user-select: none;
-  /* Removed transform so cursor-wrapper is exactly at pointer */
 }
 
+/* cursor circle */
 .cursor-circle {
   position: absolute;
   left: 50%;
@@ -66,14 +67,14 @@ html, body {
   z-index: 1;
 }
 
-/* Default cursor size */
+/* default cursor size */
 .cursor-default {
   width: 24px;
   height: 24px;
   background-image: url('/UI/cursor.png') !important;
 }
 
-/* Custom cursor classes with their original sizes */
+/* custom hats*/
 .cursor-bunny {
   width: 36px;
   height: 44px;
@@ -156,7 +157,7 @@ html, body {
 .cursor-labels {
   position: absolute;
   left: 50%;
-  bottom: 100%; /* place above the cursor circle */
+  bottom: 100%;
   transform: translateX(-50%) translateY(-16px);
   display: flex;
   flex-direction: column;
@@ -181,6 +182,7 @@ html, body {
   max-width: max-content;
 }
 
+/* afk timer */
 .cursor-timer {
   font-family: 'Press Start 2P', cursive;
   font-size: 0.5rem;
@@ -189,8 +191,7 @@ html, body {
   pointer-events: none;
 }
 
-/* Rest of your CSS below unchanged */
-
+/* logo container */
 #logo-container {
   position: fixed;
   top: 0;
@@ -252,7 +253,7 @@ html, body {
   animation: fadeInFromTop 0.5s ease-out;
 }
 
-/* Animation keyframes */
+/* animation keyframes */
 @keyframes fadeInFromTop {
   from {
     opacity: 0;

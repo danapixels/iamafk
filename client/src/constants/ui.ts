@@ -1,12 +1,12 @@
 // UI button dimensions
 export const BUTTON_DIMENSIONS = {
-  CONTROL_BUTTON_SIZE: 48, // Size of furniture control buttons
-  CONTROL_BUTTON_GAP: 0, // Gap between furniture and control buttons
+  CONTROL_BUTTON_SIZE: 48, // size of furniture control buttons
+  CONTROL_BUTTON_GAP: 0, // gap between furniture and control buttons
 } as const;
 
 // UI image paths
 export const UI_IMAGES = {
-  // Control buttons
+  // control buttons
   UP_BUTTON: '/UI/up.png',
   UP_BUTTON_HOVER: '/UI/uphover.png',
   DOWN_BUTTON: '/UI/down.png',
@@ -16,7 +16,7 @@ export const UI_IMAGES = {
   DELETE_FURNITURE_BUTTON: '/UI/deletefurniturebutton.png',
   DELETE_FURNITURE_BUTTON_HOVER: '/UI/deletefurniturebuttonhover.png',
   
-  // Logo and branding
+  // static UI
   LOGO: '/UI/logo.png',
   GITHUB_LOGO: '/UI/github.png',
   LEADERBOARD: '/UI/leaderboard.png',
@@ -26,12 +26,12 @@ export const UI_IMAGES = {
   ALLTIME: '/UI/alltime.png',
   JACKPOTS: '/UI/jackpots.png',
   
-  // Badges for statue achievements
+  // badges for statue achievements
   DAILY_BADGE: '/UI/dailybadge.png',
   CROWN_BADGE: '/UI/crownbadge.png',
   GACHA_BADGE: '/UI/gachabadge.png',
   
-  // Effects
+  // effects
   SMILE_GIF: '/UI/smile.gif',
   SLEEPING_GIF: '/UI/sleeping.gif',
   CURSOR: '/UI/cursor.png',
@@ -52,7 +52,7 @@ export const UI_IMAGES = {
 // repo link
 export const GITHUB_URL = 'https://github.com/danapixels/iamafk';
 
-// Server and connection constants
+// server and connection constants
 export const SERVER_CONFIG = {
   SOCKET_URL: import.meta.env.VITE_SERVER_URL || 'ws://localhost:3001',
   DEFAULT_CURSOR_TYPE: 'default',
@@ -66,7 +66,7 @@ export const UI_STATE = {
   INITIAL_COUNTERS: 0
 };
 
-// Hat gachapon machine constants
+// hat gachapon machine constants
 export const GACHAPON_CONFIG = {
   POSITION: {
     LEFT: 200,
@@ -79,7 +79,7 @@ export const GACHAPON_CONFIG = {
   }
 } as const;
 
-// Furniture Gachapon machine constants
+// furniture gachapon machine constants
 export const FURNITURE_GACHAPON_CONFIG = {
   POSITION: {
     LEFT: 100,
@@ -92,7 +92,7 @@ export const FURNITURE_GACHAPON_CONFIG = {
   }
 } as const;
 
-// Statue constants
+// statue constants
 export const STATUE_CONFIG = {
   POSITION: {
     LEFT: 20,
@@ -104,7 +104,7 @@ export const STATUE_CONFIG = {
   }
 } as const;
 
-// All-time statue constants
+// all-time statue constants
 export const ALLTIME_STATUE_CONFIG = {
   POSITION: {
     LEFT: 120,
@@ -116,7 +116,7 @@ export const ALLTIME_STATUE_CONFIG = {
   }
 } as const;
 
-// Jackpot statue constants
+// jackpot statue constants
 export const JACKPOT_STATUE_CONFIG = {
   POSITION: {
     LEFT: 220,

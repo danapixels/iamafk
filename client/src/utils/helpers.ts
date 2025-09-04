@@ -1,5 +1,6 @@
 import { SERVER_CONFIG } from '../constants';
 
+// helper to get the highest AFK player
 export const getHighestAFKPlayer = (cursors: { [key: string]: any }) => {
   let highestAFK = { name: '', time: 0 };
   Object.entries(cursors).forEach(([_, cursor]) => {
@@ -11,6 +12,7 @@ export const getHighestAFKPlayer = (cursors: { [key: string]: any }) => {
   return highestAFK;
 };
 
+// helper to format time for display (hh:mm:ss, mm:ss, or ss)
 export function formatTime(seconds: number): string {
   const days = Math.floor(seconds / (24 * 3600));
   seconds %= 24 * 3600;

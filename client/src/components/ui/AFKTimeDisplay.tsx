@@ -17,7 +17,7 @@ export const AFKTimeDisplay: React.FC<AFKTimeDisplayProps> = memo(({ hasConnecte
       zIndex: Z_INDEX_LAYERS.PANEL,
       pointerEvents: 'none'
     }}>
-      {/* Lifetime Total AFK Time (never deducted) */}
+      {/* lifetime total AFK time (never deducted) */}
       <div style={{
         marginBottom: '8px',
         position: 'relative'
@@ -37,7 +37,7 @@ export const AFKTimeDisplay: React.FC<AFKTimeDisplayProps> = memo(({ hasConnecte
         )}
       </div>
 
-      {/* AFK Balance (spendable) */}
+      {/* AFK balance (spendable) */}
       <div style={{
         position: 'relative'
       }}>

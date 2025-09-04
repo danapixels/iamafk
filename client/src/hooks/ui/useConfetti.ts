@@ -9,7 +9,7 @@ export const useConfetti = (
 ) => {
   const confettiTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Socket listener for gachapon win
+  // socket listener for gachapon win
   useEffect(() => {
     if (!socketRef.current) return;
 
@@ -20,54 +20,54 @@ export const useConfetti = (
         setGachaponWinner(data.winnerName);
       }
       
-      // Clear any existing confetti timeout
+      // clears any existing confetti timeout
       if (confettiTimeoutRef.current) {
         clearTimeout(confettiTimeoutRef.current);
         confettiTimeoutRef.current = null;
       }
       
-      // Show confetti immediately
+      // shows confetti immediately
       setShowConfetti(true);
       if (setConfettiTimestamp) {
         setConfettiTimestamp(Date.now());
       }
       
-      // Remove confetti after animation finishes (confetti.gif duration)
+      // removes confetti after animation finishes (confetti.gif duration)
       confettiTimeoutRef.current = setTimeout(() => {
         setShowConfetti(false);
         if (setConfettiTimestamp) {
           setConfettiTimestamp(null);
         }
         confettiTimeoutRef.current = null;
-      }, 3000); // Assuming confetti.gif is 3 seconds
+      }, 3000); // confetti.gif is 3 seconds
       
-      // Set localStorage for gachapon button state
+      // sets localStorage for gachapon button state
       localStorage.setItem('gachaponWin', 'true');
       localStorage.setItem('gachaponWinner', data.winnerName);
       localStorage.setItem('gachaponButtonChanged', 'true');
     };
 
     const handleFurnitureGachaponWin = () => {
-      // Clear any existing confetti timeout
+      // clears any existing confetti timeout
       if (confettiTimeoutRef.current) {
         clearTimeout(confettiTimeoutRef.current);
         confettiTimeoutRef.current = null;
       }
       
-      // Show confetti immediately
+      // shows confetti immediately
       setShowConfetti(true);
       if (setConfettiTimestamp) {
         setConfettiTimestamp(Date.now());
       }
       
-      // Remove confetti after animation finishes (confetti.gif duration)
+      // removes confetti after animation finishes
       confettiTimeoutRef.current = setTimeout(() => {
         setShowConfetti(false);
         if (setConfettiTimestamp) {
           setConfettiTimestamp(null);
         }
         confettiTimeoutRef.current = null;
-      }, 3000); // Assuming confetti.gif is 3 seconds
+      }, 3000);
     };
 
     socket.on('gachaponWin', handleGachaponWin);
@@ -76,7 +76,7 @@ export const useConfetti = (
     return () => {
       socket.off('gachaponWin', handleGachaponWin);
       socket.off('furnitureGachaponWin', handleFurnitureGachaponWin);
-      // Clear any pending timeout on cleanup
+      // clears pending timeout on cleanup
       if (confettiTimeoutRef.current) {
         clearTimeout(confettiTimeoutRef.current);
         confettiTimeoutRef.current = null;
@@ -84,9 +84,8 @@ export const useConfetti = (
     };
   }, [socketRef.current?.connected, setGachaponWinner, setShowConfetti, setConfettiTimestamp]);
 
-  // Update confettiTimestamp whenever showConfetti is set to true
+  // updates confettiTimestamp whenever showConfetti is set to true
   useEffect(() => {
-    // This effect will be handled by the parent component
   }, []);
 
   return { confettiTimeoutRef };

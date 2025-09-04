@@ -31,7 +31,7 @@ const Panel: React.FC<PanelProps> = ({
       <img src="/UI/transparentpanel.png" alt="Panel" className="panel-background" />
       
       <div className="panel-content">
-        {/* Hat Buttons Section */}
+        {/* hat buttons section */}
         <div className="panel-section">
           <div className="button-grid">
             <div className="button-row">

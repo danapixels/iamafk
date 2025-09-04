@@ -21,10 +21,10 @@ export const AllTimeStatue: React.FC<AllTimeStatueProps> = memo(({ socket, style
 
   useEffect(() => {
     if (socket) {
-      // Request the all-time record when component mounts
+      // requests the all-time record when component mounts
       socket.emit('requestAllTimeRecord');
 
-      // Listen for all-time record updates
+      // listens for all-time record updates
       const handleAllTimeRecord = (record: AllTimeRecord) => {
         setAllTimeRecord(record);
       };
@@ -43,7 +43,7 @@ export const AllTimeStatue: React.FC<AllTimeStatueProps> = memo(({ socket, style
     }
   }, [socket]);
 
-  // Format time for display
+  // formats time for display
   const formatTime = (seconds: number): string => {
     if (seconds < 60) return `${seconds}s`;
     if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
@@ -61,7 +61,7 @@ export const AllTimeStatue: React.FC<AllTimeStatueProps> = memo(({ socket, style
         gap: '0px'
       }}
     >
-      {/* Statue image */}
+      {/* statue image */}
       <img 
         src={UI_IMAGES.STATUE} 
         alt="Statue" 
@@ -72,7 +72,7 @@ export const AllTimeStatue: React.FC<AllTimeStatueProps> = memo(({ socket, style
         }}
       />
       
-      {/* All-time image with leaderboard text underneath */}
+      {/* all-time image with leaderboard text underneath */}
       <div style={{ position: 'relative', margin: 0, padding: 0 }}>
         <img 
           src={UI_IMAGES.ALLTIME} 

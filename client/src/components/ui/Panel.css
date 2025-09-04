@@ -23,7 +23,7 @@
   flex-direction: column;
   gap: 10px;
   padding: 20px 20px 20px 20px;
-  padding-top: 40px; /* 20px + 20px extra top padding */
+  padding-top: 40px;
   box-sizing: border-box;
   pointer-events: all;
 }
@@ -50,7 +50,7 @@
   width: 100%;
 }
 
-/* gaps between hats buttons */
+/* gaps between buttons*/
 .panel-section:last-child {
   gap: 8px;
 }
@@ -153,8 +153,6 @@
 .button[src*="whitecatbutton.png"]:hover {
   content: url('/UI/whitecatbuttonhover.png');
 }
-
-
 
 /* tooltip for locked button */
 .locked-button-container:hover .tooltip,

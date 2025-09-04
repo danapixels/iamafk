@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Socket } from 'socket.io-client';
 import { useUserStats } from '../../contexts/UserStatsContext';
 
+// defines the furniture gachapon machine props interface
 interface FurnitureGachaponMachineProps {
   src: string;
   alt: string;
@@ -15,6 +16,7 @@ interface FurnitureGachaponMachineProps {
   onShowNotification?: (text: string) => void;
 }
 
+// defines the furniture gachapon machine component
 const FurnitureGachaponMachine: React.FC<FurnitureGachaponMachineProps> = ({
   src,
   alt,
@@ -36,10 +38,10 @@ const FurnitureGachaponMachine: React.FC<FurnitureGachaponMachineProps> = ({
   const messageRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const imgRef = useRef<HTMLImageElement>(null);
 
-  // Check if user has enough AFK time (30 minutes = 1800 seconds)
+  // checks if user has enough AFK time (30 minutes = 1800 seconds)
   const checkAFKTime = () => {
     if (!userStats || userStats.afkBalance < 1800) {
-      // Not enough AFK balance
+      // not enough AFK balance
       return false;
     }
     return true;
@@ -47,22 +49,22 @@ const FurnitureGachaponMachine: React.FC<FurnitureGachaponMachineProps> = ({
 
   useEffect(() => {
     if (socket) {
-      // Listen for animation events from other users
+      // listens for animation events from other users
       socket.on('furnitureGachaponAnimation', (data: { userId: string, hasEnoughTime: boolean }) => {
-        if (data.userId !== socket.id) {  // Only play if it's not our own animation
+        if (data.userId !== socket.id) {  
           setIsPlaying(true);
           setCurrentImageSrc(src);
           setGifTimestamp(Date.now());
           
-          // Use the same timing logic as the click handler
+          // uses the same timing logic as the click handler
           if (data.hasEnoughTime) {
-            // Let the full GIF play for 3 seconds
+            // lets the full GIF play for 3 seconds
             setTimeout(() => {
               setIsPlaying(false);
               setCurrentImageSrc('/UI/furnituregacha.png');
             }, 3000);
           } else {
-            // Switch to static image after 0.5 seconds
+            // switches to static image after 0.5 seconds
             setTimeout(() => {
               setCurrentImageSrc('/UI/furnituregacha.png');
               setIsPlaying(false);
@@ -79,7 +81,7 @@ const FurnitureGachaponMachine: React.FC<FurnitureGachaponMachineProps> = ({
 
   const handleClick = () => {
     if (isPlaying || showMessage) {
-      return; // Prevent multiple clicks while playing or when message is showing
+      return; // prevents multiple clicks while playing or when message is showing
     }
 
     if (socket) {
@@ -88,12 +90,12 @@ const FurnitureGachaponMachine: React.FC<FurnitureGachaponMachineProps> = ({
 
     const enoughTime = checkAFKTime();
     
-    // Unfreeze cursor if user has enough AFK time and is currently frozen
+    // unfreezes cursor if user has enough AFK time and is currently frozen
     if (enoughTime && isCursorFrozen && onUnfreeze) {
       onUnfreeze();
     }
     
-    // Show notification immediately when clicked
+    // shows notification immediately when clicked
     if (enoughTime) {
       onShowNotification?.('-30m');
     } else {
@@ -102,11 +104,11 @@ const FurnitureGachaponMachine: React.FC<FurnitureGachaponMachineProps> = ({
 
     setIsPlaying(true);
     
-    // Switch to animated GIF and force restart
+    // switches to animated GIF and force restarts
     setCurrentImageSrc(src);
     setGifTimestamp(Date.now());
 
-    // Emit animation event to other users with enoughTime flag
+    // emits animation event to other users with enoughTime flag
     if (socket) {
       socket.emit('furnitureGachaponAnimation', { 
         userId: socket.id,
@@ -115,10 +117,10 @@ const FurnitureGachaponMachine: React.FC<FurnitureGachaponMachineProps> = ({
     }
 
     if (enoughTime) {
-      // Deduct 30 minutes (1800 seconds) from AFK balance
+      // deducts 30 minutes (1800 seconds) from AFK balance
       const success = deductAFKBalance(1800);
       if (!success) {
-        // If deduction failed, reset the playing state and show error
+        // if deduction failed, resets the playing state and shows error
         console.log('Failed to deduct AFK balance - insufficient funds');
         setIsPlaying(false);
         setCurrentImageSrc('/UI/furnituregacha.png');
@@ -126,15 +128,15 @@ const FurnitureGachaponMachine: React.FC<FurnitureGachaponMachineProps> = ({
         return;
       }
       
-      // Call onUse callback immediately to refresh stats
+      // calls onUse callback immediately to refresh stats
       onUse();
       
-      // Let the full GIF play before showing result (approximately 2.5 seconds for gacha.gif)
+      // lets the full GIF play before showing result (approximately 2.5 seconds for gacha.gif)
       setTimeout(() => {
         determinePayout();
       }, 2500); // Full GIF animation time (2.5 seconds)
     } else {
-      // For users without enough currency, play GIF for only 0.5 seconds then back to still
+      // for users without enough currency, plays GIF for only 0.5 seconds then back to still
       setTimeout(() => {
         setCurrentImageSrc('/UI/furnituregacha.png');
         setIsPlaying(false);
@@ -150,36 +152,36 @@ const FurnitureGachaponMachine: React.FC<FurnitureGachaponMachineProps> = ({
       setMessageType('win');
       setShowMessage(true);
       
-      // Pause the GIF by switching to static image while message shows
+      // pauses the GIF by switching to static image while message shows
       setCurrentImageSrc('/UI/furnituregacha.png');
       
-      // Emit win event to server (this will trigger confetti for ALL users via socket)
+      // emits win event to server (this will trigger confetti for ALL users via socket)
       console.log('Emitting furnitureGachaponWin event to server');
       console.log('Socket connected:', socket?.connected);
       console.log('Socket id:', socket?.id);
       socket?.emit('furnitureGachaponWin', { winnerId: socket?.id, winnerName: username });
       
-      // Hide message after 3 seconds
+      // hides message after 3 seconds
       messageRef.current = setTimeout(() => {
         setShowMessage(false);
         setMessageType(null);
-        setIsPlaying(false); // Re-enable clicking after message disappears
-        // Stay on still image (default state)
+        setIsPlaying(false); // re-enables clicking after message disappears
+        // stays on still image (default state)
         setCurrentImageSrc('/UI/furnituregacha.png');
       }, 3000);
     } else {
       setMessageType('tryAgain');
       setShowMessage(true);
       
-      // Pause the GIF by switching to static image while message shows
+      // pauses the GIF by switching to static image while message shows
       setCurrentImageSrc('/UI/furnituregacha.png');
       
-      // Hide message after 2 seconds
+      // hides message after 2 seconds
       messageRef.current = setTimeout(() => {
         setShowMessage(false);
         setMessageType(null);
-        setIsPlaying(false); // Re-enable clicking after message disappears
-        // Stay on still image (default state)
+        setIsPlaying(false); // re-enables clicking after message disappears
+        // stays on still image (default state)
         setCurrentImageSrc('/UI/furnituregacha.png');
       }, 2000);
     }
@@ -193,7 +195,7 @@ const FurnitureGachaponMachine: React.FC<FurnitureGachaponMachineProps> = ({
     };
   }, []);
 
-  // Create GIF URL with timestamp to force restart
+  // creates GIF URL with timestamp to force restart
   const gifUrl = gifTimestamp > 0 ? `${currentImageSrc}?t=${gifTimestamp}` : currentImageSrc;
 
   return (

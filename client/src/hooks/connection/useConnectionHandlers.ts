@@ -19,20 +19,16 @@ export const useConnectionHandlers = ({
   const handleConnect = useCallback(() => {
     if (username.trim() === '') return;
     if (socket?.connected) {
-      // Use the username the user typed, not the stored one
+      // typed username
       const userTypedUsername = username.trim();
       const deviceId = getDeviceId();
       
-      // Send username and device ID to server for validation
-      // Don't set hasConnected yet - wait for server response
+      // sends username and device ID to server for validation
       socket.emit('setName', { 
         name: userTypedUsername,
         deviceId: deviceId
       });
       
-      // The server will respond with either:
-      // - 'usernameError' if validation fails (connectionModal will stay open)
-      // - 'cursors' update if validation succeeds (connectionModal will close)
     }
   }, [socket, username, setHasConnected, clickEnabledTimeRef]);
 

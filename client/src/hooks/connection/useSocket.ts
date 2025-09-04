@@ -70,8 +70,8 @@ export const useSocket = () => {
     
     const socket = io(SERVER_CONFIG.SOCKET_URL, {
       timeout: 60000, // 60 second timeout
-      transports: ['websocket', 'polling'], // Try WebSocket first, then polling
-      path: '/socket.io/', // Explicit path for nginx proxy
+      transports: ['websocket', 'polling'],
+      path: '/socket.io/', 
       forceNew: true
     });
     socketRef.current = socket;
@@ -79,22 +79,22 @@ export const useSocket = () => {
     socket.on('connect', () => {
       console.log('✅ Connected to server successfully');
       
-      // Send device ID immediately for user stats persistence
+      // sends device ID for user stats
       const deviceId = getDeviceId();
       socket.emit('setDeviceId', { deviceId });
       console.log('📱 Device ID sent:', deviceId);
       
-      // Request user stats immediately after device ID is sent
-      // This ensures gacha unlocks are loaded as soon as possible
+      // requests user stats 
+      // gacha unlocks
       setTimeout(() => {
         socket.emit('requestUserStats');
         console.log('📊 Requested user stats after device ID setup');
-      }, 100); // Small delay to ensure device ID is processed
+      }, 100); // small delay for device ID
       
-      // Request jackpot record to get the last winner
+      // requests jackpot record to get the last winner
       socket.emit('requestJackpotRecord');
       
-      // Don't set hasConnected to true here - wait for user to enter name
+      // waits for user to enter name
     });
 
     socket.on('connect_error', (error) => {
@@ -169,35 +169,35 @@ export const useSocket = () => {
     });
 
     socket.on('jackpotRecord', (data: { name: string; wins: number; lastWinner?: string }) => {
-      // Update last winner if provided
+      // updates last winner if provided
       if (data.lastWinner) {
         setLastWinner(data.lastWinner);
       }
     });
 
-    // Handle gachapon wins - refresh user stats to show newly unlocked items
+    // refresh user stats to show unlocked items
     socket.on('gachaponWin', (data: { winnerId: string; winnerName: string; unlockedItem: string; type: string }) => {
       console.log('Gachapon win received:', data);
-      // Request updated user stats to refresh unlocked items
+      // updated user stats to refresh hats unlocked
       socket.emit('requestUserStats');
     });
 
     socket.on('furnitureGachaponWin', (data: { winnerId: string; winnerName: string; unlockedItem: string; type: string }) => {
       console.log('Furniture gachapon win received:', data);
-      // Request updated user stats to refresh unlocked items
+      // updated user stats to refresh furnitures unlocked
       socket.emit('requestUserStats');
     });
 
     socket.on('usernameError', () => {
-      // Show a friendly error message to the user
+      // error if bad name
       alert("nooo.. that's not a good name, try another..");
     });
 
     socket.on('usernameAccepted', (data: { username: string }) => {
-      // Username was accepted, complete the connection
+      // username accepted
       setHasConnected(true);
       
-      // Set up cursor and user data
+      // sets up cursor and user data
       const savedCursorType = getSavedCursorType();
       if (savedCursorType) {
         socket.emit('changeCursor', { type: savedCursorType });

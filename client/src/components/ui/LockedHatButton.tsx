@@ -10,9 +10,9 @@ const LockedHatButton: React.FC<LockedHatButtonProps> = ({ hatType, onClick }) =
   const { userStats } = useUserStats();
   const [showTooltip, setShowTooltip] = useState(false);
 
-  // Check if user has this specific hat unlocked and get unlocker info
+  // checks if user has this specific hat unlocked and gets unlocker info
   const unlockedHat = userStats?.unlockedGachaHats?.find(hat => {
-    // Handle both string and object formats
+    // handles both string and object formats
     if (typeof hat === 'string') {
       return hat === hatType;
     } else if (typeof hat === 'object' && hat.item) {

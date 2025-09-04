@@ -39,7 +39,7 @@ const FurniturePanel: React.FC<FurniturePanelProps> = ({
       <img src="/UI/transparentfurniturepanel.png" alt="Furniture Panel" className="furniture-panel-background" />
       
       <div className="furniture-panel-content">
-        {/* Furniture Buttons Section */}
+        {/* furniture buttons section */}
         <div className="furniture-panel-section">
           <div className="button-grid">
             <div className="button-row">
