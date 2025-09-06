@@ -28,12 +28,6 @@ if (success) {
 refreshStats(); // refreshes to see updated stats
 
 ;
-// refresh stats
-const handleRefreshStats = async () => {
-console.log('Refreshing stats...');
-await refreshStats();
-console.log('Stats refreshed');
-;
 // return the testing panel to add afk balance and deduct afk balance
 return (
 <div style={{ 
