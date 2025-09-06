@@ -9,6 +9,7 @@ const Testing: React.FC = () => {
     refreshStats
   } = useUserStats();
 
+  // deduct AFK time
   const handleTestDeductBalance = async () => {
     console.log('Testing AFK balance deduction...');
     const success = await deductAFKBalance(30); // deducts 30 seconds
@@ -17,7 +18,7 @@ const Testing: React.FC = () => {
       refreshStats(); // refreshes to see updated stats
     }
   };
-
+ // add AFK time
   const handleAddAFKTime = async (minutes: number) => {
     console.log(`Adding ${minutes} minutes of AFK time...`);
     const seconds = minutes * 60;
@@ -27,7 +28,13 @@ const Testing: React.FC = () => {
       refreshStats(); // refreshes to see updated stats
     }
   };
-
+  // refresh stats
+  const handleRefreshStats = async () => {
+    console.log('Refreshing stats...');
+    await refreshStats();
+    console.log('Stats refreshed');
+  };
+  // return the testing panel to add afk balance and deduct afk balance
   return (
     <div style={{ 
       position: 'fixed', 
