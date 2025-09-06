@@ -11,10 +11,10 @@ const Testing: React.FC = () => {
 
   const handleTestDeductBalance = async () => {
     console.log('Testing AFK balance deduction...');
-    const success = await deductAFKBalance(30); // Deduct 30 seconds
+    const success = await deductAFKBalance(30); // deducts 30 seconds
     console.log('AFK balance deduction result:', success);
     if (success) {
-      refreshStats(); // Refresh to see updated stats
+      refreshStats(); // refreshes to see updated stats
     }
   };
 
@@ -24,7 +24,7 @@ const Testing: React.FC = () => {
     const success = await addAFKTime(seconds);
     console.log('AFK time addition result:', success);
     if (success) {
-      refreshStats(); // Refresh to see updated stats
+      refreshStats(); // refreshes to see updated stats
     }
   };
 
