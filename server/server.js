@@ -298,6 +298,15 @@ console.error('Error loading user activity data from MongoDB:', error);
 
 async function savePersistentData() {
 
+const deletionsToProcess = pendingChanges.filter(change => 
+change.type === 'furniture' && change.data && change.data._delete
+);
+
+for (const deletion of deletionsToProcess) {
+await Furniture.deleteOne({ id: deletion.data.id );
+console.log(`🗑️ Deleted furniture from MongoDB: ${deletion.data.id`);
+
+
 // save furniture to MongoDB
 for (const [id, item] of Object.entries(furniture)) {
 // handle both old and new furniture structures
@@ -666,6 +675,9 @@ socketId: socketId
 
 break;
 case 'furniture':
+if (change.data && change.data._delete) {
+delete furniture[change.data.id];
+
 break;
 case 'cleanup':
 break;
@@ -1019,8 +1031,8 @@ io.emit('furnitureZIndexChanged', [
 socket.on('deleteFurniture', (furnitureId) => {
 if (furniture[furnitureId]) {
 delete furniture[furnitureId];
-// save to persistent storage
-addToBatch('furniture', null);
+// save to persistent storage to delete
+addToBatch('furniture', { id: furnitureId, _delete: true );
 io.emit('furnitureDeleted', { id: furnitureId );
 
 );
