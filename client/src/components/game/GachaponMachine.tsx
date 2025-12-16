@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect  from 'react';
 import { Socket  from 'socket.io-client';
 import { useUserStats  from '../../contexts/UserStatsContext';
 
+
 interface GachaponMachineProps {
 src: string;
 alt: string;
@@ -87,6 +88,9 @@ socket.emit('resetStillTime');
 
 
 const enoughTime = checkAFKTime();
+
+// gacha machine click with datadog
+'hat', enoughTime);
 
 // unfreezes cursor if user has enough AFK time and is currently frozen
 if (enoughTime && isCursorFrozen && onUnfreeze) {

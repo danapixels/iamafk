@@ -4,6 +4,7 @@ import './FurniturePanel.css';
 import FurnitureButton from './FurnitureButton';
 import LockedFurnitureButton from './LockedFurnitureButton';
 
+
 interface FurniturePanelProps {
 socket: Socket | null;
 onFurnitureSpawn?: (type: string, x: number, y: number) => void;
@@ -18,6 +19,9 @@ viewportOffset,
 style
 ) => {
 const handleFurnitureClick = (type: string) => {
+// furniture panel click with datadog
+type);
+
 const centerX = window.innerWidth / 2;
 const centerY = window.innerHeight / 2;
 const canvasX = centerX + (viewportOffset?.x || 0);

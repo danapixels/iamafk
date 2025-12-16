@@ -7,6 +7,8 @@ saveUsername,
 getDeviceId
  from '../../utils/localStorage';
 
+import { datadogRum  from '@datadog/browser-rum';
+
 interface CursorData {
 x: number;
 y: number;
@@ -103,6 +105,10 @@ console.error('❌ Connection error:', error);
 
 socket.on('disconnect', (reason) => {
 console.log('🔌 Disconnected:', reason);
+
+// session end with datadog
+reason);
+
 setHasConnected(false);
 setCursors({);
 setHearts([]);
@@ -178,12 +184,16 @@ setLastWinner(data.lastWinner);
 // refresh user stats to show unlocked items
 socket.on('gachaponWin', (data: { winnerId: string; winnerName: string; unlockedItem: string; type: string ) => {
 console.log('Gachapon win received:', data);
+// gacha win with actual item name
+'hat', data.unlockedItem);
 // updated user stats to refresh hats unlocked
 socket.emit('requestUserStats');
 );
 
 socket.on('furnitureGachaponWin', (data: { winnerId: string; winnerName: string; unlockedItem: string; type: string ) => {
 console.log('Furniture gachapon win received:', data);
+// gacha win with actual item name
+'furniture', data.unlockedItem);
 // updated user stats to refresh furnitures unlocked
 socket.emit('requestUserStats');
 );
@@ -204,6 +214,13 @@ socket.emit('changeCursor', { type: savedCursorType );
 
 
 saveUsername(data.username);
+
+// user login with datadog and set user context
+
+id: socket.id,
+username: data.username
+);
+data.username);
 
 console.log('✅ Username accepted, connection completed');
 );

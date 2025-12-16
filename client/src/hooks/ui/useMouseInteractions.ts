@@ -3,6 +3,7 @@ import { Socket  from 'socket.io-client';
 import { CANVAS_SIZE  from '../../constants';
 import { screenToCanvas, clampToCanvas  from '../../utils/canvas';
 
+
 interface MouseInteractionsProps {
 socketRef: React.RefObject<Socket | null>;
 hasConnected: boolean;
@@ -372,6 +373,11 @@ if (selectedFurnitureId === furnitureId) {
 setSelectedFurnitureId(null);
  else {
 setSelectedFurnitureId(furnitureId);
+// furniture select interaction
+const furnitureItem = furniture[furnitureId];
+if (furnitureItem) {
+'select', furnitureId, furnitureItem.type);
+
 
 
 // stores the furniture ID and start position for potential dragging
@@ -590,14 +596,16 @@ if (!socketRef.current?.connected || !hasConnected) return;
 
 const now = Date.now();
 
+socketRef.current.emit('resetStillTime');
+const canvasCoords = convertScreenToCanvas(e.clientX, e.clientY);
+const clampedCoords = clampToCanvas(canvasCoords.x, canvasCoords.y);
 
+// double click with Datadog
+clampedCoords.x, clampedCoords.y);
 
 // updates last double-click time
 lastDoubleClickTimeRef.current = now;
 
-socketRef.current.emit('resetStillTime');
-const canvasCoords = convertScreenToCanvas(e.clientX, e.clientY);
-const clampedCoords = clampToCanvas(canvasCoords.x, canvasCoords.y);
 const heartId = `${socketRef.current.id-${Date.now()-${++heartCounterRef.current`;
 socketRef.current.emit('spawnHeart', {
 x: clampedCoords.x,

@@ -3,6 +3,7 @@ import type { Furniture  from '../../types';
 import { FURNITURE_IMAGES, FURNITURE_TOGGLE_IMAGES, Z_INDEX_LAYERS  from '../../constants';
 import { FurnitureControlButtons  from './FurnitureControlButtons';
 
+
 interface FurnitureRendererProps {
 visibleFurniture: Furniture[];
 selectedFurnitureId: string | null;
@@ -35,19 +36,34 @@ return FURNITURE_IMAGES[item.type];
 
 const handleFlip = (furnitureId: string) => {
 if (socketRef.current) {
+const furniture = visibleFurniture.find(item => item.id === furnitureId);
 socketRef.current.emit('flipFurniture', { furnitureId );
+// furniture flip interaction
+if (furniture) {
+'flip', furnitureId, furniture.type);
+
 
 ;
 
 const handleToggle = (furnitureId: string) => {
 if (socketRef.current) {
+const furniture = visibleFurniture.find(item => item.id === furnitureId);
 socketRef.current.emit('toggleFurnitureState', { furnitureId );
+// furniture toggle interaction
+if (furniture) {
+'toggle', furnitureId, furniture.type);
+
 
 ;
 
 const handleDelete = (furnitureId: string) => {
 if (socketRef.current) {
+const furniture = visibleFurniture.find(item => item.id === furnitureId);
 socketRef.current.emit('deleteFurniture', furnitureId);
+// furniture delete interaction
+if (furniture) {
+'delete', furnitureId, furniture.type);
+
 onDelete(furnitureId);
 
 ;

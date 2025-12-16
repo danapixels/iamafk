@@ -1,6 +1,7 @@
 import { useCallback  from 'react';
 import { Socket  from 'socket.io-client';
 
+
 interface UseFurnitureHandlersProps {
 socket: Socket | null;
 canPlaceFurniture: () => boolean;
@@ -37,6 +38,9 @@ type: furnitureType,
 x,
 y
 );
+
+// furniture placement with datadog
+furnitureType, x, y);
 
 const success = await recordFurniturePlacement(furnitureType);
 if (!success) {

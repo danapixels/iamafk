@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect  from 'react';
 import { Socket  from 'socket.io-client';
 import { useUserStats  from '../../contexts/UserStatsContext';
 
+
 // defines the furniture gachapon machine props interface
 interface FurnitureGachaponMachineProps {
 src: string;
@@ -89,6 +90,9 @@ socket.emit('resetStillTime');
 
 
 const enoughTime = checkAFKTime();
+
+// gacha machine click with datadog
+'furniture', enoughTime);
 
 // unfreezes cursor if user has enough AFK time and is currently frozen
 if (enoughTime && isCursorFrozen && onUnfreeze) {

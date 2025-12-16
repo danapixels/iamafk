@@ -4,6 +4,7 @@ import './Panel.css';
 import HatButton from './HatButton';
 import LockedHatButton from './LockedHatButton';
 
+
 interface PanelProps {
 socket: Socket | null;
 onCursorChange: (cursor: { type: string ) => void;
@@ -18,6 +19,9 @@ style
 ) => {
 
 const handleHatClick = (hatType: string) => {
+// hats panel click with datadog
+hatType);
+
 if (socket) {
 socket.emit('changeCursor', { type: hatType );
 onCursorChange({ type: hatType );

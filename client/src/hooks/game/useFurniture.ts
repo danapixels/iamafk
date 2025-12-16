@@ -1,6 +1,7 @@
 import { useEffect  from 'react';
 import { Socket  from 'socket.io-client';
 
+
 interface Furniture {
 id: string;
 type: string;
@@ -36,6 +37,9 @@ socket.on('furnitureSpawned', (data: any) => {
 if (data && data.id) {
 setFurniture(prev => ({ ...prev, [data.id]: data ));
 
+// furniture placement (catches all placements including presets)
+data.type, data.x, data.y);
+
 // auto-selects the furniture if this user spawned it
 if (data.ownerId === socket.id) {
 setSelectedFurnitureId(data.id);
@@ -54,7 +58,13 @@ draggedFurnitureId.current === data.id
 return;
 
 if (data && data.id) {
-setFurniture(prev => ({
+// furniture move interaction (only for moves from other users or server)
+setFurniture(prev => {
+const furnitureItem = prev[data.id];
+if (furnitureItem) {
+'move', data.id, furnitureItem.type);
+
+return {
 ...prev,
 [data.id]: {
 ...prev[data.id],
@@ -62,13 +72,19 @@ x: data.x,
 y: data.y,
 isFlipped: data.isFlipped
 
-));
+;
+);
 
 );
 
 socket.on('furnitureDeleted', (data: any) => {
 if (data && data.id) {
 setFurniture(prev => {
+const furnitureItem = prev[data.id];
+// furniture delete interaction with actual type
+if (furnitureItem) {
+'delete', data.id, furnitureItem.type);
+
 const newFurniture = { ...prev ;
 delete newFurniture[data.id];
 return newFurniture;
