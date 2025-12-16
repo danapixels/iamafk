@@ -55,6 +55,7 @@ export const useKeyboardInteractions = ({
           if (socketRef.current) {
             socketRef.current.emit('deleteFurniture', selectedFurnitureId);
             setSelectedFurnitureId(null);
+            // note: delete interaction is tracked in useFurniture.ts when furnitureDeleted event is received
           }
           return;
         }

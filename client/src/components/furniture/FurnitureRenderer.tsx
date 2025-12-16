@@ -2,6 +2,7 @@ import React, { memo } from 'react';
 import type { Furniture } from '../../types';
 import { FURNITURE_IMAGES, FURNITURE_TOGGLE_IMAGES, Z_INDEX_LAYERS } from '../../constants';
 import { FurnitureControlButtons } from './FurnitureControlButtons';
+import { trackFurnitureInteraction } from '../../utils/datadog';
 
 interface FurnitureRendererProps {
   visibleFurniture: Furniture[];
@@ -35,19 +36,34 @@ const FurnitureRenderer: React.FC<FurnitureRendererProps> = memo(({
 
   const handleFlip = (furnitureId: string) => {
     if (socketRef.current) {
+      const furniture = visibleFurniture.find(item => item.id === furnitureId);
       socketRef.current.emit('flipFurniture', { furnitureId });
+      // track furniture flip interaction
+      if (furniture) {
+        trackFurnitureInteraction('flip', furnitureId, furniture.type);
+      }
     }
   };
 
   const handleToggle = (furnitureId: string) => {
     if (socketRef.current) {
+      const furniture = visibleFurniture.find(item => item.id === furnitureId);
       socketRef.current.emit('toggleFurnitureState', { furnitureId });
+      // track furniture toggle interaction
+      if (furniture) {
+        trackFurnitureInteraction('toggle', furnitureId, furniture.type);
+      }
     }
   };
 
   const handleDelete = (furnitureId: string) => {
     if (socketRef.current) {
+      const furniture = visibleFurniture.find(item => item.id === furnitureId);
       socketRef.current.emit('deleteFurniture', furnitureId);
+      // track furniture delete interaction
+      if (furniture) {
+        trackFurnitureInteraction('delete', furnitureId, furniture.type);
+      }
       onDelete(furnitureId);
     }
   };

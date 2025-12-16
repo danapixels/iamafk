@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Socket } from 'socket.io-client';
 import { useUserStats } from '../../contexts/UserStatsContext';
+import { trackGachaMachineClick } from '../../utils/datadog';
 
 // defines the furniture gachapon machine props interface
 interface FurnitureGachaponMachineProps {
@@ -89,6 +90,9 @@ const FurnitureGachaponMachine: React.FC<FurnitureGachaponMachineProps> = ({
     }
 
     const enoughTime = checkAFKTime();
+    
+    // track gacha machine click with datadog
+    trackGachaMachineClick('furniture', enoughTime);
     
     // unfreezes cursor if user has enough AFK time and is currently frozen
     if (enoughTime && isCursorFrozen && onUnfreeze) {

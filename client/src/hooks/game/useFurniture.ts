@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Socket } from 'socket.io-client';
+import { trackFurniturePlacement, trackFurnitureInteraction } from '../../utils/datadog';
 
 interface Furniture {
   id: string;
@@ -36,6 +37,9 @@ export const useFurniture = (
       if (data && data.id) {
         setFurniture(prev => ({ ...prev, [data.id]: data }));
         
+        // track furniture placement (catches all placements including presets)
+        trackFurniturePlacement(data.type, data.x, data.y);
+        
         // auto-selects the furniture if this user spawned it
         if (data.ownerId === socket.id) {
           setSelectedFurnitureId(data.id);
@@ -54,21 +58,33 @@ export const useFurniture = (
         return;
       }
       if (data && data.id) {
-        setFurniture(prev => ({
-          ...prev,
-          [data.id]: {
-            ...prev[data.id],
-            x: data.x,
-            y: data.y,
-            isFlipped: data.isFlipped
+        // track furniture move interaction (only for moves from other users or server)
+        setFurniture(prev => {
+          const furnitureItem = prev[data.id];
+          if (furnitureItem) {
+            trackFurnitureInteraction('move', data.id, furnitureItem.type);
           }
-        }));
+          return {
+            ...prev,
+            [data.id]: {
+              ...prev[data.id],
+              x: data.x,
+              y: data.y,
+              isFlipped: data.isFlipped
+            }
+          };
+        });
       }
     });
 
     socket.on('furnitureDeleted', (data: any) => {
       if (data && data.id) {
         setFurniture(prev => {
+          const furnitureItem = prev[data.id];
+          // track furniture delete interaction with actual type
+          if (furnitureItem) {
+            trackFurnitureInteraction('delete', data.id, furnitureItem.type);
+          }
           const newFurniture = { ...prev };
           delete newFurniture[data.id];
           return newFurniture;

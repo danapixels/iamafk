@@ -6,6 +6,8 @@ import {
   saveUsername,
   getDeviceId
 } from '../../utils/localStorage';
+import { trackUserLogin, trackSessionEnd, trackGachaWin } from '../../utils/datadog';
+import { datadogRum } from '@datadog/browser-rum';
 
 interface CursorData {
   x: number;
@@ -103,6 +105,10 @@ export const useSocket = () => {
 
     socket.on('disconnect', (reason) => {
       console.log('🔌 Disconnected:', reason);
+      
+      // track session end with datadog
+      trackSessionEnd(reason);
+      
       setHasConnected(false);
       setCursors({});
       setHearts([]);
@@ -178,12 +184,16 @@ export const useSocket = () => {
     // refresh user stats to show unlocked items
     socket.on('gachaponWin', (data: { winnerId: string; winnerName: string; unlockedItem: string; type: string }) => {
       console.log('Gachapon win received:', data);
+      // track gacha win with actual item name
+      trackGachaWin('hat', data.unlockedItem);
       // updated user stats to refresh hats unlocked
       socket.emit('requestUserStats');
     });
 
     socket.on('furnitureGachaponWin', (data: { winnerId: string; winnerName: string; unlockedItem: string; type: string }) => {
       console.log('Furniture gachapon win received:', data);
+      // track gacha win with actual item name
+      trackGachaWin('furniture', data.unlockedItem);
       // updated user stats to refresh furnitures unlocked
       socket.emit('requestUserStats');
     });
@@ -204,6 +214,13 @@ export const useSocket = () => {
       }
       
       saveUsername(data.username);
+      
+      // track user login with datadog and set user context
+      datadogRum.setUser({
+        id: socket.id,
+        username: data.username
+      });
+      trackUserLogin(data.username);
       
       console.log('✅ Username accepted, connection completed');
     });

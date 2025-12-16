@@ -3,6 +3,7 @@ import { Socket } from 'socket.io-client';
 import './FurniturePanel.css';
 import FurnitureButton from './FurnitureButton';
 import LockedFurnitureButton from './LockedFurnitureButton';
+import { trackFurniturePanelClick } from '../../utils/datadog';
 
 interface FurniturePanelProps {
   socket: Socket | null;
@@ -18,6 +19,9 @@ const FurniturePanel: React.FC<FurniturePanelProps> = ({
   style
 }) => {
   const handleFurnitureClick = (type: string) => {
+    // track furniture panel click with datadog
+    trackFurniturePanelClick(type);
+    
     const centerX = window.innerWidth / 2;
     const centerY = window.innerHeight / 2;
     const canvasX = centerX + (viewportOffset?.x || 0);

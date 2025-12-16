@@ -3,6 +3,7 @@ import { Socket } from 'socket.io-client';
 import './Panel.css';
 import HatButton from './HatButton';
 import LockedHatButton from './LockedHatButton';
+import { trackHatsPanelClick } from '../../utils/datadog';
 
 interface PanelProps {
   socket: Socket | null;
@@ -18,6 +19,9 @@ const Panel: React.FC<PanelProps> = ({
 }) => {
 
   const handleHatClick = (hatType: string) => {
+    // track hats panel click with datadog
+    trackHatsPanelClick(hatType);
+    
     if (socket) {
       socket.emit('changeCursor', { type: hatType });
       onCursorChange({ type: hatType });

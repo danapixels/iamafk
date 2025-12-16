@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { Socket } from 'socket.io-client';
+import { trackFurniturePlacement } from '../../utils/datadog';
 
 interface UseFurnitureHandlersProps {
   socket: Socket | null;
@@ -37,6 +38,9 @@ export const useFurnitureHandlers = ({
         x,
         y
       });
+      
+      // track furniture placement with datadog
+      trackFurniturePlacement(furnitureType, x, y);
       
       const success = await recordFurniturePlacement(furnitureType);
       if (!success) {
