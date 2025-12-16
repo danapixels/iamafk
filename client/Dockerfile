@@ -5,7 +5,12 @@ WORKDIR /app
 
 # Accept build arguments for environment variables
 ARG VITE_SERVER_URL
+ARG 
+ARG 
+
 ENV VITE_SERVER_URL=$VITE_SERVER_URL
+ENV =$
+ENV =$
 
 # Copy package files
 COPY package*.json ./
