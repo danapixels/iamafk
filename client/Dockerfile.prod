@@ -3,7 +3,7 @@ FROM node:18-alpine AS build
 
 WORKDIR /app
 
-# Accept build arguments for environment variables
+# Accept build arguments for environment variables, remove Datadog ones for personal use
 ARG VITE_SERVER_URL
 ARG VITE_DATADOG_APPLICATION_ID
 ARG VITE_DATADOG_CLIENT_TOKEN
@@ -40,4 +40,5 @@ COPY nginx.conf /etc/nginx/nginx.conf
 EXPOSE 80
 
 # Start nginx
-CMD ["nginx", "-g", "daemon off;"] 
+CMD ["nginx", "-g", "daemon off;"]
+

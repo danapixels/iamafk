@@ -449,48 +449,51 @@ function cleanupOldUserStats() {
       delete lastAFKUpdateTimes[deviceId];
     }
   });
-  
-  // clean up deviceID mappings and user stats older than 2 weeks
-  const deviceIdsToRemove = [];
-  
-  // check deviceID mappings for expiration
-  Object.entries(socketToDeviceMap).forEach(([socketId, deviceId]) => {
-    // if socket is not connected and device hasn't been seen in 2 weeks
-    if (!cursors[socketId] && userStats[deviceId]) {
-      const lastSeen = userStats[deviceId].lastSeen || 0;
-      if (now - lastSeen > TWO_WEEKS) {
-        deviceIdsToRemove.push(deviceId);
-        delete socketToDeviceMap[socketId];
-        delete deviceToSocketMap[deviceId];
-      }
-    }
-  });
-  
-  // check user stats for expiration (deviceIDs not in mappings)
-  Object.keys(userStats).forEach(deviceId => {
-    const lastSeen = userStats[deviceId].lastSeen || 0;
-    if (now - lastSeen > TWO_WEEKS) {
-      deviceIdsToRemove.push(deviceId);
-      delete userStats[deviceId];
-    }
-  });
-  
-  // remove duplicate deviceIDs
-  const uniqueDeviceIdsToRemove = [...new Set(deviceIdsToRemove)];
-  
-  if (uniqueDeviceIdsToRemove.length > 0) {
-    console.log(`🧹 Cleaned up ${uniqueDeviceIdsToRemove.length} expired deviceIDs and user stats after 2 weeks of inactivity`);
-    console.log(`📊 Removed deviceIDs: ${uniqueDeviceIdsToRemove.join(', ')}`);
-    
-    // save the updated mappings to persistent storage
-    saveSocketDeviceMapping();
-    
-    // add to batch for user stats persistence
-    addToBatch('cleanup', { type: 'deviceIdCleanup', count: uniqueDeviceIdsToRemove.length });
-  }
+
+  // USER STATS & DEVICE MAPPING EXPIRY - DISABLED FOR NOW
+  // keeping the logic below commented so it can be re-enabled later if needed
+  //
+  // // clean up deviceID mappings and user stats older than 2 weeks
+  // const deviceIdsToRemove = [];
+  //
+  // // check deviceID mappings for expiration
+  // Object.entries(socketToDeviceMap).forEach(([socketId, deviceId]) => {
+  //   // if socket is not connected and device hasn't been seen in 2 weeks
+  //   if (!cursors[socketId] && userStats[deviceId]) {
+  //     const lastSeen = userStats[deviceId].lastSeen || 0;
+  //     if (now - lastSeen > TWO_WEEKS) {
+  //       deviceIdsToRemove.push(deviceId);
+  //       delete socketToDeviceMap[socketId];
+  //       delete deviceToSocketMap[deviceId];
+  //     }
+  //   }
+  // });
+  //
+  // // check user stats for expiration (deviceIDs not in mappings)
+  // Object.keys(userStats).forEach(deviceId => {
+  //   const lastSeen = userStats[deviceId].lastSeen || 0;
+  //   if (now - lastSeen > TWO_WEEKS) {
+  //     deviceIdsToRemove.push(deviceId);
+  //     delete userStats[deviceId];
+  //   }
+  // });
+  //
+  // // remove duplicate deviceIDs
+  // const uniqueDeviceIdsToRemove = [...new Set(deviceIdsToRemove)];
+  //
+  // if (uniqueDeviceIdsToRemove.length > 0) {
+  //   console.log(`🧹 Cleaned up ${uniqueDeviceIdsToRemove.length} expired deviceIDs and user stats after 2 weeks of inactivity`);
+  //   console.log(`📊 Removed deviceIDs: ${uniqueDeviceIdsToRemove.join(', ')}`);
+  //
+  //   // save the updated mappings to persistent storage
+  //   saveSocketDeviceMapping();
+  //
+  //   // add to batch for user stats persistence
+  //   addToBatch('cleanup', { type: 'deviceIdCleanup', count: uniqueDeviceIdsToRemove.length });
+  // }
 }
 
-// Manual cleanup function for testing/admin purposes
+// manual cleanup function for testing/admin purposes
 function manualCleanup() {
   console.log('🧹 Manual cleanup triggered');
   cleanupOldUserStats();

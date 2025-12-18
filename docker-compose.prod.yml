@@ -2,7 +2,7 @@ services:
   client:
     build:
       context: ./client
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.prod
       args:
         - VITE_SERVER_URL=wss://iamafk.dev
     ports:

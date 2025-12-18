@@ -18,11 +18,13 @@ services:
   server:
     build:
       context: ./server
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     ports:
       - "3001:3001"
     volumes:
       - server-data:/app/data
+      - ./server:/app
+      - /app/node_modules
     environment:
       - NODE_ENV=development
       - PORT=3001
