@@ -186,3 +186,8 @@ logs/
 # Temporary deployment files
 .tmp/
 .temp/
+
+# Production Docker files (contain private information)
+client/Dockerfile.prod
+server/Dockerfile.prod
+docker-compose.prod.yml
