@@ -1,27 +1,27 @@
-import { useCallback  from 'react';
-import { Socket  from 'socket.io-client';
-import { saveCursorType  from '../../utils/localStorage';
+import { useCallback } from 'react';
+import { Socket } from 'socket.io-client';
+import { saveCursorType } from '../../utils/localStorage';
 
 interface UseCursorHandlersProps {
-socket: Socket | null;
-setCursorType: (type: string) => void;
-
+  socket: Socket | null;
+  setCursorType: (type: string) => void;
+}
 
 export const useCursorHandlers = ({
-socket,
-setCursorType
-: UseCursorHandlersProps) => {
+  socket,
+  setCursorType
+}: UseCursorHandlersProps) => {
+  
+  const handleCursorChange = useCallback((cursor: { type: string }) => {
+    if (socket) {
+      setCursorType(cursor.type);
+      // saves cursor type to localStorage for persistence
+      saveCursorType(cursor.type);
+      socket.emit('changeCursor', cursor);
+    }
+  }, [socket, setCursorType]);
 
-const handleCursorChange = useCallback((cursor: { type: string ) => {
-if (socket) {
-setCursorType(cursor.type);
-// saves cursor type to localStorage for persistence
-saveCursorType(cursor.type);
-socket.emit('changeCursor', cursor);
-
-, [socket, setCursorType]);
-
-return {
-handleCursorChange
-;
-; 
+  return {
+    handleCursorChange
+  };
+}; 

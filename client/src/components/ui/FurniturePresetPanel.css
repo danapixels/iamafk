@@ -1,290 +1,290 @@
 /* container for the panel*/
 .furniture-preset-panel-container {
-position: fixed;
-right: 160px;
-top: 255px;
-transform: none;
-pointer-events: none;
-animation: fadeInFromRight 0.5s ease-out;
-
+  position: fixed;
+  right: 160px;
+  top: 255px;
+  transform: none;
+  pointer-events: none;
+  animation: fadeInFromRight 0.5s ease-out;
+}
 
 /* background image for the panel*/
 .furniture-preset-panel-background {
-width: auto;
-height: auto;
-pointer-events: none;
-
+  width: auto;
+  height: auto;
+  pointer-events: none;
+}
 
 /* content of the panel*/
 .furniture-preset-panel-content {
-position: absolute;
-top: 0;
-left: 0;
-width: 100%;
-height: 100%;
-display: flex;
-flex-direction: column;
-gap: 15px;
-padding: 20px;
-padding-top: 42px;
-box-sizing: border-box;
-pointer-events: all;
-
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 20px;
+  padding-top: 42px;
+  box-sizing: border-box;
+  pointer-events: all;
+}
 
 /* button container*/
 .preset-button-container {
-display: flex;
-flex-direction: column;
-gap: 8px;
-align-items: center;
-
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
 
 /* button for the preset*/
 .preset-button {
-background: none;
-border: none;
-cursor: pointer;
-padding: 0;
-transition: transform 0.1s ease;
-pointer-events: all;
-position: relative;
-z-index: 1000;
-display: flex;
-align-items: center;
-height: 100%;
-
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.1s ease;
+  pointer-events: all;
+  position: relative;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
 
 /* hover effect for the preset button*/
 .preset-button:hover {
-transform: scale(1.05);
-
+  transform: scale(1.05);
+}
 
 /* disabled effect for the preset button*/
 .preset-button:disabled {
-cursor: not-allowed;
-opacity: 0.5;
-
+  cursor: not-allowed;
+  opacity: 0.5;
+}
 
 /* image for the preset button*/
 .preset-button img {
-width: auto;
-height: auto;
-pointer-events: none;
-
+  width: auto;
+  height: auto;
+  pointer-events: none;
+}
 
 /* save slots container*/
 .preset-slots-container {
-display: flex;
-flex-direction: column;
-gap: 6px;
-min-height: 32px;
-width: 105px;
-align-items: flex-start;
-transform: translateX(-4px);
-
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 32px;
+  width: 105px;
+  align-items: flex-start;
+  transform: translateX(-4px);
+}
 
 /* preset slot*/
 .preset-slot {
-background: #111111;
-border: none;
-border-bottom: 1px solid white;
-padding: 1px 2px;
-display: flex;
-flex-direction: column;
-justify-content: center;
-min-height: 12px;
-width: 105px;
-transition: background-color 0.2s ease;
-
+  background: #111111;
+  border: none;
+  border-bottom: 1px solid white;
+  padding: 1px 2px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 12px;
+  width: 105px;
+  transition: background-color 0.2s ease;
+}
 
 /* hover effect for the preset slot*/
 .preset-slot:hover {
-background: #222222;
-
+  background: #222222;
+}
 
 /* header for the preset slot*/
 .preset-slot-header {
-display: flex;
-justify-content: space-between;
-align-items: center;
-height: 100%;
-
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 100%;
+}
 
 /* name for the preset slot*/
 .preset-slot-name {
-font-family: 'Press Start 2P', monospace;
-font-size: 0.5em;
-color: white;
-line-height: 1;
-display: flex;
-align-items: center;
-height: 100%;
-
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.5em;
+  color: white;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
 
 .preset-delete-button {
-background: none;
-border: none;
-cursor: pointer;
-padding: 0;
-transition: transform 0.1s ease;
-display: flex;
-align-items: center;
-height: 100%;
-
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.1s ease;
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
 
 .preset-delete-button:hover {
-transform: scale(1.05);
-
+  transform: scale(1.05);
+}
 
 /* canvas overlay for placing presets*/
 .canvas-overlay {
-position: fixed;
-top: 0;
-left: 0;
-width: 100vw;
-height: 100vh;
-background: rgba(0, 0, 0, 0.3);
-cursor: crosshair;
-z-index: 9999;
-pointer-events: all;
-
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.3);
+  cursor: crosshair;
+  z-index: 9999;
+  pointer-events: all;
+}
 
 /* hover effect for the canvas overlay*/
 .canvas-overlay:hover {
-background: rgba(0, 0, 0, 0.2);
-
+  background: rgba(0, 0, 0, 0.2);
+}
 
 /* selection mode indicator*/
 .preset-button.selecting {
-animation: pulse 1s infinite;
-
+  animation: pulse 1s infinite;
+}
 
 /* pulse animation for the selection mode indicator*/
 @keyframes pulse {
-0% { transform: scale(1); 
-50% { transform: scale(1.05); 
-100% { transform: scale(1); 
-
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
 
 /* selection mode overlay*/
 .selection-mode-indicator {
-position: fixed;
-top: 0;
-left: 0;
-width: 100vw;
-height: 80px;
-background: transparent;
-z-index: 10000;
-display: flex;
-align-items: center;
-justify-content: center;
-padding-top: 16px;
-
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 80px;
+  background: transparent;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 16px;
+}
 
 /* placement mode overlay*/
 .placement-mode-indicator {
-position: fixed;
-top: 0;
-left: 0;
-width: 100vw;
-height: 60px;
-background: transparent;
-z-index: 10000;
-display: flex;
-align-items: center;
-justify-content: center;
-
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 60px;
+  background: transparent;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
 /* content for the placement mode overlay*/
 .placement-mode-content {
-display: flex;
-flex-direction: column;
-align-items: center;
-gap: 4px;
-
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
 
 /* text for the placement mode overlay*/
 .placement-mode-text {
-font-family: 'Press Start 2P', monospace;
-font-size: 0.8em;
-color: white;
-font-weight: bold;
-
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.8em;
+  color: white;
+  font-weight: bold;
+}
 
 /* hint for the placement mode overlay*/
 .placement-mode-hint {
-font-family: 'Press Start 2P', monospace;
-font-size: 0.5em;
-color: #e0e0e0;
-
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.5em;
+  color: #e0e0e0;
+}
 
 /* buttons for the placement mode overlay*/
 .placement-buttons {
-display: flex;
-gap: 8px;
-margin-top: 4px;
-
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
 
 /* content for the selection mode overlay*/
 .selection-mode-content {
-display: flex;
-flex-direction: column;
-align-items: center;
-gap: 4px;
-min-height: 80px;
-justify-content: flex-start;
-padding-top: 8px;
-
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-height: 80px;
+  justify-content: flex-start;
+  padding-top: 8px;
+}
 
 /* text for the selection mode overlay*/
 .selection-mode-text {
-font-family: 'Press Start 2P', monospace;
-font-size: 0.8em;
-color: white;
-font-weight: bold;
-
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.8em;
+  color: white;
+  font-weight: bold;
+}
 
 /* hint for the selection mode overlay*/
 .selection-mode-hint {
-font-family: 'Press Start 2P', monospace;
-font-size: 0.5em;
-color: #e0e0e0;
-
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.5em;
+  color: #e0e0e0;
+}
 
 /* selection save button*/
 .selection-save-button {
-background: #111111 !important;
-border: 1px solid white !important;
-border-radius: 6px !important;
-color: white !important;
-font-family: 'Press Start 2P', monospace !important;
-font-size: 0.5em !important;
-font-weight: bold !important;
-padding: 10px 20px !important;
-cursor: pointer !important;
-margin-top: 8px !important;
-width: fit-content !important;
-text-align: center !important;
-
+  background: #111111 !important;
+  border: 1px solid white !important;
+  border-radius: 6px !important;
+  color: white !important;
+  font-family: 'Press Start 2P', monospace !important;
+  font-size: 0.5em !important;
+  font-weight: bold !important;
+  padding: 10px 20px !important;
+  cursor: pointer !important;
+  margin-top: 8px !important;
+  width: fit-content !important;
+  text-align: center !important;
+}
 
 /* hover effect for the selection save button*/
 .selection-save-button:hover {
-background: #222222 !important;
-
+  background: #222222 !important;
+}
 
 /* active effect for the selection save button*/
 .selection-save-button:active {
-transform: translateY(0) !important;
-
+  transform: translateY(0) !important;
+}
 
 /* fade in from right animation*/
 @keyframes fadeInFromRight {
-from {
-opacity: 0;
-transform: translateX(20px);
-
-to {
-opacity: 1;
-transform: translateX(0);
-
- 
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+} 

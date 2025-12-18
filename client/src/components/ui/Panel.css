@@ -1,162 +1,162 @@
 .panel-container {
-position: fixed;
-right: 8px;
-top: 0;
-transform: none;
-pointer-events: none;
-animation: fadeInFromRight 0.5s ease-out;
-
+  position: fixed;
+  right: 8px;
+  top: 0;
+  transform: none;
+  pointer-events: none;
+  animation: fadeInFromRight 0.5s ease-out;
+}
 
 .panel-background {
-width: auto;
-height: auto;
-pointer-events: none;
-
+  width: auto;
+  height: auto;
+  pointer-events: none;
+}
 
 .panel-content {
-position: absolute;
-top: 0;
-left: 0;
-width: 100%;
-height: 100%;
-display: flex;
-flex-direction: column;
-gap: 10px;
-padding: 20px 20px 20px 20px;
-padding-top: 40px;
-box-sizing: border-box;
-pointer-events: all;
-
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px 20px 20px 20px;
+  padding-top: 40px;
+  box-sizing: border-box;
+  pointer-events: all;
+}
 
 .panel-section {
-display: flex;
-flex-direction: column;
-align-items: flex-start;
-gap: 10px;
-width: 100%;
-
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+}
 
 .section-title {
-width: auto;
-height: auto;
-align-self: flex-start;
-padding-top: 2px;
-
+  width: auto;
+  height: auto;
+  align-self: flex-start;
+  padding-top: 2px;
+}
 
 .button-grid {
-display: flex;
-flex-direction: column;
-gap: 8px;
-width: 100%;
-
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
 
 /* gaps between buttons*/
 .panel-section:last-child {
-gap: 8px;
-
+  gap: 8px;
+}
 
 .panel-section:last-child .button-grid {
-gap: 8px;
-
+  gap: 8px;
+}
 
 .button-row {
-display: flex;
-justify-content: center;
-gap: 8px;
-
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
 
 .button {
-width: auto;
-height: auto;
-cursor: pointer;
-transition: transform 0.1s ease;
-
+  width: auto;
+  height: auto;
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
 
 .button:hover {
-transform: scale(1.05);
-
+  transform: scale(1.05);
+}
 
 /* hat button hover states */
 .button[src*="bunnybutton.png"]:hover {
-content: url('/UI/bunnybuttonhover.png');
-
+  content: url('/UI/bunnybuttonhover.png');
+}
 
 .button[src*="capbutton.png"]:hover {
-content: url('/UI/capbuttonhover.png');
-
+  content: url('/UI/capbuttonhover.png');
+}
 
 .button[src*="slimebutton.png"]:hover {
-content: url('/UI/slimebuttonhover.png');
-
+  content: url('/UI/slimebuttonhover.png');
+}
 
 .button[src*="astronautbutton.png"]:hover {
-content: url('/UI/astronautbuttonhover.png');
-
+  content: url('/UI/astronautbuttonhover.png');
+}
 
 .button[src*="beaniebutton.png"]:hover {
-content: url('/UI/beaniebuttonhover.png');
-
+  content: url('/UI/beaniebuttonhover.png');
+}
 
 .button[src*="headphonesbutton.png"]:hover {
-content: url('/UI/headphonesbuttonhover.png');
-
+  content: url('/UI/headphonesbuttonhover.png');
+}
 
 .button[src*="sproutbutton.png"]:hover {
-content: url('/UI/sproutbuttonhover.png');
-
+  content: url('/UI/sproutbuttonhover.png');
+}
 
 .button[src*="catbutton.png"]:hover {
-content: url('/UI/cathathover.png');
-
+  content: url('/UI/cathathover.png');
+}
 
 .button[src*="deletehatbutton.png"]:hover {
-content: url('/UI/deletehatbuttonhover.png');
-
+  content: url('/UI/deletehatbuttonhover.png');
+}
 
 .button[src*="lockedbutton.png"]:hover {
-content: url('/UI/lockedbuttonhover.png');
-
+  content: url('/UI/lockedbuttonhover.png');
+}
 
 .button[src*="easteregg1button.png"]:hover {
-content: url('/UI/easteregg1buttonhover.png');
-
+  content: url('/UI/easteregg1buttonhover.png');
+}
 
 /* furniture button hover states */
 .button[src*="chairbutton.png"]:hover {
-content: url('/UI/chairbuttonhover.png');
-
+  content: url('/UI/chairbuttonhover.png');
+}
 
 .button[src*="lampbutton.png"]:hover {
-content: url('/UI/lampbuttonhover.png');
-
+  content: url('/UI/lampbuttonhover.png');
+}
 
 .button[src*="bedbutton.png"]:hover {
-content: url('/UI/bedbuttonhover.png');
-
+  content: url('/UI/bedbuttonhover.png');
+}
 
 .button[src*="wallsbutton.png"]:hover {
-content: url('/UI/wallsbuttonhover.png');
-
+  content: url('/UI/wallsbuttonhover.png');
+}
 
 .button[src*="plant1button.png"]:hover {
-content: url('/UI/plant1buttonhover.png');
-
+  content: url('/UI/plant1buttonhover.png');
+}
 
 .button[src*="plant2button.png"]:hover {
-content: url('/UI/plant2buttonhover.png');
-
+  content: url('/UI/plant2buttonhover.png');
+}
 
 .button[src*="blackcatbutton.png"]:hover {
-content: url('/UI/blackcatbuttonhover.png');
-
+  content: url('/UI/blackcatbuttonhover.png');
+}
 
 .button[src*="whitecatbutton.png"]:hover {
-content: url('/UI/whitecatbuttonhover.png');
-
+  content: url('/UI/whitecatbuttonhover.png');
+}
 
 /* tooltip for locked button */
 .locked-button-container:hover .tooltip,
 .locked-button-container.clicked .tooltip {
-opacity: 1;
-visibility: visible;
- 
+  opacity: 1;
+  visibility: visible;
+} 

@@ -1,100 +1,100 @@
-import { useState, useEffect  from 'react';
-import { SERVER_CONFIG  from '../../constants';
+import { useState, useEffect } from 'react';
+import { SERVER_CONFIG } from '../../constants';
 
 interface StatueBadges {
-dailyBadge: boolean;
-crownBadge: boolean;
-gachaBadge: boolean;
-
+  dailyBadge: boolean;
+  crownBadge: boolean;
+  gachaBadge: boolean;
+}
 
 interface UseStatueBadgesProps {
-cursors: { [key: string]: any ;
-username: string;
-socket: any;
+  cursors: { [key: string]: any };
+  username: string;
+  socket: any;
+}
 
+export const useStatueBadges = ({ cursors, username, socket }: UseStatueBadgesProps) => {
+  const [badges, setBadges] = useState<StatueBadges>({
+    dailyBadge: false,
+    crownBadge: false,
+    gachaBadge: false
+  });
 
-export const useStatueBadges = ({ cursors, username, socket : UseStatueBadgesProps) => {
-const [badges, setBadges] = useState<StatueBadges>({
-dailyBadge: false,
-crownBadge: false,
-gachaBadge: false
-);
+  useEffect(() => {
+    if (!username || username === SERVER_CONFIG.ANONYMOUS_NAME) {
+      setBadges({ dailyBadge: false, crownBadge: false, gachaBadge: false });
+      return;
+    }
+    
+    // checks daily badge - find the best stillTime among all users for today
+    let dailyBest = { name: '', time: 0 };
+    Object.values(cursors).forEach((cursor: any) => {
+      if (!cursor || !cursor.name || cursor.name === SERVER_CONFIG.ANONYMOUS_NAME) return;
+      const stillTime = cursor.stillTime || 0;
+      if (stillTime > dailyBest.time) {
+        dailyBest = { name: cursor.name, time: stillTime };
+      }
+    });
 
-useEffect(() => {
-if (!username || username === SERVER_CONFIG.ANONYMOUS_NAME) {
-setBadges({ dailyBadge: false, crownBadge: false, gachaBadge: false );
-return;
+    // checks if current user has the daily badge
+    const hasDailyBadge = dailyBest.name === username && dailyBest.time > 0;
 
+    setBadges(prev => ({
+      ...prev,
+      dailyBadge: hasDailyBadge
+    }));
 
-// checks daily badge - find the best stillTime among all users for today
-let dailyBest = { name: '', time: 0 ;
-Object.values(cursors).forEach((cursor: any) => {
-if (!cursor || !cursor.name || cursor.name === SERVER_CONFIG.ANONYMOUS_NAME) return;
-const stillTime = cursor.stillTime || 0;
-if (stillTime > dailyBest.time) {
-dailyBest = { name: cursor.name, time: stillTime ;
+  }, [cursors, username]);
 
-);
+  // listens for all-time record updates
+  useEffect(() => {
+    if (!socket || !username) return;
 
-// checks if current user has the daily badge
-const hasDailyBadge = dailyBest.name === username && dailyBest.time > 0;
+    const handleAllTimeRecord = (record: { name: string; time: number }) => {
+      setBadges(prev => ({
+        ...prev,
+        crownBadge: record.name === username
+      }));
+    };
 
-setBadges(prev => ({
-...prev,
-dailyBadge: hasDailyBadge
-));
+    const handleAllTimeRecordUpdated = (record: { name: string; time: number }) => {
+      setBadges(prev => ({
+        ...prev,
+        crownBadge: record.name === username
+      }));
+    };
 
-, [cursors, username]);
+    const handleJackpotRecord = (record: { name: string; wins: number }) => {
+      setBadges(prev => ({
+        ...prev,
+        gachaBadge: record.name === username
+      }));
+    };
 
-// listens for all-time record updates
-useEffect(() => {
-if (!socket || !username) return;
+    const handleJackpotRecordUpdated = (record: { name: string; wins: number }) => {
+      setBadges(prev => ({
+        ...prev,
+        gachaBadge: record.name === username
+      }));
+    };
 
-const handleAllTimeRecord = (record: { name: string; time: number ) => {
-setBadges(prev => ({
-...prev,
-crownBadge: record.name === username
-));
-;
+    // requests current records
+    socket.emit('requestAllTimeRecord');
+    socket.emit('requestJackpotRecord');
 
-const handleAllTimeRecordUpdated = (record: { name: string; time: number ) => {
-setBadges(prev => ({
-...prev,
-crownBadge: record.name === username
-));
-;
+    // listens for updates
+    socket.on('allTimeRecord', handleAllTimeRecord);
+    socket.on('allTimeRecordUpdated', handleAllTimeRecordUpdated);
+    socket.on('jackpotRecord', handleJackpotRecord);
+    socket.on('jackpotRecordUpdated', handleJackpotRecordUpdated);
 
-const handleJackpotRecord = (record: { name: string; wins: number ) => {
-setBadges(prev => ({
-...prev,
-gachaBadge: record.name === username
-));
-;
+    return () => {
+      socket.off('allTimeRecord', handleAllTimeRecord);
+      socket.off('allTimeRecordUpdated', handleAllTimeRecordUpdated);
+      socket.off('jackpotRecord', handleJackpotRecord);
+      socket.off('jackpotRecordUpdated', handleJackpotRecordUpdated);
+    };
+  }, [socket, username]);
 
-const handleJackpotRecordUpdated = (record: { name: string; wins: number ) => {
-setBadges(prev => ({
-...prev,
-gachaBadge: record.name === username
-));
-;
-
-// requests current records
-socket.emit('requestAllTimeRecord');
-socket.emit('requestJackpotRecord');
-
-// listens for updates
-socket.on('allTimeRecord', handleAllTimeRecord);
-socket.on('allTimeRecordUpdated', handleAllTimeRecordUpdated);
-socket.on('jackpotRecord', handleJackpotRecord);
-socket.on('jackpotRecordUpdated', handleJackpotRecordUpdated);
-
-return () => {
-socket.off('allTimeRecord', handleAllTimeRecord);
-socket.off('allTimeRecordUpdated', handleAllTimeRecordUpdated);
-socket.off('jackpotRecord', handleJackpotRecord);
-socket.off('jackpotRecordUpdated', handleJackpotRecordUpdated);
-;
-, [socket, username]);
-
-return badges;
-; 
+  return badges;
+}; 

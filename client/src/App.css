@@ -1,358 +1,358 @@
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
 html, body {
-background-color: #111111;
-margin: 0;
-height: 100%;
-color: white;
-overflow: hidden;
-width: 100vw;
-user-select: none; 
-
+  background-color: #111111;
+  margin: 0;
+  height: 100%;
+  color: white;
+  overflow: hidden;
+  width: 100vw;
+  user-select: none; 
+}
 
 #root {
-width: 100vw;
-height: 100vh;
-overflow: hidden;
-position: relative;
-user-select: none; 
-
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+  user-select: none; 
+}
 
 #app-root {
-width: 100vw;
-height: 100vh;
-margin: 0;
-padding: 0;
-overflow: hidden;
-position: relative;
-background-color: #111111;
-cursor: default;
-
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  position: relative;
+  background-color: #111111;
+  cursor: default;
+}
 
 #app-root.cursor-hidden {
-cursor: none;
-
+  cursor: none;
+}
 
 #app-root.cursor-hidden * {
-cursor: none !important;
-
+  cursor: none !important;
+}
 
 /* hides system cursor only when connected */
 .cursor-hidden {
-cursor: none;
-
+  cursor: none;
+}
 
 /* cursor wrapper */
 .cursor-wrapper {
-position: absolute;
-pointer-events: none;
-user-select: none;
-
+  position: absolute;
+  pointer-events: none;
+  user-select: none;
+}
 
 /* cursor circle */
 .cursor-circle {
-position: absolute;
-left: 50%;
-top: 50%;
-transform: translate(-50%, -50%);
-image-rendering: pixelated;
-image-rendering: crisp-edges;
-width: auto;
-height: auto;
-background-size: contain;
-background-repeat: no-repeat;
-background-position: center;
-background-color: transparent;
-pointer-events: none; 
-z-index: 1;
-
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  width: auto;
+  height: auto;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-color: transparent;
+  pointer-events: none; 
+  z-index: 1;
+}
 
 /* default cursor size */
 .cursor-default {
-width: 24px;
-height: 24px;
-background-image: url('/UI/cursor.png') !important;
-
+  width: 24px;
+  height: 24px;
+  background-image: url('/UI/cursor.png') !important;
+}
 
 /* custom hats*/
 .cursor-bunny {
-width: 36px;
-height: 44px;
-background-image: url('/UI/bunny.png') !important;
-
+  width: 36px;
+  height: 44px;
+  background-image: url('/UI/bunny.png') !important;
+}
 
 .cursor-cap {
-width: 42px;
-height: 34px;
-background-image: url('/UI/cap.png') !important;
-
+  width: 42px;
+  height: 34px;
+  background-image: url('/UI/cap.png') !important;
+}
 
 .cursor-slime {
-width: 50px;
-height: 36px;
-background-image: url('/UI/slime.png') !important;
-
+  width: 50px;
+  height: 36px;
+  background-image: url('/UI/slime.png') !important;
+}
 
 .cursor-astronaut {
-width: 44px;
-height: 40px;
-background-image: url('/UI/astronaut.png') !important;
-
+  width: 44px;
+  height: 40px;
+  background-image: url('/UI/astronaut.png') !important;
+}
 
 .cursor-beanie {
-width: 36px;
-height: 30px;
-background-image: url('/UI/beanie.png') !important;
-
+  width: 36px;
+  height: 30px;
+  background-image: url('/UI/beanie.png') !important;
+}
 
 .cursor-headphones {
-width: 38px;
-height: 38px;
-background-image: url('/UI/headphones.png') !important;
-
+  width: 38px;
+  height: 38px;
+  background-image: url('/UI/headphones.png') !important;
+}
 
 .cursor-sprout {
-width: 34px;
-height: 38px;
-background-image: url('/UI/sprout.png') !important;
-
+  width: 34px;
+  height: 38px;
+  background-image: url('/UI/sprout.png') !important;
+}
 
 .cursor-cathat {
-width: 48px;
-height: 38px;
-background-image: url('/UI/cathat.png') !important;
-
+  width: 48px;
+  height: 38px;
+  background-image: url('/UI/cathat.png') !important;
+}
 
 /* Gacha hat cursor styles */
 .cursor-easteregg1 {
-width: 32px;
-height: 34px;
-background-image: url('/UI/easteregg1.gif') !important;
-
+  width: 32px;
+  height: 34px;
+  background-image: url('/UI/easteregg1.gif') !important;
+}
 
 .cursor-balloon {
-width: 42px;
-height: 50px;
-background-image: url('/UI/balloon.gif') !important;
-
+  width: 42px;
+  height: 50px;
+  background-image: url('/UI/balloon.gif') !important;
+}
 
 .cursor-ffr {
-width: 54px;
-height: 44px;
-background-image: url('/UI/ffr.gif') !important;
-
+  width: 54px;
+  height: 44px;
+  background-image: url('/UI/ffr.gif') !important;
+}
 
 .cursor-ghost {
-width: 24px;
-height: 24px;
-background-image: url('/UI/ghost.png') !important;
-
+  width: 24px;
+  height: 24px;
+  background-image: url('/UI/ghost.png') !important;
+}
 
 .cursor-loading {
-width: 44px;
-height: 34px;
-background-image: url('/UI/loading.gif') !important;
-
+  width: 44px;
+  height: 34px;
+  background-image: url('/UI/loading.gif') !important;
+}
 
 .cursor-labels {
-position: absolute;
-left: 50%;
-bottom: 100%;
-transform: translateX(-50%) translateY(-16px);
-display: flex;
-flex-direction: column;
-align-items: center;
-pointer-events: none;
-user-select: none;
-white-space: nowrap;
-z-index: 2;
-
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  transform: translateX(-50%) translateY(-16px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+  z-index: 2;
+}
 
 .cursor-id-label {
-font-family: 'Press Start 2P', monospace;
-font-size: 0.6rem;
-font-weight: normal;
-margin-bottom: 2px;
-background-color: #111111;
-padding: 1px 4px;
-border-radius: 3px;
-color: white;
-border: 1px solid white;
-pointer-events: none;
-max-width: max-content;
-
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.6rem;
+  font-weight: normal;
+  margin-bottom: 2px;
+  background-color: #111111;
+  padding: 1px 4px;
+  border-radius: 3px;
+  color: white;
+  border: 1px solid white;
+  pointer-events: none;
+  max-width: max-content;
+}
 
 /* afk timer */
 .cursor-timer {
-font-family: 'Press Start 2P', cursive;
-font-size: 0.5rem;
-color: rgb(104, 104, 104);
-margin-bottom: 4px;
-pointer-events: none;
-
+  font-family: 'Press Start 2P', cursive;
+  font-size: 0.5rem;
+  color: rgb(104, 104, 104);
+  margin-bottom: 4px;
+  pointer-events: none;
+}
 
 /* logo container */
 #logo-container {
-position: fixed;
-top: 0;
-left: 25px;
-z-index: 10000;
-pointer-events: none;
-animation: fadeInFromTop 0.5s ease-out;
-margin: 0;
-padding: 0;
-
+  position: fixed;
+  top: 0;
+  left: 25px;
+  z-index: 10000;
+  pointer-events: none;
+  animation: fadeInFromTop 0.5s ease-out;
+  margin: 0;
+  padding: 0;
+}
 
 .logo-row {
-display: flex;
-align-items: center;
-gap: 8px;
-pointer-events: none;
-margin: 0;
-padding: 0;
-
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+  margin: 0;
+  padding: 0;
+}
 
 #logo {
-height: 100%;
-width: auto;
-pointer-events: none;
-display: block;
-margin: 0;
-padding: 0;
-
+  height: 100%;
+  width: auto;
+  pointer-events: none;
+  display: block;
+  margin: 0;
+  padding: 0;
+}
 
 #github-logo {
-width: 32px;
-height: 32px;
-pointer-events: all;
-cursor: pointer;
-transition: transform 0.2s ease;
-
+  width: 32px;
+  height: 32px;
+  pointer-events: all;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
 
 #github-logo:hover {
-transform: scale(1.1);
-
+  transform: scale(1.1);
+}
 
 #leaderboard {
-width: auto;
-height: auto;
-display: block;
-margin: 0;
-padding: 0;
-
+  width: auto;
+  height: auto;
+  display: block;
+  margin: 0;
+  padding: 0;
+}
 
 #modal-overlay {
-position: fixed;
-inset: 0;
-background-color: rgba(36, 36, 36, 0.623);
-display: flex;
-justify-content: center;
-align-items: center;
-z-index: 9999; 
-pointer-events: all; 
-animation: fadeInFromTop 0.5s ease-out;
-
+  position: fixed;
+  inset: 0;
+  background-color: rgba(36, 36, 36, 0.623);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999; 
+  pointer-events: all; 
+  animation: fadeInFromTop 0.5s ease-out;
+}
 
 /* animation keyframes */
 @keyframes fadeInFromTop {
-from {
-opacity: 0;
-transform: translateY(-20px);
-
-to {
-opacity: 1;
-transform: translateY(0);
-
-
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
 @keyframes fadeInFromRight {
-from {
-opacity: 0;
-transform: translateX(20px);
-
-to {
-opacity: 1;
-transform: translateX(0);
-
-
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
 
 .connect-button {
-padding: 0.5rem 0.5rem;
-color: white;
-font-size: 0.6rem;
-background-color: #111111;
-font-family: 'Press Start 2P', cursive;
-pointer-events: all; 
-
+  padding: 0.5rem 0.5rem;
+  color: white;
+  font-size: 0.6rem;
+  background-color: #111111;
+  font-family: 'Press Start 2P', cursive;
+  pointer-events: all; 
+}
 
 .connect-button.enabled {
-cursor: pointer;
-
+  cursor: pointer;
+}
 
 .connect-button.enabled:hover {
-color: rgb(207, 207, 207);
-
+  color: rgb(207, 207, 207);
+}
 
 .connect-button.disabled {
-color: rgb(104, 104, 104);
-cursor: not-allowed;
-
+  color: rgb(104, 104, 104);
+  cursor: not-allowed;
+}
 
 .form-container {
-display: flex;
-flex-direction: column;
-align-items: center;
-gap: 0.5rem;
-width: 16rem;
-padding: 1rem;
-background-color: #111111;
-border-radius: 0.5rem;
-font-family: 'Press Start 2P', cursive;
-font-size: 0.7rem;
-justify-content: center;
-text-align: center;
-border: 1px solid white;
-margin: auto;
-pointer-events: all; 
-
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  width: 16rem;
+  padding: 1rem;
+  background-color: #111111;
+  border-radius: 0.5rem;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 0.7rem;
+  justify-content: center;
+  text-align: center;
+  border: 1px solid white;
+  margin: auto;
+  pointer-events: all; 
+}
 
 .input-global {
-padding: 0.5rem;
-border-radius: 1rem;
-border: 1px solid white;
-background-color: #111111;
-color: white;
-width: 75%;
-text-align: center;
-outline: none;
-font-size: 0.6rem;
-font-family: 'Press Start 2P', cursive;
-pointer-events: all; 
-
+  padding: 0.5rem;
+  border-radius: 1rem;
+  border: 1px solid white;
+  background-color: #111111;
+  color: white;
+  width: 75%;
+  text-align: center;
+  outline: none;
+  font-size: 0.6rem;
+  font-family: 'Press Start 2P', cursive;
+  pointer-events: all; 
+}
 
 .input-global::placeholder {
-color: rgb(104, 104, 104);
-
+  color: rgb(104, 104, 104);
+}
 
 /* gacha output msg animations */
 @keyframes fadeInUp {
-from {
-opacity: 0;
-transform: translateX(-50%) translateY(20px);
-
-to {
-opacity: 1;
-transform: translateX(-50%) translateY(0);
-
-
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
 
 @keyframes fadeOutUp {
-from {
-opacity: 1;
-transform: translateX(-50%) translateY(0);
-
-to {
-opacity: 0;
-transform: translateX(-50%) translateY(-20px);
-
-
+  from {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
+}

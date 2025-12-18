@@ -1,85 +1,85 @@
-import { Socket  from 'socket.io-client';
+import { Socket } from 'socket.io-client';
 
 // cursor related types
 export interface CursorData {
-x: number;
-y: number;
-name?: string;
-stillTime: number;
-cursorType?: string;
-isFrozen?: boolean;
-frozenPosition?: { x: number; y: number ;
-sleepingOnBed?: boolean;
-badges?: {
-dailyBadge: boolean;
-crownBadge: boolean;
-gachaBadge: boolean;
-;
-
+  x: number;
+  y: number;
+  name?: string;
+  stillTime: number;
+  cursorType?: string;
+  isFrozen?: boolean;
+  frozenPosition?: { x: number; y: number };
+  sleepingOnBed?: boolean;
+  badges?: {
+    dailyBadge: boolean;
+    crownBadge: boolean;
+    gachaBadge: boolean;
+  };
+}
 
 export interface CursorsMap {
-[socketId: string]: CursorData;
-
+  [socketId: string]: CursorData;
+}
 
 // effect types
 export interface Heart {
-id: string;
-x: number;
-y: number;
-timestamp: number;
-
+  id: string;
+  x: number;
+  y: number;
+  timestamp: number;
+}
 
 export interface Circle {
-id: string;
-x: number;
-y: number;
-timestamp: number;
-
+  id: string;
+  x: number;
+  y: number;
+  timestamp: number;
+}
 
 export interface Emote {
-id: string;
-x: number;
-y: number;
-timestamp: number;
-type: string;
-
+  id: string;
+  x: number;
+  y: number;
+  timestamp: number;
+  type: string;
+}
 
 // furniture types
 export interface Furniture {
-id: string;
-type: string;
-x: number;
-y: number;
-zIndex?: number;
-isFlipped?: boolean;
-isOn?: boolean;
-
+  id: string;
+  type: string;
+  x: number;
+  y: number;
+  zIndex?: number;
+  isFlipped?: boolean;
+  isOn?: boolean;
+}
 
 // panel props
 export interface PanelProps {
-socket: Socket | null;
-onCursorChange: (type: string) => void;
-cursorPosition?: CursorData;
-viewportOffset: { x: number; y: number ;
-style?: React.CSSProperties;
-
+  socket: Socket | null;
+  onCursorChange: (type: string) => void;
+  cursorPosition?: CursorData;
+  viewportOffset: { x: number; y: number };
+  style?: React.CSSProperties;
+}
 
 // mouse state
 export interface MouseState {
-isDraggingFurniture: boolean;
-isDraggingViewport: boolean;
-lastX: number;
-lastY: number;
-lastEvent: MouseEvent | null;
-
+  isDraggingFurniture: boolean;
+  isDraggingViewport: boolean;
+  lastX: number;
+  lastY: number;
+  lastEvent: MouseEvent | null;
+}
 
 // viewport types
 export interface ViewportOffset {
-x: number;
-y: number;
-
+  x: number;
+  y: number;
+}
 
 export interface DragPosition {
-x: number;
-y: number;
- 
+  x: number;
+  y: number;
+} 

@@ -1,107 +1,107 @@
-import { useMemo  from 'react';
-import type { Circle, Heart, Emote, Furniture, CursorsMap  from '../../types';
+import { useMemo } from 'react';
+import type { Circle, Heart, Emote, Furniture, CursorsMap } from '../../types';
 
 interface ViewportFilteringProps {
-circles: Circle[];
-hearts: Heart[];
-emotes: Emote[];
-furniture: { [key: string]: Furniture ;
-cursors: CursorsMap;
-
+  circles: Circle[];
+  hearts: Heart[];
+  emotes: Emote[];
+  furniture: { [key: string]: Furniture };
+  cursors: CursorsMap;
+}
 
 export const useViewportFiltering = ({
-circles,
-hearts,
-emotes,
-furniture,
-cursors
-: ViewportFilteringProps) => {
+  circles,
+  hearts,
+  emotes,
+  furniture,
+  cursors
+}: ViewportFilteringProps) => {
+  
+  // quality based on user count
+  const qualitySettings = useMemo(() => {
+    const userCount = Object.keys(cursors).length;
+    
+    if (userCount > 50) {
+      // very crowded
+      return {
+        cursorUpdateInterval: 2000, // 2 seconds
+        animationLimit: 5, // 5 animations visible
+        quality: 'low'
+      };
+    } else if (userCount > 20) {
+      // crowded
+      return {
+        cursorUpdateInterval: 1500, // 1.5 seconds
+        animationLimit: 10, // 10 animations visible
+        quality: 'medium'
+      };
+    } else {
+      // normal
+      return {
+        cursorUpdateInterval: 1000, // 1 second
+        animationLimit: 20, // all animations visible
+        quality: 'high'
+      };
+    }
+  }, [cursors]);
 
-// quality based on user count
-const qualitySettings = useMemo(() => {
-const userCount = Object.keys(cursors).length;
+  const visibleCircles = useMemo(() => {
+    const { animationLimit } = qualitySettings;
+    const now = Date.now();
+    
+    const filtered = circles
+      .filter(circle => {
+        return now - circle.timestamp < 8000;
+      })
+      .slice(-animationLimit);
+    
+    return filtered;
+  }, [circles, qualitySettings]);
 
-if (userCount > 50) {
-// very crowded
-return {
-cursorUpdateInterval: 2000, // 2 seconds
-animationLimit: 5, // 5 animations visible
-quality: 'low'
-;
- else if (userCount > 20) {
-// crowded
-return {
-cursorUpdateInterval: 1500, // 1.5 seconds
-animationLimit: 10, // 10 animations visible
-quality: 'medium'
-;
- else {
-// normal
-return {
-cursorUpdateInterval: 1000, // 1 second
-animationLimit: 20, // all animations visible
-quality: 'high'
-;
+  const visibleHearts = useMemo(() => {
+    const { animationLimit } = qualitySettings;
+    const now = Date.now();
+    
+    const filtered = hearts
+      .filter(heart => {
+        return now - heart.timestamp < 10000;
+      })
+      .slice(-animationLimit);
+    
+    return filtered;
+  }, [hearts, qualitySettings]);
 
-, [cursors]);
+  const visibleEmotes = useMemo(() => {
+    const { animationLimit } = qualitySettings;
+    const now = Date.now();
+    
+    const filtered = emotes
+      .filter(emote => {
+        return now - emote.timestamp < 6000;
+      })
+      .slice(-animationLimit);
+    
+    return filtered;
+  }, [emotes, qualitySettings]);
 
-const visibleCircles = useMemo(() => {
-const { animationLimit  = qualitySettings;
-const now = Date.now();
+  const visibleFurniture = useMemo(() => {
+    // shows all furniture - no filtering, even before connecting
+    // uses Object.values directly for better performance
+    return Object.values(furniture);
+  }, [furniture]);
 
-const filtered = circles
-.filter(circle => {
-return now - circle.timestamp < 8000;
-)
-.slice(-animationLimit);
+  const visibleCursors = useMemo(() => {
+    // shows all cursors - no filtering, even before connecting
+    // uses Object.entries directly and filter in one pass
+    return Object.entries(cursors).filter(([_id, cursor]) => cursor && cursor.name);
+  }, [cursors]);
 
-return filtered;
-, [circles, qualitySettings]);
-
-const visibleHearts = useMemo(() => {
-const { animationLimit  = qualitySettings;
-const now = Date.now();
-
-const filtered = hearts
-.filter(heart => {
-return now - heart.timestamp < 10000;
-)
-.slice(-animationLimit);
-
-return filtered;
-, [hearts, qualitySettings]);
-
-const visibleEmotes = useMemo(() => {
-const { animationLimit  = qualitySettings;
-const now = Date.now();
-
-const filtered = emotes
-.filter(emote => {
-return now - emote.timestamp < 6000;
-)
-.slice(-animationLimit);
-
-return filtered;
-, [emotes, qualitySettings]);
-
-const visibleFurniture = useMemo(() => {
-// shows all furniture - no filtering, even before connecting
-// uses Object.values directly for better performance
-return Object.values(furniture);
-, [furniture]);
-
-const visibleCursors = useMemo(() => {
-// shows all cursors - no filtering, even before connecting
-// uses Object.entries directly and filter in one pass
-return Object.entries(cursors).filter(([_id, cursor]) => cursor && cursor.name);
-, [cursors]);
-
-return {
-visibleCircles,
-visibleHearts,
-visibleEmotes,
-visibleFurniture,
-visibleCursors,
-qualitySettings
-;
-; 
+  return {
+    visibleCircles,
+    visibleHearts,
+    visibleEmotes,
+    visibleFurniture,
+    visibleCursors,
+    qualitySettings
+  };
+}; 

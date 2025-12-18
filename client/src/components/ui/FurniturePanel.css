@@ -1,67 +1,67 @@
 .furniture-panel-container {
-position: fixed;
-right: 160px;
-top: 0;
-transform: none;
-pointer-events: none;
-animation: fadeInFromRight 0.5s ease-out;
-
+  position: fixed;
+  right: 160px;
+  top: 0;
+  transform: none;
+  pointer-events: none;
+  animation: fadeInFromRight 0.5s ease-out;
+}
 
 .furniture-panel-background {
-width: auto;
-height: auto;
-pointer-events: none;
-
+  width: auto;
+  height: auto;
+  pointer-events: none;
+}
 
 .furniture-panel-content {
-position: absolute;
-top: 0;
-left: 0;
-width: 100%;
-height: 100%;
-display: flex;
-flex-direction: column;
-gap: 10px;
-padding: 20px 20px 20px 20px;
-padding-top: 42px; 
-box-sizing: border-box;
-pointer-events: all;
-
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px 20px 20px 20px;
+  padding-top: 42px; 
+  box-sizing: border-box;
+  pointer-events: all;
+}
 
 .furniture-panel-section {
-display: flex;
-flex-direction: column;
-align-items: flex-start;
-gap: 10px;
-width: 100%;
-
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+}
 
 /* gaps for furniture buttons in the panel*/
 .furniture-panel-section {
-gap: 2px;
-
+  gap: 2px;
+}
 
 .furniture-panel-section .button-grid {
-gap: 8px;
-
+  gap: 8px;
+}
 
 .furniture-panel-section .button-row {
-gap: 2px;
-
+  gap: 2px;
+}
 
 /* padding to the last row of buttons*/
 .furniture-panel-section .button-grid .button-row:last-child {
-margin-top: 0;
-padding-top: 1px;
-
+  margin-top: 0;
+  padding-top: 1px;
+}
 
 @keyframes fadeInFromRight {
-from {
-opacity: 0;
-transform: translateX(20px);
-
-to {
-opacity: 1;
-transform: translateX(0);
-
- 
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+} 
